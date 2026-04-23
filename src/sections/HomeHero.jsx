@@ -198,32 +198,7 @@ export default function HomeHero() {
               Track Shipment <ArrowRight size={16} />
             </motion.div>
           </Link>
-          <motion.div
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={() =>
-              document
-                .getElementById("services")
-                ?.scrollIntoView({ behavior: "smooth" })
-            }
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              background: "rgba(255,255,255,0.1)",
-              color: "#fff",
-              padding: "14px 28px",
-              borderRadius: "10px",
-              fontFamily: "'Sora',sans-serif",
-              fontSize: "14px",
-              fontWeight: 600,
-              cursor: "pointer",
-              border: "1px solid rgba(255,255,255,0.22)",
-              backdropFilter: "blur(8px)",
-            }}
-          >
-            Our Services
-          </motion.div>
+        
         </motion.div>
 
         <motion.div

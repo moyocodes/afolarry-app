@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Car, FileText, Shield, Package } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 const services = [
   {
@@ -64,9 +65,7 @@ export default function HomeServices() {
               Our Services
             </h2>
           </div>
-          <p style={{ fontFamily: "'Sora',sans-serif", fontSize: '14px', color: 'rgba(255,255,255,0.4)', lineHeight: 1.75, fontWeight: 300, maxWidth: '340px' }}>
-            Comprehensive solutions tailored to your automotive logistics needs.
-          </p>
+        
         </motion.div>
 
         {/* Main layout: sidebar tabs + big visual */}
@@ -154,6 +153,15 @@ export default function HomeServices() {
               ))}
             </div>
           </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '1.8rem' }}>
+          <Link to="/solutions" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#1565c0', color: '#fff', padding: '12px 20px', borderRadius: '10px', textDecoration: 'none', fontFamily: "'Sora',sans-serif", fontSize: '14px', fontWeight: 700 }}>
+            View Solutions
+          </Link>
+          <Link to="/#contact" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.14)', padding: '12px 20px', borderRadius: '10px', textDecoration: 'none', fontFamily: "'Sora',sans-serif", fontSize: '14px', fontWeight: 700 }}>
+            Request a Quote
+          </Link>
         </div>
       </div>
     </section>

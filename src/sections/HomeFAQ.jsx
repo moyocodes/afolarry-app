@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 const faqs = [
   { q: 'What documents do I need to ship a vehicle by sea?', a: 'Typically you need the vehicle title, invoice, ID, and export documentation. We guide you through the full checklist.' },
@@ -14,7 +15,7 @@ export default function HomeFAQ() {
   const [open, setOpen] = useState(null)
 
   return (
-    <section style={{ padding: '7rem 3rem', background: '#fff', borderTop: '1px solid #dce8f7' }}>
+    <section id="faq" style={{ padding: '7rem 3rem', background: '#fff', borderTop: '1px solid #dce8f7', scrollMarginTop: '96px' }}>
       <div style={{ maxWidth: '860px', margin: '0 auto' }}>
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -90,6 +91,13 @@ export default function HomeFAQ() {
               </AnimatePresence>
             </motion.div>
           ))}
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap', marginTop: '2.5rem' }}>
+         
+          <Link to="/#contact" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#eef6ff', color: '#1565c0', border: '1px solid #dce8f7', padding: '12px 20px', borderRadius: '10px', textDecoration: 'none', fontFamily: "'Sora',sans-serif", fontSize: '14px', fontWeight: 700 }}>
+            Talk to Our Team
+          </Link>
         </div>
       </div>
     </section>

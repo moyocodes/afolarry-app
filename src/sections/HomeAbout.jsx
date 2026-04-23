@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { Link } from 'react-router-dom'
 
 const fade = (dir = 0) => ({
   hidden: { opacity: 0, x: dir * 40, y: dir === 0 ? 30 : 0 },
@@ -28,6 +29,12 @@ export default function HomeAbout() {
           <p style={{ fontFamily: "'Sora',sans-serif", fontSize: '15px', color: '#5a7599', lineHeight: 1.9, fontWeight: 300 }}>
             Our mission is to provide transparent, efficient, and secure logistics solutions. We handle everything from procurement and customs clearance to final delivery, ensuring peace of mind for our clients.
           </p>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '1.8rem' }}>
+            <Link to="/#services" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#1565c0', color: '#fff', padding: '12px 20px', borderRadius: '10px', textDecoration: 'none', fontFamily: "'Sora',sans-serif", fontSize: '14px', fontWeight: 700 }}>
+              Explore Services
+            </Link>
+           
+          </div>
         </motion.div>
 
         {/* Image */}
