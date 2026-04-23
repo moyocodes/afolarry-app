@@ -8,6 +8,7 @@ import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebas
 import emailjs from '@emailjs/browser'
 import { db, storage, auth } from '../lib/firebase'
 import { EJS_SERVICE, EJS_ORDER, EJS_PUBLIC } from '../lib/emailjs'
+import PageHeader from '../components/PageHeader'
 import {
   Search, SlidersHorizontal, X, Plus, Pencil, Trash2, LogIn,
   LogOut, Upload, CheckCircle, AlertCircle, ChevronLeft, ChevronRight,
@@ -402,30 +403,22 @@ export default function Cars() {
 
   return (
     <div style={S}>
-      {/* Header */}
-      <div style={{ background: 'linear-gradient(135deg, #0d1b2e 0%, #1565c0 100%)', padding: '4rem 3rem', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 70% 50%, rgba(66,165,245,0.15) 0%, transparent 55%)' }} />
-        <div style={{ maxWidth: '1280px', margin: '0 auto', position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.5rem' }}>
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: '#42a5f5', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '0.8rem' }}>Cars</div>
-            <h1 style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', fontWeight: 800, color: '#fff', lineHeight: 1.1, marginBottom: '0.8rem' }}>
-              Available Cars &amp; Pre-Orders
-            </h1>
-            <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.7, fontWeight: 300 }}>
-              Browse in-stock vehicles or place a pre-order for upcoming arrivals. We will contact you to confirm payment and shipping.
-            </p>
-          </motion.div>
-          <motion.button
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            onClick={() => setAdminOpen(true)}
-            style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '9px 16px', borderRadius: '9px', fontFamily: "'Sora',sans-serif", fontSize: '12px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '7px', backdropFilter: 'blur(8px)' }}
-          >
-            <SlidersHorizontal size={14} /> Admin
-          </motion.button>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Cars"
+        title="Available Cars & Pre-Orders"
+        description="Browse in-stock vehicles or place a pre-order for upcoming arrivals. We will contact you to confirm payment and shipping."
+        image="https://images.unsplash.com/photo-1502877338535-766e1452684a?w=1600&q=80&auto=format&fit=crop"
+      >
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          onClick={() => setAdminOpen(true)}
+          style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '9px 16px', borderRadius: '9px', fontFamily: "'Sora',sans-serif", fontSize: '12px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '7px', backdropFilter: 'blur(8px)' }}
+        >
+          <SlidersHorizontal size={14} /> Admin
+        </motion.button>
+      </PageHeader>
 
       {/* Filters */}
       <div style={{ background: '#f7faff', borderBottom: '1px solid #dce8f7', padding: '1.2rem 3rem' }}>

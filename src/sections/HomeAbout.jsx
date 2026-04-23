@@ -7,8 +7,8 @@ const fade = (dir = 0) => ({
 
 export default function HomeAbout() {
   return (
-    <section id="about" style={{ padding: '7rem 3rem', background: '#fff', overflow: 'hidden' }}>
-      <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5rem', alignItems: 'center' }}>
+    <section id="about" className="section-pad" style={{ padding: '7rem 3rem', background: '#fff', overflow: 'hidden', scrollMarginTop: '96px' }}>
+      <div className="responsive-two-col" style={{ maxWidth: '1280px', margin: '0 auto', gap: '5rem', alignItems: 'center' }}>
 
         {/* Text */}
         <motion.div variants={fade(-1)} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-80px' }}>
@@ -76,8 +76,6 @@ export default function HomeAbout() {
         </motion.div>
 
       </div>
-
-      <style>{`@media(max-width:768px){#about .about-grid{grid-template-columns:1fr!important}}`}</style>
     </section>
   )
 }

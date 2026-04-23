@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import emailjs from '@emailjs/browser'
 import { EJS_SERVICE, EJS_CONTACT, EJS_PUBLIC } from '../lib/emailjs'
 import { MapPin, Phone, Mail, CheckCircle, AlertCircle } from 'lucide-react'
+import PageHeader from '../components/PageHeader'
 
 const S = { fontFamily: "'Sora',sans-serif" }
 const fade = { hidden: { opacity: 0, y: 20 }, show: (i=0) => ({ opacity: 1, y: 0, transition: { duration: 0.5, delay: i*0.1 } }) }
@@ -34,25 +35,17 @@ export default function ContactPage() {
 
   return (
     <div style={S}>
-      {/* Banner */}
-      <div style={{ background: 'linear-gradient(135deg, #0d1b2e 0%, #1565c0 100%)', padding: '5rem 3rem', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 70% 50%, rgba(66,165,245,0.15) 0%, transparent 55%)' }} />
-        <div style={{ maxWidth: '900px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
-          <motion.div variants={fade} custom={0} initial="hidden" animate="show">
-            <div style={{ fontSize: '11px', fontWeight: 700, color: '#42a5f5', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '0.8rem' }}>Contact</div>
-            <h1 style={{ fontSize: 'clamp(2rem,4vw,3rem)', fontWeight: 800, color: '#fff', lineHeight: 1.1, marginBottom: '1rem' }}>
-              Let's move your cargo.
-            </h1>
-            <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.85, fontWeight: 300 }}>
-              Fill in the form and we'll respond within two business hours. Or call us directly.
-            </p>
-          </motion.div>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Contact"
+        title="Let's move your cargo."
+        description="Fill in the form and we'll respond within two business hours, or call us directly."
+        image="https://images.unsplash.com/photo-1494412574643-ff11b0a5c1c3?w=1600&q=80&auto=format&fit=crop"
+        maxWidth="900px"
+      />
 
       {/* Body */}
-      <section style={{ padding: '5rem 3rem', background: '#0d1b2e' }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '4rem' }}>
+      <section className="section-pad" style={{ padding: '5rem 3rem', background: '#0d1b2e' }}>
+        <div className="responsive-contact-grid" style={{ maxWidth: '1100px', margin: '0 auto' }}>
 
           {/* Left info */}
           <motion.div variants={fade} custom={0} initial="hidden" whileInView="show" viewport={{ once: true }}
@@ -92,7 +85,7 @@ export default function ContactPage() {
 
           {/* Right form */}
           <motion.form ref={formRef} onSubmit={send} variants={fade} custom={1} initial="hidden" whileInView="show" viewport={{ once: true }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <div className="responsive-form-grid">
               {[
                 { name: 'from_name', label: 'Full Name', type: 'text', placeholder: 'Your name', full: false },
                 { name: 'phone', label: 'Phone / WhatsApp', type: 'tel', placeholder: '+234...', full: false },

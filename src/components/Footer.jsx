@@ -3,9 +3,9 @@ import { Anchor } from 'lucide-react'
 
 export default function Footer() {
   return (
-    <footer style={{ background: '#060f1c', borderTop: '1px solid rgba(255,255,255,0.06)', padding: '3rem', fontFamily: "'Sora',sans-serif" }}>
+    <footer className="section-pad" style={{ background: '#060f1c', borderTop: '1px solid rgba(255,255,255,0.06)', padding: '3rem', fontFamily: "'Sora',sans-serif" }}>
       <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr', gap: '2.5rem', marginBottom: '2rem' }}>
+        <div className="responsive-footer-grid" style={{ marginBottom: '2rem' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '0.9rem' }}>
               <div style={{ width: '32px', height: '32px', background: '#1565c0', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -16,7 +16,7 @@ export default function Footer() {
                 <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>LIMITED</div>
               </div>
             </div>
-            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', lineHeight: 1.7, fontWeight: 300, maxWidth: '230px' }}>
+            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', lineHeight: 1.7, fontWeight: 300, maxWidth: '260px' }}>
               Reliable sea freight and vehicle logistics across global markets. We handle documentation, customs clearance, and end-to-end delivery.
             </p>
           </div>
@@ -25,9 +25,9 @@ export default function Footer() {
             <h5 style={{ fontSize: '10px', fontWeight: 700, color: '#42a5f5', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '1rem' }}>Quick Links</h5>
             {[
               { to: '/', l: 'Home' },
-              { to: '/services', l: 'Services' },
-              { to: '/contact', l: 'Contact' },
-              { to: '/solutions', l: 'Solutions' },
+              { to: '/#services', l: 'Services' },
+              { to: '/#contact', l: 'Contact' },
+              { to: '/#solutions', l: 'Solutions' },
             ].map(item => (
               <Link key={item.l} to={item.to} style={{ display: 'block', fontSize: '12px', color: 'rgba(255,255,255,0.45)', textDecoration: 'none', marginBottom: '0.5rem', fontWeight: 300, transition: 'color 0.2s' }}>
                 {item.l}
@@ -41,7 +41,7 @@ export default function Footer() {
               { to: '/schedules', l: 'Schedules' },
               { to: '/track', l: 'Track Shipment' },
               { to: '/cars', l: 'Cars' },
-              { to: '/about', l: 'About' },
+              { to: '/#about', l: 'About' },
             ].map(item => (
               <Link key={item.l} to={item.to} style={{ display: 'block', fontSize: '12px', color: 'rgba(255,255,255,0.45)', textDecoration: 'none', marginBottom: '0.5rem', fontWeight: 300 }}>
                 {item.l}

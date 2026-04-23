@@ -18,8 +18,22 @@ import TrackShipment from './pages/TrackShipment'
 import ContactPage from './pages/ContactPage'
 
 function ScrollToTop() {
-  const { pathname } = useLocation()
-  useEffect(() => { window.scrollTo(0, 0) }, [pathname])
+  const { pathname, hash } = useLocation()
+
+  useEffect(() => {
+    if (hash) {
+      const id = hash.slice(1)
+      const timer = window.setTimeout(() => {
+        const el = document.getElementById(id)
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 60)
+
+      return () => window.clearTimeout(timer)
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [pathname, hash])
+
   return null
 }
 

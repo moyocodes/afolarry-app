@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { Shield, Award, Users, Globe } from 'lucide-react'
+import PageHeader from '../components/PageHeader'
 
 const S = { fontFamily: "'Sora',sans-serif" }
 
@@ -21,25 +22,16 @@ const fade = { hidden: { opacity: 0, y: 24 }, show: (i=0) => ({ opacity: 1, y: 0
 export default function About() {
   return (
     <div style={S}>
-      {/* Hero banner */}
-      <div style={{ background: 'linear-gradient(135deg, #0d1b2e 0%, #1565c0 100%)', padding: '5rem 3rem', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 70% 50%, rgba(66,165,245,0.15) 0%, transparent 60%)' }} />
-        <div style={{ maxWidth: '1280px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
-          <motion.div variants={fade} custom={0} initial="hidden" animate="show">
-            <div style={{ fontSize: '11px', fontWeight: 700, color: '#42a5f5', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '0.8rem' }}>About Us</div>
-            <h1 style={{ fontSize: 'clamp(2rem,4vw,3.2rem)', fontWeight: 800, color: '#fff', lineHeight: 1.1, marginBottom: '1.2rem', letterSpacing: '-0.02em' }}>
-              Nigeria's trusted<br />sea freight partner.
-            </h1>
-            <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.85, maxWidth: '520px', fontWeight: 300 }}>
-              Founded in 2012, Afolaray Nigeria Limited has grown from a single-operator clearing agency into one of Lagos's most respected ocean freight forwarders — moving cargo across 30+ global trade lanes.
-            </p>
-          </motion.div>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="About Us"
+        title="Nigeria's trusted sea freight partner."
+        description="Founded in 2012, Afolaray Nigeria Limited has grown from a single-operator clearing agency into one of Lagos's respected ocean freight forwarders."
+        image="https://images.unsplash.com/photo-1494412574643-ff11b0a5c1c3?w=1600&q=80&auto=format&fit=crop"
+      />
 
       {/* Story */}
-      <section style={{ padding: '5rem 3rem', maxWidth: '1280px', margin: '0 auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4rem', alignItems: 'center' }}>
+      <section className="section-pad" style={{ padding: '5rem 3rem', maxWidth: '1280px', margin: '0 auto' }}>
+        <div className="responsive-two-col" style={{ gap: '4rem', alignItems: 'center' }}>
           <motion.div variants={fade} custom={0} initial="hidden" whileInView="show" viewport={{ once: true }}>
             <div style={{ fontSize: '11px', fontWeight: 700, color: '#42a5f5', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '0.6rem' }}>Our Story</div>
             <h2 style={{ fontSize: 'clamp(1.6rem,3vw,2.2rem)', fontWeight: 700, color: '#0d1b2e', lineHeight: 1.2, marginBottom: '1.2rem' }}>
@@ -64,13 +56,13 @@ export default function About() {
       </section>
 
       {/* Values */}
-      <section style={{ padding: '4rem 3rem', background: '#f7faff', borderTop: '1px solid #dce8f7', borderBottom: '1px solid #dce8f7' }}>
+      <section className="section-pad" style={{ padding: '4rem 3rem', background: '#f7faff', borderTop: '1px solid #dce8f7', borderBottom: '1px solid #dce8f7' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
           <motion.div variants={fade} initial="hidden" whileInView="show" viewport={{ once: true }} style={{ textAlign: 'center', marginBottom: '3rem' }}>
             <div style={{ fontSize: '11px', fontWeight: 700, color: '#42a5f5', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '0.6rem' }}>What we stand for</div>
             <h2 style={{ fontSize: 'clamp(1.6rem,3vw,2.2rem)', fontWeight: 700, color: '#0d1b2e' }}>Our values</h2>
           </motion.div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '1.5rem' }}>
+          <div className="responsive-four-col">
             {values.map((v, i) => (
               <motion.div key={v.title} variants={fade} custom={i} initial="hidden" whileInView="show" viewport={{ once: true }}
                 style={{ background: '#fff', border: '1px solid #dce8f7', borderRadius: '16px', padding: '2rem' }}>
@@ -86,12 +78,12 @@ export default function About() {
       </section>
 
       {/* Team */}
-      <section style={{ padding: '5rem 3rem', maxWidth: '1280px', margin: '0 auto' }}>
+      <section className="section-pad" style={{ padding: '5rem 3rem', maxWidth: '1280px', margin: '0 auto' }}>
         <motion.div variants={fade} initial="hidden" whileInView="show" viewport={{ once: true }} style={{ textAlign: 'center', marginBottom: '3rem' }}>
           <div style={{ fontSize: '11px', fontWeight: 700, color: '#42a5f5', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '0.6rem' }}>The people</div>
           <h2 style={{ fontSize: 'clamp(1.6rem,3vw,2.2rem)', fontWeight: 700, color: '#0d1b2e' }}>Meet the team</h2>
         </motion.div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '2rem', maxWidth: '800px', margin: '0 auto' }}>
+        <div className="responsive-three-col" style={{ maxWidth: '800px', margin: '0 auto' }}>
           {team.map((m, i) => (
             <motion.div key={m.name} variants={fade} custom={i} initial="hidden" whileInView="show" viewport={{ once: true }}
               style={{ textAlign: 'center' }}>

@@ -52,7 +52,7 @@ export default function Services() {
   const toggle = (i) => setOpen(open === i ? null : i)
 
   return (
-    <section id="services" style={{ padding: '5rem 3rem', maxWidth: '1280px', margin: '0 auto' }}>
+    <section id="services" className="section-pad" style={{ padding: '5rem 3rem', maxWidth: '1280px', margin: '0 auto' }}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -74,9 +74,8 @@ export default function Services() {
         </div>
       </motion.div>
 
-      <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(3,1fr)',
-        gap: '1px', background: '#dce8f7',
+      <div className="responsive-service-grid" style={{
+        background: '#dce8f7',
         marginTop: '3rem', border: '1px solid #dce8f7',
         borderRadius: '16px', overflow: 'hidden',
       }}>
@@ -136,7 +135,7 @@ export default function Services() {
             transition={{ duration: 0.35, ease: 'easeInOut' }}
             style={{ overflow: 'hidden', background: '#e3f2fd', border: '1px solid #dce8f7', borderRadius: '16px', marginTop: '1px' }}
           >
-            <div style={{ padding: '2rem 3rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', alignItems: 'start' }}>
+            <div className="responsive-detail-grid" style={{ padding: '2rem 3rem' }}>
               <div style={{ fontSize: '14px', color: '#0c447c', lineHeight: 1.8, fontWeight: 300 }}>
                 {svcData[open].full}
               </div>

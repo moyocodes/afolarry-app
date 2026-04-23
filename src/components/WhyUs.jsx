@@ -54,8 +54,8 @@ export default function WhyUs() {
   const [open, setOpen] = useState(0)
 
   return (
-    <section id="why" style={{ padding: '5rem 3rem' }}>
-      <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4rem', alignItems: 'start' }}>
+    <section id="why" className="section-pad" style={{ padding: '5rem 3rem' }}>
+      <div className="responsive-two-col" style={{ maxWidth: '1280px', margin: '0 auto', gap: '4rem', alignItems: 'start' }}>
         {/* Left */}
         <div>
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>

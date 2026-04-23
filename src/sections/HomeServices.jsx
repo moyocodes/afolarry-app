@@ -8,7 +8,7 @@ const services = [
     icon: <Car size={26} />,
     title: 'Vehicle Import',
     body: 'Complete assistance with sourcing and importing vehicles from major global markets including USA, Canada, and Europe.',
-    img: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?w=900&q=80&auto=format&fit=crop',
+    img: 'https://i.pinimg.com/736x/9b/16/ed/9b16ed1ccbf20a60a8b1dbab3a04f3da.jpg',
   },
   {
     num: '02',
@@ -22,7 +22,7 @@ const services = [
     icon: <Shield size={26} />,
     title: 'Customs Clearance',
     body: "Navigating complex customs regulations so you don't have to. We handle all documentation and compliance.",
-    img: 'https://images.unsplash.com/photo-1604629615861-3cd34038e5e9?w=900&q=80&auto=format&fit=crop',
+    img: 'https://platinumfreight.co.nz/wp-content/uploads/2023/11/customs-clearance.jpg',
   },
   {
     num: '04',
@@ -45,7 +45,8 @@ export default function HomeServices() {
   }, [paused])
 
   return (
-    <section id="services" style={{ padding: '7rem 3rem', background: '#0d1b2e', overflow: 'hidden', position: 'relative' }}>
+    <section id="services" style={{ padding: '7rem 3rem', background: '#0d1b2e', overflow: 'hidden', position: 'relative', scrollMarginTop: '96px' }}>
+      <div id="solutions" style={{ position: 'absolute', top: '96px', scrollMarginTop: '96px' }} />
       <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '900px', height: '600px', background: 'radial-gradient(ellipse, rgba(21,101,192,0.1) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
       <div style={{ maxWidth: '1280px', margin: '0 auto', position: 'relative', zIndex: 1 }}>

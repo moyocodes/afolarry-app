@@ -44,7 +44,7 @@ export default function HomeHowItWorks() {
   }, [])
 
   return (
-    <section style={{ padding: '7rem 3rem', background: '#f7faff', borderTop: '1px solid #dce8f7', overflow: 'hidden' }}>
+    <section id="how-it-works" style={{ padding: '7rem 3rem', background: '#f7faff', borderTop: '1px solid #dce8f7', overflow: 'hidden', scrollMarginTop: '96px' }}>
       <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
 
         {/* Header */}

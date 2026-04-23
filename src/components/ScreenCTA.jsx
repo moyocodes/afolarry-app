@@ -27,7 +27,7 @@ export default function ScreenCTA() {
           exit={{ y: 80, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 300, damping: 32 }}
           style={{
-            position: 'fixed', bottom: '96px', left: '50%', transform: 'translateX(-50%)',
+            position: 'fixed', bottom: '84px', left: '50%', transform: 'translateX(-50%)',
             zIndex: 900,
             background: '#0d1b2e',
             border: '1px solid rgba(255,255,255,0.1)',
@@ -36,16 +36,17 @@ export default function ScreenCTA() {
             display: 'flex', alignItems: 'center', gap: '12px',
             boxShadow: '0 16px 50px rgba(4,14,30,0.45)',
             backdropFilter: 'blur(12px)',
-            whiteSpace: 'nowrap',
             flexWrap: 'wrap',
+            width: 'min(calc(100vw - 2rem), 560px)',
+            justifyContent: 'space-between',
           }}
         >
-          <span style={{ fontFamily: "'Sora',sans-serif", fontSize: '13px', color: 'rgba(255,255,255,0.65)', fontWeight: 300 }}>
+          <span style={{ fontFamily: "'Sora',sans-serif", fontSize: '13px', color: 'rgba(255,255,255,0.65)', fontWeight: 300, flex: '1 1 180px' }}>
             Ready to ship your vehicle?
           </span>
 
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <Link to="/contact">
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <Link to="/#contact">
               <motion.div
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.96 }}

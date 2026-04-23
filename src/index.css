@@ -22,3 +22,121 @@ body {
 #root {
   width: 100%;
 }
+
+img,
+video,
+iframe {
+  max-width: 100%;
+}
+
+.section-pad {
+  padding-left: 3rem !important;
+  padding-right: 3rem !important;
+}
+
+.responsive-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+}
+
+.responsive-contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 4rem;
+}
+
+.responsive-three-col {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+.responsive-four-col {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+}
+
+.responsive-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.responsive-service-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+}
+
+.responsive-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+.map-review-badge {
+  position: absolute;
+  left: 2rem;
+  bottom: 2rem;
+  max-width: 360px;
+}
+
+.responsive-footer-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1fr;
+  gap: 2.5rem;
+}
+
+.hero-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 1024px) {
+  .section-pad {
+    padding-left: 1.5rem !important;
+    padding-right: 1.5rem !important;
+  }
+
+  .responsive-two-col,
+  .responsive-contact-grid,
+  .responsive-three-col,
+  .responsive-four-col,
+  .responsive-detail-grid {
+    grid-template-columns: 1fr !important;
+    gap: 2rem !important;
+  }
+
+  .responsive-service-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .responsive-footer-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 2rem !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .section-pad {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  .responsive-form-grid,
+  .responsive-service-grid,
+  .hero-stats-grid,
+  .responsive-footer-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .map-review-badge {
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+    max-width: none;
+  }
+}
