@@ -53,6 +53,7 @@ export default function HomeHero() {
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
+        background: "linear-gradient(135deg, #0d47a1 0%, #1565c0 100%)",
       }}
     >
       {/* BG video */}
@@ -71,6 +72,7 @@ export default function HomeHero() {
             height: "100%",
             objectFit: "cover",
             display: "block",
+            opacity: 0.4,
           }}
         />
         <div
@@ -78,10 +80,9 @@ export default function HomeHero() {
             position: "absolute",
             inset: 0,
             background:
-              "linear-gradient(to bottom, rgba(4,14,30,0.78) 0%, rgba(4,14,30,0.55) 50%, rgba(4,14,30,0.92) 100%)",
+              "linear-gradient(to bottom, rgba(38,20,11,0.8) 0%, rgba(38,20,11,0.58) 48%, rgba(38,20,11,0.94) 100%)",
           }}
         />
-        {/* subtle blue glow */}
         <div
           style={{
             position: "absolute",
@@ -92,7 +93,7 @@ export default function HomeHero() {
             height: "700px",
             borderRadius: "50%",
             background:
-              "radial-gradient(circle, rgba(21,101,192,0.18) 0%, transparent 70%)",
+              "radial-gradient(circle, rgba(201,137,83,0.24) 0%, transparent 70%)",
             pointerEvents: "none",
           }}
         />
@@ -138,7 +139,7 @@ export default function HomeHero() {
                 fontSize: "clamp(2.6rem, 5.5vw, 5rem)",
                 fontWeight: 800,
                 color: ["Global", "Vehicle", "Markets"].includes(word)
-                  ? "#42a5f5"
+                  ? "#f4d2ae"
                   : "#fff",
                 lineHeight: 1.05,
                 letterSpacing: "-0.03em",
@@ -174,7 +175,12 @@ export default function HomeHero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.9, duration: 0.6 }}
-          style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginBottom: "1.6rem" }}
+          style={{
+            display: "flex",
+            gap: "12px",
+            flexWrap: "wrap",
+            marginBottom: "1.6rem",
+          }}
         >
           <Link to="/track">
             <motion.div
@@ -184,8 +190,8 @@ export default function HomeHero() {
                 display: "flex",
                 alignItems: "center",
                 gap: "8px",
-                background: "#1565c0",
-                color: "#fff",
+                background: "var(--brand-primary)",
+                color: "var(--brand-accent)",
                 padding: "14px 28px",
                 borderRadius: "10px",
                 fontFamily: "'Sora',sans-serif",
@@ -198,7 +204,6 @@ export default function HomeHero() {
               Track Shipment <ArrowRight size={16} />
             </motion.div>
           </Link>
-        
         </motion.div>
 
         <motion.div
@@ -211,7 +216,7 @@ export default function HomeHero() {
             gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
             gap: "1px",
             background: "rgba(255,255,255,0.12)",
-            border: "1px solid rgba(255,255,255,0.14)",
+            border: "1px solid rgba(244,234,216,0.18)",
             borderRadius: "22px",
             overflow: "hidden",
             maxWidth: "760px",
@@ -223,7 +228,7 @@ export default function HomeHero() {
               key={s.label}
               style={{
                 padding: "1.2rem 1rem",
-                background: "rgba(6,15,28,0.28)",
+                background: "rgba(38,20,11,0.28)",
                 textAlign: "center",
               }}
             >
@@ -239,7 +244,14 @@ export default function HomeHero() {
               >
                 <Counter to={s.value} suffix={s.suffix} />
               </div>
-              <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.64)", marginTop: "8px", fontWeight: 500 }}>
+              <div
+                style={{
+                  fontSize: "12px",
+                  color: "rgba(255,255,255,0.64)",
+                  marginTop: "8px",
+                  fontWeight: 500,
+                }}
+              >
                 {s.label}
               </div>
             </div>

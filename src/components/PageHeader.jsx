@@ -1,104 +1,128 @@
-import { motion } from 'framer-motion'
-
-const defaultImage =
-  'https://images.unsplash.com/photo-1494412574643-ff11b0a5c1c3?w=1600&q=80&auto=format&fit=crop'
+import { motion } from "framer-motion";
+import OceanBg from "./OceanBg";
 
 export default function PageHeader({
   eyebrow,
   title,
   description,
-  image = defaultImage,
   children,
-  maxWidth = '1280px',
+  maxWidth = "1280px",
 }) {
   return (
     <section
       className="section-pad"
       style={{
-        position: 'relative',
-        overflow: 'hidden',
-        padding: '5rem 3rem',
-        minHeight: '320px',
-        display: 'flex',
-        alignItems: 'flex-end',
+        position: "relative",
+        overflow: "hidden",
+        minHeight: "420px",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
-      <div style={{ position: 'absolute', inset: 0 }}>
-        <img
-          src={image}
-          alt=""
-          aria-hidden="true"
-          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background:
-              'linear-gradient(135deg, rgba(6,15,28,0.92) 0%, rgba(13,27,46,0.82) 42%, rgba(21,101,192,0.62) 100%)',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background:
-              'radial-gradient(circle at 78% 36%, rgba(66,165,245,0.2) 0%, transparent 40%)',
-          }}
-        />
+      {/* Ocean animated background */}
+      <div style={{ position: "absolute", inset: 0 }}>
+        <OceanBg />
       </div>
 
+      {/* Text-area gradient overlay (sky darkening for legibility) */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background:
+            "linear-gradient(180deg, rgba(2,10,24,0.72) 0%, rgba(4,18,42,0.55) 38%, rgba(4,18,42,0.18) 60%, transparent 80%)",
+          zIndex: 2,
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* Side vignette for text contrast */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background:
+            "linear-gradient(90deg, rgba(2,10,24,0.55) 0%, transparent 45%)",
+          zIndex: 2,
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* Content */}
       <div
         className="page-header-inner"
         style={{
-          position: 'relative',
-          zIndex: 1,
+          position: "relative",
+          zIndex: 5,
           maxWidth,
-          width: '100%',
-          margin: '0 auto',
-          display: 'flex',
-          alignItems: 'flex-end',
-          justifyContent: 'space-between',
-          gap: '1.5rem',
-          flexWrap: 'wrap',
+          width: "100%",
+          margin: "0 auto",
+          padding: "4rem 3rem 5rem",
+          display: "flex",
+          alignItems: "flex-end",
+          justifyContent: "space-between",
+          gap: "1.5rem",
+          flexWrap: "wrap",
+          flex: 1,
         }}
       >
-        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-          <div
-            style={{
-              fontSize: '11px',
-              fontWeight: 700,
-              color: '#7dc4ff',
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-              marginBottom: '0.8rem',
-              fontFamily: "'Sora',sans-serif",
-            }}
-          >
-            {eyebrow}
-          </div>
+        <motion.div
+          initial={{ opacity: 0, y: 28 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+        >
+          {eyebrow && (
+            <div
+              style={{
+                fontSize: "11px",
+                fontWeight: 700,
+                color: "#90caf9",
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                marginBottom: "0.75rem",
+                fontFamily: "'Sora',sans-serif",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+            >
+              <span
+                style={{
+                  width: "20px",
+                  height: "2px",
+                  background: "#42a5f5",
+                  display: "inline-block",
+                  borderRadius: "1px",
+                }}
+              />
+              {eyebrow}
+            </div>
+          )}
+
           <h1
             style={{
-              fontSize: 'clamp(2rem,4vw,3.2rem)',
+              fontSize: "clamp(2rem,4vw,3.4rem)",
               fontWeight: 800,
-              color: '#fff',
-              lineHeight: 1.08,
-              margin: '0 0 1rem',
-              letterSpacing: '-0.02em',
+              color: "#ffffff",
+              lineHeight: 1.06,
+              margin: "0 0 1rem",
+              letterSpacing: "-0.025em",
               fontFamily: "'Sora',sans-serif",
-              maxWidth: '720px',
+              maxWidth: "680px",
+              textShadow: "0 2px 16px rgba(0,0,0,0.35)",
             }}
           >
             {title}
           </h1>
+
           {description && (
             <p
               style={{
-                fontSize: '15px',
-                color: 'rgba(255,255,255,0.72)',
-                lineHeight: 1.85,
+                fontSize: "clamp(13px,1.6vw,16px)",
+                color: "rgba(255,255,255,0.74)",
+                lineHeight: 1.82,
                 fontWeight: 300,
-                maxWidth: '560px',
+                maxWidth: "540px",
                 margin: 0,
                 fontFamily: "'Sora',sans-serif",
               }}
@@ -108,12 +132,16 @@ export default function PageHeader({
           )}
         </motion.div>
 
-        {children ? (
-          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.5 }}>
+        {children && (
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.18, duration: 0.5, ease: "easeOut" }}
+          >
             {children}
           </motion.div>
-        ) : null}
+        )}
       </div>
     </section>
-  )
+  );
 }

@@ -1,5 +1,42 @@
-@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&display=swap");
 @import "tailwindcss";
+
+@theme {
+  --color-primary: #0d47a1;
+  --color-primary-light: #1565c0;
+  --color-secondary: #ffffff;
+  --color-accent: #f59e0b;
+  --color-ink: #0a1428;
+  --color-muted: #5a6b7a;
+  --color-surface: #ffffff;
+}
+
+:root {
+  --brand-primary: #1565c0;
+  --brand-primary-light: #1976d2;
+  --brand-secondary: #ffffff;
+  --brand-accent: #42a5f5;
+  --brand-ink: #0d1b2e;
+  --brand-muted: #64748b;
+  --brand-surface: #ffffff;
+  --brand-border: rgba(21, 101, 192, 0.14);
+  --brand-shadow: 0 24px 60px rgba(21, 101, 192, 0.1);
+  --ocean-dark: #0d1b2e;
+  --ocean-navy: #0a2d5e;
+  --ocean-blue: #1565c0;
+  --ocean-light: #f0f7ff;
+  --ocean-card: #e3f2fd;
+}
+
+@keyframes starTwinkle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.12; }
+}
+
+@keyframes routeFlow {
+  from { stroke-dashoffset: 80; }
+  to   { stroke-dashoffset: 0; }
+}
 
 * {
   box-sizing: border-box;
@@ -12,9 +49,9 @@ html {
 }
 
 body {
-  font-family: 'Sora', sans-serif;
-  background: #fff;
-  color: #0d1b2e;
+  font-family: "Sora", sans-serif;
+  background: #ffffff;
+  color: var(--brand-ink);
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
@@ -93,6 +130,19 @@ iframe {
 .hero-stats-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.brand-logo-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.brand-card {
+  background: rgba(240, 247, 255, 0.9);
+  border: 1px solid var(--brand-border);
+  box-shadow: var(--brand-shadow);
 }
 
 @media (max-width: 1024px) {

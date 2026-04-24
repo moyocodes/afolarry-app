@@ -29,8 +29,8 @@ export default function ScreenCTA() {
           style={{
             position: 'fixed', bottom: '84px', left: '50%', transform: 'translateX(-50%)',
             zIndex: 900,
-            background: '#0d1b2e',
-            border: '1px solid rgba(255,255,255,0.1)',
+            background: '#26140b',
+            border: '1px solid rgba(244,234,216,0.12)',
             borderRadius: '16px',
             padding: '1rem 1.4rem',
             display: 'flex', alignItems: 'center', gap: '12px',
@@ -50,7 +50,7 @@ export default function ScreenCTA() {
               <motion.div
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.96 }}
-                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#1565c0', color: '#fff', padding: '8px 16px', borderRadius: '9px', fontFamily: "'Sora',sans-serif", fontSize: '12px', fontWeight: 700, textDecoration: 'none', cursor: 'pointer' }}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#c98953', color: '#26140b', padding: '8px 16px', borderRadius: '9px', fontFamily: "'Sora',sans-serif", fontSize: '12px', fontWeight: 700, textDecoration: 'none', cursor: 'pointer' }}
               >
                 Get a Free Quote <ArrowRight size={13} />
               </motion.div>

@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
+import BlueprintBg from '../components/BlueprintBg'
 
 const fade = (dir = 0) => ({
   hidden: { opacity: 0, x: dir * 40, y: dir === 0 ? 30 : 0 },
@@ -8,8 +9,9 @@ const fade = (dir = 0) => ({
 
 export default function HomeAbout() {
   return (
-    <section id="about" className="section-pad" style={{ padding: '7rem 3rem', background: '#fff', overflow: 'hidden', scrollMarginTop: '96px' }}>
-      <div className="responsive-two-col" style={{ maxWidth: '1280px', margin: '0 auto', gap: '5rem', alignItems: 'center' }}>
+    <section id="about" className="section-pad bg-surface" style={{ padding: '7rem 3rem', overflow: 'hidden', scrollMarginTop: '96px', position: 'relative' }}>
+      <BlueprintBg />
+      <div className="responsive-two-col" style={{ maxWidth: '1280px', margin: '0 auto', gap: '5rem', alignItems: 'center', position: 'relative', zIndex: 1 }}>
 
         {/* Text */}
         <motion.div variants={fade(-1)} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-80px' }}>
@@ -18,19 +20,19 @@ export default function HomeAbout() {
             whileInView={{ width: '48px' }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            style={{ height: '3px', background: '#1565c0', borderRadius: '2px', marginBottom: '1.8rem' }}
+            style={{ height: '3px', background: 'var(--brand-secondary)', borderRadius: '2px', marginBottom: '1.8rem' }}
           />
-          <h2 style={{ fontFamily: "'Sora',sans-serif", fontSize: 'clamp(1.8rem,3.5vw,2.6rem)', fontWeight: 800, color: '#0d1b2e', lineHeight: 1.1, letterSpacing: '-0.025em', marginBottom: '1.6rem' }}>
+          <h2 style={{ fontFamily: "'Sora',sans-serif", fontSize: 'clamp(1.8rem,3.5vw,2.6rem)', fontWeight: 800, color: 'var(--brand-ink)', lineHeight: 1.1, letterSpacing: '-0.025em', marginBottom: '1.6rem' }}>
             About Afolaray<br />Nigeria Limited
           </h2>
-          <p style={{ fontFamily: "'Sora',sans-serif", fontSize: '15px', color: '#5a7599', lineHeight: 1.9, fontWeight: 300, marginBottom: '1.2rem' }}>
+          <p style={{ fontFamily: "'Sora',sans-serif", fontSize: '15px', color: 'var(--brand-muted)', lineHeight: 1.9, fontWeight: 300, marginBottom: '1.2rem' }}>
             Afolaray Limited is a premier vehicle import company dedicated to simplifying the global vehicle trade. With over a decade of experience, we have established ourselves as a trusted partner for individuals and dealerships looking to move vehicles across borders.
           </p>
-          <p style={{ fontFamily: "'Sora',sans-serif", fontSize: '15px', color: '#5a7599', lineHeight: 1.9, fontWeight: 300 }}>
+          <p style={{ fontFamily: "'Sora',sans-serif", fontSize: '15px', color: 'var(--brand-muted)', lineHeight: 1.9, fontWeight: 300 }}>
             Our mission is to provide transparent, efficient, and secure logistics solutions. We handle everything from procurement and customs clearance to final delivery, ensuring peace of mind for our clients.
           </p>
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '1.8rem' }}>
-            <Link to="/#services" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#1565c0', color: '#fff', padding: '12px 20px', borderRadius: '10px', textDecoration: 'none', fontFamily: "'Sora',sans-serif", fontSize: '14px', fontWeight: 700 }}>
+            <Link to="/#services" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'var(--brand-primary)', color: 'var(--brand-accent)', padding: '12px 20px', borderRadius: '10px', textDecoration: 'none', fontFamily: "'Sora',sans-serif", fontSize: '14px', fontWeight: 700 }}>
               Explore Services
             </Link>
            
@@ -49,7 +51,7 @@ export default function HomeAbout() {
           <motion.div
             whileHover={{ scale: 1.02 }}
             transition={{ duration: 0.5 }}
-            style={{ borderRadius: '20px', overflow: 'hidden', aspectRatio: '4/3', boxShadow: '0 30px 80px rgba(21,101,192,0.16)' }}
+            style={{ borderRadius: '20px', overflow: 'hidden', aspectRatio: '4/3', boxShadow: '0 30px 80px rgba(21,101,192,0.14)' }}
           >
             <img
               src="https://afolary-limited-5d4i.vercel.app/assets/Afolary-image-DbVIOQKx.jpg"
@@ -72,13 +74,13 @@ export default function HomeAbout() {
             transition={{ delay: 0.4, duration: 0.6 }}
             style={{
               position: 'absolute', bottom: '-20px', left: '-24px',
-              background: '#1565c0', color: '#fff',
+              background: 'var(--brand-secondary)', color: 'var(--brand-ink)',
               borderRadius: '14px', padding: '1.2rem 1.4rem',
-              boxShadow: '0 16px 40px rgba(21,101,192,0.35)',
+              boxShadow: '0 16px 40px rgba(21,101,192,0.18)',
             }}
           >
             <div style={{ fontFamily: "'Sora',sans-serif", fontSize: '2rem', fontWeight: 800, lineHeight: 1 }}>12+</div>
-            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: '11px', fontWeight: 400, opacity: 0.8, marginTop: '3px' }}>Years of<br />experience</div>
+            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: '11px', fontWeight: 500, opacity: 0.82, marginTop: '3px' }}>Years of<br />experience</div>
           </motion.div>
         </motion.div>
 

@@ -92,7 +92,7 @@ export default function Solutions() {
             to="/#contact"
             style={{
               fontSize: "13px",
-              color: "#1565c0",
+              color: "#8f4c29",
               background: "#fff",
               padding: "11px 22px",
               borderRadius: "9px",
@@ -107,7 +107,7 @@ export default function Solutions() {
 
       {/* Mode of transport */}
       <section
-        style={{ padding: "5rem 3rem", maxWidth: "1280px", margin: "0 auto" }}
+        style={{ padding: "5rem 3rem", maxWidth: "1280px", margin: "0 auto", fontFamily: "'Sora',sans-serif" }}
       >
         <motion.div
           variants={fade}
@@ -142,7 +142,7 @@ export default function Solutions() {
           <p
             style={{
               fontSize: "14px",
-              color: "#5a7599",
+              color: "#64748b",
               lineHeight: 1.8,
               fontWeight: 300,
               maxWidth: "560px",
@@ -174,7 +174,7 @@ export default function Solutions() {
             },
             {
               title: "Ocean Compliance",
-              color: "#f7faff",
+              color: "#f0f7ff",
               features: [
                 "Export documentation support",
                 "Customs coordination",
@@ -192,14 +192,14 @@ export default function Solutions() {
               viewport={{ once: true }}
               style={{
                 background: item.color,
-                border: "1px solid #dce8f7",
+                border: "1px solid rgba(143,76,41,0.14)",
                 borderRadius: "16px",
                 padding: "2rem",
               }}
             >
               <Ship
                 size={28}
-                color="#1565c0"
+                color="#8f4c29"
                 style={{ marginBottom: "1rem" }}
               />
               <h3
@@ -215,7 +215,7 @@ export default function Solutions() {
               <p
                 style={{
                   fontSize: "13px",
-                  color: "#5a7599",
+                  color: "#64748b",
                   lineHeight: 1.8,
                   fontWeight: 300,
                   marginBottom: "1.2rem",
@@ -240,7 +240,7 @@ export default function Solutions() {
                       width: "6px",
                       height: "6px",
                       borderRadius: "50%",
-                      background: "#1565c0",
+                      background: "#8f4c29",
                       flexShrink: 0,
                       display: "inline-block",
                     }}
@@ -257,9 +257,9 @@ export default function Solutions() {
       <section
         style={{
           padding: "4rem 3rem",
-          background: "#f7faff",
-          borderTop: "1px solid #dce8f7",
-          borderBottom: "1px solid #dce8f7",
+          background: "#f0f7ff",
+          borderTop: "1px solid rgba(143,76,41,0.14)",
+          borderBottom: "1px solid rgba(143,76,41,0.14)",
         }}
       >
         <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
@@ -310,7 +310,7 @@ export default function Solutions() {
                 viewport={{ once: true }}
                 style={{
                   background: "#fff",
-                  border: "1px solid #dce8f7",
+                  border: "1px solid rgba(143,76,41,0.14)",
                   borderRadius: "14px",
                   padding: "1.6rem",
                 }}
@@ -324,7 +324,7 @@ export default function Solutions() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    color: "#1565c0",
+                    color: "#8f4c29",
                     marginBottom: "1rem",
                   }}
                 >
@@ -343,7 +343,7 @@ export default function Solutions() {
                 <p
                   style={{
                     fontSize: "12px",
-                    color: "#5a7599",
+                    color: "#64748b",
                     lineHeight: 1.7,
                     fontWeight: 300,
                   }}
@@ -417,8 +417,8 @@ export default function Solutions() {
                 <div
                   key={item.title}
                   style={{
-                    background: "#f7faff",
-                    border: "1px solid #dce8f7",
+                    background: "#f0f7ff",
+                    border: "1px solid rgba(143,76,41,0.14)",
                     borderRadius: "12px",
                     padding: "1.4rem",
                   }}
@@ -431,7 +431,7 @@ export default function Solutions() {
                       marginBottom: "0.5rem",
                     }}
                   >
-                    <Gavel size={16} color="#1565c0" />
+                    <Gavel size={16} color="#8f4c29" />
                     <h4
                       style={{
                         fontSize: "14px",
@@ -445,7 +445,7 @@ export default function Solutions() {
                   <p
                     style={{
                       fontSize: "13px",
-                      color: "#5a7599",
+                      color: "#64748b",
                       lineHeight: 1.75,
                       fontWeight: 300,
                     }}
@@ -499,7 +499,7 @@ export default function Solutions() {
               style={{
                 fontSize: "11px",
                 fontWeight: 700,
-                color: "#42a5f5",
+                color: "#90caf9",
                 letterSpacing: "0.12em",
                 textTransform: "uppercase",
                 marginBottom: "0.6rem",

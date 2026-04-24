@@ -28,10 +28,10 @@ export default function WaFab() {
             transition={{ type: 'spring', stiffness: 280, damping: 28 }}
             style={{
               position: 'fixed', bottom: '90px', right: '24px', zIndex: 998,
-              width: '320px', background: '#fff',
+              width: '320px', background: '#fffaf2',
               borderRadius: '18px', overflow: 'hidden',
               boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
-              border: '1px solid #dce8f7',
+              border: '1px solid rgba(143,76,41,0.14)',
             }}
           >
             {/* Header */}
@@ -56,17 +56,17 @@ export default function WaFab() {
             </div>
 
             {/* Chat body */}
-            <div style={{ padding: '1.2rem', background: '#f0f7ff', minHeight: '100px' }}>
+            <div style={{ padding: '1.2rem', background: '#f7ede1', minHeight: '100px' }}>
               {/* Greeting bubble */}
               <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginBottom: '1rem' }}>
                 <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#25d366', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <MessageCircle size={13} color="#fff" />
                 </div>
                 <div style={{ background: '#fff', borderRadius: '0 12px 12px 12px', padding: '10px 13px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', maxWidth: '220px' }}>
-                  <p style={{ fontFamily: "'Sora',sans-serif", fontSize: '13px', color: '#0d1b2e', lineHeight: 1.6, fontWeight: 300, margin: 0 }}>
+                  <p style={{ fontFamily: "'Sora',sans-serif", fontSize: '13px', color: '#26140b', lineHeight: 1.6, fontWeight: 300, margin: 0 }}>
                     👋 Hi there! How can I help you today?
                   </p>
-                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: '10px', color: '#5a7599', marginTop: '4px', textAlign: 'right' }}>
+                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: '10px', color: '#745c49', marginTop: '4px', textAlign: 'right' }}>
                     Afolaray
                   </div>
                 </div>
@@ -74,7 +74,7 @@ export default function WaFab() {
             </div>
 
             {/* Input area */}
-            <div style={{ padding: '0.8rem 1rem', background: '#fff', borderTop: '1px solid #dce8f7' }}>
+            <div style={{ padding: '0.8rem 1rem', background: '#fffaf2', borderTop: '1px solid rgba(143,76,41,0.14)' }}>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
                 <textarea
                   rows={2}
@@ -83,10 +83,10 @@ export default function WaFab() {
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); openChat() } }}
                   placeholder="Type your message…"
                   style={{
-                    flex: 1, padding: '9px 12px', border: '1px solid #dce8f7', borderRadius: '10px',
+                    flex: 1, padding: '9px 12px', border: '1px solid rgba(143,76,41,0.14)', borderRadius: '10px',
                     fontFamily: "'Sora',sans-serif", fontSize: '13px', fontWeight: 300,
-                    outline: 'none', resize: 'none', color: '#0d1b2e',
-                    background: '#f7faff',
+                    outline: 'none', resize: 'none', color: '#26140b',
+                    background: '#fff',
                   }}
                 />
                 <motion.button
@@ -96,16 +96,16 @@ export default function WaFab() {
                   disabled={!message.trim()}
                   style={{
                     width: '40px', height: '40px', borderRadius: '10px',
-                    background: message.trim() ? '#25d366' : '#dce8f7',
+                    background: message.trim() ? '#25d366' : '#f4ead8',
                     border: 'none', cursor: message.trim() ? 'pointer' : 'default',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     flexShrink: 0, transition: 'background 0.2s',
                   }}
                 >
-                  <Send size={16} color={message.trim() ? '#fff' : '#5a7599'} />
+                  <Send size={16} color={message.trim() ? '#fff' : '#745c49'} />
                 </motion.button>
               </div>
-              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: '10px', color: '#5a7599', textAlign: 'center', marginTop: '6px' }}>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: '10px', color: '#745c49', textAlign: 'center', marginTop: '6px' }}>
                 Sends to WhatsApp · usually replies in minutes
               </div>
             </div>

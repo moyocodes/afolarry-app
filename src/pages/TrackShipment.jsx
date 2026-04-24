@@ -50,7 +50,7 @@ export default function TrackShipment() {
           <Link to="/schedules" style={{ fontSize: '14px', color: '#fff', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', padding: '12px 22px', borderRadius: '10px', textDecoration: 'none', fontWeight: 700, backdropFilter: 'blur(8px)' }}>
             View Schedules
           </Link>
-          <Link to="/solutions" style={{ fontSize: '14px', color: '#1565c0', background: '#fff', padding: '12px 22px', borderRadius: '10px', textDecoration: 'none', fontWeight: 800 }}>
+          <Link to="/solutions" style={{ fontSize: '14px', color: '#1565c0', background: '#f7faff', padding: '12px 22px', borderRadius: '10px', textDecoration: 'none', fontWeight: 800 }}>
             Explore Solutions
           </Link>
         </div>
@@ -66,7 +66,7 @@ export default function TrackShipment() {
               <h2 style={{ fontSize: 'clamp(1.9rem,3vw,2.6rem)', fontWeight: 800, color: '#0d1b2e', lineHeight: 1.12, marginBottom: '0.8rem' }}>
                 Select a carrier below to track your shipment.
               </h2>
-              <p style={{ fontSize: '16px', color: '#5a7599', lineHeight: 1.85, fontWeight: 300 }}>
+              <p style={{ fontSize: '16px', color: '#64748b', lineHeight: 1.85, fontWeight: 300 }}>
                 Tracking is separate from schedules. Choose the carrier you want, then open the correct public tracking portal.
               </p>
             </div>
@@ -81,8 +81,8 @@ export default function TrackShipment() {
                 style={{
                   width: '100%',
                   textAlign: 'left',
-                  background: active === index ? '#0d1b2e' : '#fff',
-                  border: active === index ? `1.5px solid ${carrier.accent}` : '1.5px solid #dce8f7',
+                  background: active === index ? '#0d1b2e' : '#f7faff',
+                  border: active === index ? `1.5px solid ${carrier.accent}` : '1.5px solid rgba(143,76,41,0.14)',
                   borderRadius: '18px',
                   padding: '1.35rem 1.4rem',
                   cursor: 'pointer',
@@ -109,10 +109,10 @@ export default function TrackShipment() {
                     {carrier.short}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '18px', fontWeight: 800, color: active === index ? '#fff' : '#0d1b2e', marginBottom: '0.3rem' }}>
+                    <div style={{ fontSize: '18px', fontWeight: 800, color: active === index ? '#f7faff' : '#0d1b2e', marginBottom: '0.3rem' }}>
                       {carrier.name}
                     </div>
-                    <div style={{ fontSize: '15px', color: active === index ? 'rgba(255,255,255,0.72)' : '#5a7599', lineHeight: 1.7, fontWeight: 300 }}>
+                    <div style={{ fontSize: '15px', color: active === index ? 'rgba(255,255,255,0.72)' : '#64748b', lineHeight: 1.7, fontWeight: 300 }}>
                       {carrier.desc}
                     </div>
                   </div>
@@ -128,7 +128,7 @@ export default function TrackShipment() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
             style={{
-              background: 'linear-gradient(180deg, #0d1b2e 0%, #122844 100%)',
+              background: 'linear-gradient(180deg, #0d1b2e 0%, #1565c0 100%)',
               borderRadius: '24px',
               padding: '2rem',
               color: '#fff',
@@ -207,7 +207,7 @@ export default function TrackShipment() {
             maxWidth: '1100px',
             margin: '1.5rem auto 0',
             background: '#e3f2fd',
-            border: '1px solid #dce8f7',
+            border: '1px solid rgba(143,76,41,0.14)',
             borderRadius: '18px',
             padding: '1.5rem 1.75rem',
             display: 'flex',
@@ -216,12 +216,12 @@ export default function TrackShipment() {
             flexWrap: 'wrap',
           }}
         >
-          <PackageSearch size={22} color="#1565c0" style={{ flexShrink: 0, marginTop: '2px' }} />
+          <PackageSearch size={22} color="#8f4c29" style={{ flexShrink: 0, marginTop: '2px' }} />
           <div>
             <div style={{ fontSize: '18px', fontWeight: 800, color: '#0c447c', marginBottom: '0.35rem' }}>
               Looking for Afolary shipment tracking?
             </div>
-            <div style={{ fontSize: '15px', color: '#5a7599', lineHeight: 1.8, fontWeight: 300 }}>
+            <div style={{ fontSize: '15px', color: '#64748b', lineHeight: 1.8, fontWeight: 300 }}>
               Use the public tracking page. If you need extra help verifying your shipment details,{' '}
               <Link to="/#contact" style={{ color: '#1565c0', fontWeight: 700, textDecoration: 'underline' }}>
                 contact us directly
@@ -258,7 +258,7 @@ export default function TrackShipment() {
             </div>
           </div>
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <a href="tel:+2347033576017" style={{ fontSize: '14px', color: '#fff', background: '#1565c0', padding: '12px 20px', borderRadius: '10px', textDecoration: 'none', fontWeight: 700 }}>
+            <a href="tel:+2347033576017" style={{ fontSize: '14px', color: '#f7faff', background: '#1565c0', padding: '12px 20px', borderRadius: '10px', textDecoration: 'none', fontWeight: 700 }}>
               Call Now
             </a>
             <a href="https://wa.me/2347033576017" target="_blank" rel="noopener noreferrer" style={{ fontSize: '14px', color: '#fff', background: '#25d366', padding: '12px 20px', borderRadius: '10px', textDecoration: 'none', fontWeight: 700 }}>

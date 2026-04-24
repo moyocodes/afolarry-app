@@ -12,9 +12,9 @@ const fade = (i = 0) => ({
 const inp = (dark) => ({
   width: '100%', padding: '11px 14px', borderRadius: '9px', outline: 'none',
   fontFamily: "'Sora',sans-serif", fontSize: '13px', fontWeight: 300,
-  background: dark ? 'rgba(255,255,255,0.07)' : '#fff',
-  border: dark ? '1px solid rgba(255,255,255,0.12)' : '1px solid #dce8f7',
-  color: dark ? '#fff' : '#0d1b2e',
+  background: dark ? 'rgba(255,250,242,0.08)' : '#fffaf2',
+  border: dark ? '1px solid rgba(244,234,216,0.12)' : '1px solid rgba(143,76,41,0.16)',
+  color: dark ? '#fffaf2' : '#26140b',
 })
 
 export default function HomeContact() {
@@ -39,7 +39,7 @@ export default function HomeContact() {
   }
 
   return (
-    <section id="contact" style={{ background: '#f7faff', overflow: 'hidden', scrollMarginTop: '96px', borderTop: '1px solid #dce8f7' }}>
+    <section id="contact" style={{ background: '#f7ede1', overflow: 'hidden', scrollMarginTop: '96px', borderTop: '1px solid rgba(143,76,41,0.12)' }}>
       {/* Map strip */}
       <div style={{ height: '360px', position: 'relative' }}>
         <iframe
@@ -52,7 +52,7 @@ export default function HomeContact() {
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"
         />
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(6,15,28,0.12) 0%, rgba(6,15,28,0.2) 52%, rgba(13,27,46,0.88) 100%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(38,20,11,0.16) 0%, rgba(38,20,11,0.24) 52%, rgba(38,20,11,0.88) 100%)', pointerEvents: 'none' }} />
         <motion.div
           className="map-review-badge"
           variants={fade(0)}
@@ -60,14 +60,14 @@ export default function HomeContact() {
           whileInView="show"
           viewport={{ once: true }}
           style={{
-            background: 'rgba(6,15,28,0.8)',
-            border: '1px solid rgba(255,255,255,0.14)',
+            background: 'rgba(38,20,11,0.82)',
+            border: '1px solid rgba(244,234,216,0.14)',
             backdropFilter: 'blur(12px)',
             borderRadius: '20px',
             padding: '1.2rem 1.25rem',
           }}
         >
-          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: '10px', fontWeight: 700, color: '#7dc4ff', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '0.55rem' }}>
+          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: '10px', fontWeight: 700, color: '#f4d2ae', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '0.55rem' }}>
             Google Reviews
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '0.65rem' }}>
@@ -86,8 +86,8 @@ export default function HomeContact() {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '7px',
-              background: '#1565c0',
-              color: '#fff',
+              background: '#c98953',
+              color: '#26140b',
               padding: '10px 16px',
               borderRadius: '10px',
               fontFamily: "'Sora',sans-serif",
@@ -99,7 +99,7 @@ export default function HomeContact() {
             Leave a Review <ExternalLink size={14} />
           </a>
         </motion.div>
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '80px', background: 'linear-gradient(to bottom, transparent, #0d1b2e)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '80px', background: 'linear-gradient(to bottom, transparent, #26140b)', pointerEvents: 'none' }} />
       </div>
 
       {/* Content */}
@@ -115,42 +115,42 @@ export default function HomeContact() {
             aria-hidden="true"
             style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.12 }}
           />
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(247,250,255,0.96) 100%)' }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(255,250,242,0.92) 0%, rgba(247,237,225,0.97) 100%)' }} />
         </div>
         <motion.div variants={fade()} initial="hidden" whileInView="show" viewport={{ once: true }} style={{ position: 'relative', zIndex: 1, marginBottom: '3rem', paddingTop: '1.5rem' }}>
-          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: '11px', fontWeight: 800, color: '#1565c0', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '0.8rem' }}>
+          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: '11px', fontWeight: 800, color: '#8f4c29', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '0.8rem' }}>
             Reach us
           </div>
-          <h2 style={{ fontFamily: "'Sora',sans-serif", fontSize: 'clamp(2.1rem,4vw,3.35rem)', fontWeight: 800, color: '#0d1b2e', lineHeight: 1.02, letterSpacing: '-0.03em', margin: 0 }}>
+          <h2 style={{ fontFamily: "'Sora',sans-serif", fontSize: 'clamp(2.1rem,4vw,3.35rem)', fontWeight: 800, color: '#26140b', lineHeight: 1.02, letterSpacing: '-0.03em', margin: 0 }}>
             Get In Touch
           </h2>
-          <p style={{ fontFamily: "'Sora',sans-serif", fontSize: 'clamp(15px,2vw,18px)', color: '#5a7599', lineHeight: 1.8, fontWeight: 300, maxWidth: '640px', marginTop: '0.9rem' }}>
+          <p style={{ fontFamily: "'Sora',sans-serif", fontSize: 'clamp(15px,2vw,18px)', color: '#745c49', lineHeight: 1.8, fontWeight: 300, maxWidth: '640px', marginTop: '0.9rem' }}>
             Reach our team quickly for tracking help, booking guidance, or a fresh shipping quote.
           </p>
         </motion.div>
 
-        <div className="responsive-contact-grid" style={{ position: 'relative', zIndex: 1, alignItems: 'start', background: '#fff', border: '1px solid #dce8f7', borderRadius: '24px', boxShadow: '0 24px 60px rgba(21,101,192,0.08)', padding: '2rem' }}>
+        <div className="responsive-contact-grid" style={{ position: 'relative', zIndex: 1, alignItems: 'start', background: '#fffaf2', border: '1px solid rgba(143,76,41,0.12)', borderRadius: '24px', boxShadow: '0 24px 60px rgba(143,76,41,0.12)', padding: '2rem' }}>
 
           {/* Left: Contact info */}
           <motion.div variants={fade(0)} initial="hidden" whileInView="show" viewport={{ once: true }}>
-            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: '13px', fontWeight: 800, color: '#5a7599', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '2rem' }}>
+            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: '13px', fontWeight: 800, color: '#745c49', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '2rem' }}>
               Contact Information
             </div>
 
             {[
               {
-                icon: <MapPin size={15} color="#42a5f5" />,
+                icon: <MapPin size={15} color="#c98953" />,
                 label: 'Head Office',
                 val: '11A Apapa-Oshodi Express Way, Amuwo, Lagos Nigeria',
               },
               {
-                icon: <Phone size={15} color="#42a5f5" />,
+                icon: <Phone size={15} color="#c98953" />,
                 label: 'Phone',
                 val: '+2347033576017',
                 href: 'tel:+2347033576017',
               },
               {
-                icon: <Mail size={15} color="#42a5f5" />,
+                icon: <Mail size={15} color="#c98953" />,
                 label: 'Email',
                 val: 'Afolaraynigerialimited@gmail.com',
                 href: 'mailto:Afolaraynigerialimited@gmail.com',
@@ -164,14 +164,14 @@ export default function HomeContact() {
                 viewport={{ once: true }}
                 style={{ display: 'flex', gap: '14px', alignItems: 'flex-start', marginBottom: '1.8rem' }}
               >
-                <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#eaf4ff', border: '1px solid #dce8f7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#f4ead8', border: '1px solid rgba(143,76,41,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   {item.icon}
                 </div>
                 <div>
-                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: '10px', fontWeight: 800, color: '#1565c0', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '5px' }}>{item.label}</div>
+                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: '10px', fontWeight: 800, color: '#8f4c29', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '5px' }}>{item.label}</div>
                   {item.href
-                    ? <a href={item.href} style={{ fontFamily: "'Sora',sans-serif", fontSize: '15px', color: '#0d1b2e', fontWeight: 400, lineHeight: 1.6, textDecoration: 'none' }}>{item.val}</a>
-                    : <div style={{ fontFamily: "'Sora',sans-serif", fontSize: '15px', color: '#0d1b2e', fontWeight: 400, lineHeight: 1.6 }}>{item.val}</div>
+                    ? <a href={item.href} style={{ fontFamily: "'Sora',sans-serif", fontSize: '15px', color: '#26140b', fontWeight: 400, lineHeight: 1.6, textDecoration: 'none' }}>{item.val}</a>
+                    : <div style={{ fontFamily: "'Sora',sans-serif", fontSize: '15px', color: '#26140b', fontWeight: 400, lineHeight: 1.6 }}>{item.val}</div>
                   }
                 </div>
               </motion.div>
@@ -180,7 +180,7 @@ export default function HomeContact() {
 
           {/* Right: Form */}
           <motion.div variants={fade(1)} initial="hidden" whileInView="show" viewport={{ once: true }}>
-            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: '13px', fontWeight: 800, color: '#5a7599', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '2rem' }}>
+            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: '13px', fontWeight: 800, color: '#745c49', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '2rem' }}>
               Send us a message
             </div>
 
@@ -196,7 +196,7 @@ export default function HomeContact() {
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                   style={{
-                    background: status === 'ok' ? '#2e7d32' : status === 'err' ? '#c62828' : '#1e88e5',
+                    background: status === 'ok' ? '#2e7d32' : status === 'err' ? '#c62828' : '#8f4c29',
                     color: '#fff', border: 'none', padding: '13px 28px', borderRadius: '9px',
                     fontFamily: "'Sora',sans-serif", fontSize: '13px', fontWeight: 700, cursor: 'pointer',
                     transition: 'background 0.3s', opacity: status === 'sending' ? 0.7 : 1,
