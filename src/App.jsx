@@ -39,6 +39,9 @@ function ScrollToTop() {
 }
 
 function Layout() {
+  const { pathname } = useLocation()
+  const isMail = pathname.startsWith('/mail')
+
   return (
     <>
       <ScrollToTop />
@@ -54,25 +57,20 @@ function Layout() {
           <Route path="/cars" element={<Cars />} />
           <Route path="/track" element={<TrackShipment />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/mail" element={<MailDashboard />} />
         </Routes>
       </main>
-      <Footer />
-      <WaFab />
-      <ScreenCTA />
+      {!isMail && <Footer />}
+      {!isMail && <WaFab />}
+      {!isMail && <ScreenCTA />}
     </>
   )
-}
-
-function AppContent() {
-  const { pathname } = useLocation()
-  if (pathname.startsWith('/mail')) return <MailDashboard />
-  return <Layout />
 }
 
 export default function App() {
   return (
     <BrowserRouter>
-      <AppContent />
+      <Layout />
     </BrowserRouter>
   )
 }

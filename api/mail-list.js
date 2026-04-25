@@ -3,7 +3,7 @@ import { guard, mkImap, PAGE_SIZE, isAuthError } from './_lib.js'
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  const { email, password, page = 1 } = req.body ?? {}
+  const { email, password, page = 1, folder = 'INBOX' } = req.body ?? {}
 
   try { guard(email) } catch (e) {
     return res.status(403).json({ error: e.message })
@@ -12,11 +12,36 @@ export default async function handler(req, res) {
   const client = mkImap(email, password)
   try {
     await client.connect()
-    const lock = await client.getMailboxLock('INBOX')
+
+    const isStarred    = folder === 'Starred'
+    const targetFolder = isStarred ? 'INBOX' : folder
+
+    const lock = await client.getMailboxLock(targetFolder)
     try {
-      const st = await client.status('INBOX', { messages: true, unseen: true })
-      const total = st.messages ?? 0
-      const unseen = st.unseen ?? 0
+      if (isStarred) {
+        const uids = await client.search({ flagged: true })
+        if (!uids.length) return res.json({ emails: [], total: 0, unseen: 0, page: 1 })
+
+        const emails = []
+        for await (const msg of client.fetch(uids, {
+          uid: true, flags: true, envelope: true,
+        }, { uid: true })) {
+          emails.push({
+            uid:       msg.uid,
+            seen:      msg.flags.has('\\Seen'),
+            starred:   true,
+            from:      msg.envelope.from?.[0]  ?? null,
+            subject:   msg.envelope.subject    ?? '(no subject)',
+            date:      msg.envelope.date?.toISOString() ?? null,
+            messageId: msg.envelope.messageId  ?? null,
+          })
+        }
+        return res.json({ emails: emails.reverse(), total: emails.length, unseen: 0, page: 1 })
+      }
+
+      const st    = await client.status(targetFolder, { messages: true, unseen: true })
+      const total  = st.messages ?? 0
+      const unseen = st.unseen   ?? 0
 
       if (total === 0) return res.json({ emails: [], total: 0, unseen: 0, page })
 
@@ -30,6 +55,7 @@ export default async function handler(req, res) {
         emails.push({
           uid:       msg.uid,
           seen:      msg.flags.has('\\Seen'),
+          starred:   msg.flags.has('\\Flagged'),
           from:      msg.envelope.from?.[0]  ?? null,
           subject:   msg.envelope.subject    ?? '(no subject)',
           date:      msg.envelope.date?.toISOString() ?? null,
