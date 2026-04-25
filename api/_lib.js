@@ -6,25 +6,59 @@ export const IMAP_HOST = 'mail.privateemail.com'
 export const SMTP_HOST = 'mail.privateemail.com'
 export const PAGE_SIZE = 30
 
-// Namecheap Private Email (cPanel/Dovecot) uses different folder names depending
-// on account setup — try the most common variants in order.
+// Common name guesses per virtual folder name
 const FOLDER_ALIASES = {
   Sent:   ['Sent', 'Sent Messages', 'Sent Items', 'INBOX.Sent'],
-  Spam:   ['Spam', 'Junk', 'INBOX.Spam', 'INBOX.Junk'],
-  Trash:  ['Trash', 'Deleted Messages', 'Deleted Items', 'INBOX.Trash'],
+  Spam:   ['Spam', 'Junk', 'INBOX.Spam', 'INBOX.Junk', 'Junk Mail', 'Bulk Mail'],
+  Trash:  ['Trash', 'Deleted Messages', 'Deleted Items', 'INBOX.Trash', 'Deleted'],
   Drafts: ['Drafts', 'Draft', 'INBOX.Drafts'],
 }
 
-// Opens the best-matching mailbox and returns { lock, folder: actualName }
+// RFC 6154 special-use flags — server tags folders with these regardless of name
+const SPECIAL_USE_FLAG = {
+  Sent:   '\\Sent',
+  Spam:   '\\Junk',
+  Trash:  '\\Trash',
+  Drafts: '\\Drafts',
+}
+
+// Opens the best-matching mailbox and returns { lock, folder: actualName }.
+// Strategy:
+//   1. Try known name aliases
+//   2. List all folders, find by RFC 6154 special-use flag (most reliable)
+//   3. Fuzzy name match as last resort
 export async function openMailbox(client, folder) {
-  const candidates = FOLDER_ALIASES[folder] ?? [folder]
-  for (const name of candidates) {
+  // 1. Try name aliases
+  for (const name of FOLDER_ALIASES[folder] ?? [folder]) {
     try {
       const lock = await client.getMailboxLock(name)
       return { lock, folder: name }
     } catch {}
   }
-  throw new Error(`Mailbox not found: ${folder}`)
+
+  // 2 & 3. Discover via folder listing
+  const all = await client.list()
+  const flag = SPECIAL_USE_FLAG[folder]
+  const lower = folder.toLowerCase()
+
+  const match =
+    // special-use flag match (e.g. \Junk regardless of folder name)
+    (flag && all.find(m => m.flags?.has(flag))) ||
+    // exact path match
+    all.find(m => m.path.toLowerCase() === lower) ||
+    // path contains the virtual name (e.g. "INBOX.Junk" contains "junk" for Spam)
+    all.find(m => m.path.toLowerCase().includes(lower)) ||
+    // for Spam specifically also try junk in any path
+    (folder === 'Spam' && all.find(m => m.path.toLowerCase().includes('junk'))) ||
+    (folder === 'Trash' && all.find(m => m.path.toLowerCase().includes('deleted')))
+
+  if (match) {
+    const lock = await client.getMailboxLock(match.path)
+    return { lock, folder: match.path }
+  }
+
+  const available = all.map(m => m.path).join(', ')
+  throw new Error(`Mailbox "${folder}" not found. Available: ${available}`)
 }
 
 export function guard(email) {
