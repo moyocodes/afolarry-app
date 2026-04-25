@@ -1,4 +1,4 @@
-import { guard, mkImap, PAGE_SIZE, isAuthError } from './_lib.js'
+import { guard, mkImap, PAGE_SIZE, isAuthError, openMailbox } from './_lib.js'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -13,10 +13,10 @@ export default async function handler(req, res) {
   try {
     await client.connect()
 
-    const isStarred    = folder === 'Starred'
-    const targetFolder = isStarred ? 'INBOX' : folder
+    const isStarred = folder === 'Starred'
+    const rawFolder = isStarred ? 'INBOX' : folder
 
-    const lock = await client.getMailboxLock(targetFolder)
+    const { lock, folder: actualFolder } = await openMailbox(client, rawFolder)
     try {
       if (isStarred) {
         const uids = await client.search({ flagged: true })
@@ -39,11 +39,14 @@ export default async function handler(req, res) {
         return res.json({ emails: emails.reverse(), total: emails.length, unseen: 0, page: 1 })
       }
 
-      const st    = await client.status(targetFolder, { messages: true, unseen: true })
-      const total  = st.messages ?? 0
-      const unseen = st.unseen   ?? 0
+      // Use client.mailbox.exists instead of STATUS on the selected mailbox
+      // (calling STATUS on the currently selected mailbox violates RFC 3501)
+      const total = client.mailbox.exists ?? 0
+      const unseen = folder === 'INBOX'
+        ? (await client.search({ seen: false })).length
+        : 0
 
-      if (total === 0) return res.json({ emails: [], total: 0, unseen: 0, page })
+      if (total === 0) return res.json({ emails: [], total: 0, unseen: 0, page, folder: actualFolder })
 
       const hi = total - (page - 1) * PAGE_SIZE
       const lo = Math.max(1, hi - PAGE_SIZE + 1)
@@ -63,7 +66,7 @@ export default async function handler(req, res) {
         })
       }
 
-      return res.json({ emails: emails.reverse(), total, unseen, page })
+      return res.json({ emails: emails.reverse(), total, unseen, page, folder: actualFolder })
     } finally { lock.release() }
   } catch (err) {
     if (isAuthError(err)) return res.status(401).json({ error: 'Wrong email or password' })

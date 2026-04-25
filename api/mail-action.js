@@ -1,4 +1,4 @@
-import { guard, mkImap, isAuthError } from './_lib.js'
+import { guard, mkImap, isAuthError, openMailbox } from './_lib.js'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -12,7 +12,7 @@ export default async function handler(req, res) {
   const client = mkImap(email, password)
   try {
     await client.connect()
-    const lock = await client.getMailboxLock(folder)
+    const { lock, folder: actualFolder } = await openMailbox(client, folder)
     try {
       switch (action) {
         case 'star':
@@ -28,10 +28,15 @@ export default async function handler(req, res) {
           await client.messageFlagsRemove({ uid }, ['\\Seen'], { uid: true })
           break
         case 'delete':
-          if (folder === 'Trash') {
+          if (actualFolder.toLowerCase().includes('trash') || actualFolder.toLowerCase().includes('deleted')) {
             await client.messageDelete({ uid }, { uid: true })
           } else {
-            await client.messageMove({ uid }, 'Trash', { uid: true })
+            // Try to move to the real Trash folder, fall back to delete
+            try {
+              await client.messageMove({ uid }, 'Trash', { uid: true })
+            } catch {
+              await client.messageDelete({ uid }, { uid: true })
+            }
           }
           break
         default:

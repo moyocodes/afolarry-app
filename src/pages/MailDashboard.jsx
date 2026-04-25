@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   Inbox, Send, Star, Trash2, PenSquare, Calendar, LogOut,
   Search, RefreshCw, Reply, Forward, ChevronLeft, MailOpen,
-  ShieldAlert, X, ChevronRight, Bell, Eye, EyeOff, Paperclip,
+  ShieldAlert, X, ChevronRight, Bell, Eye, EyeOff, Paperclip, Download,
 } from 'lucide-react'
 
 // ─── API ─────────────────────────────────────────────────────────────────────
@@ -100,6 +100,7 @@ export default function MailDashboard() {
   const [remModal,    setRemModal]     = useState(null)   // { date: Date }
   const [remForm,     setRemForm]      = useState({ title: '', note: '', time: '09:00' })
   const [error,       setError]        = useState(null)
+  const [sentOk,      setSentOk]       = useState(false)
   const [mobile,      setMobile]       = useState(window.innerWidth < 900)
   const [mobPage,     setMobPage]      = useState('list') // mobile: 'list'|'email'|'compose'
 
@@ -237,6 +238,7 @@ export default function MailDashboard() {
         ...(compose.attachments?.length ? { attachments: compose.attachments } : {}),
       })
       setPanel('list'); setMobPage('list'); setCompose(blankCompose())
+      setSentOk(true); setTimeout(() => setSentOk(false), 4000)
     } catch (e) { setError(e.message) }
     finally { setSending(false) }
   }
@@ -267,7 +269,7 @@ export default function MailDashboard() {
 
   // ── Login ─────────────────────────────────────────────────────────────────
   if (!creds) return (
-    <div style={{ minHeight: 'calc(100vh - 88px)', background: '#f4f7fb', fontFamily: F, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+    <div style={{ minHeight: '100vh', background: '#f4f7fb', fontFamily: F, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
       <div style={{ background: '#fff', border: `1px solid ${BDR}`, borderRadius: '20px', padding: '2.5rem 2rem', width: '100%', maxWidth: '400px', boxShadow: '0 24px 60px rgba(21,101,192,0.08)' }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <div style={{ width: '52px', height: '52px', background: '#e3f2fd', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
@@ -288,7 +290,7 @@ export default function MailDashboard() {
     </div>
   )
 
-  const H = 'calc(100vh - 88px)'
+  const H = '100vh'
 
   // ── Dashboard ─────────────────────────────────────────────────────────────
   return (
@@ -458,6 +460,13 @@ export default function MailDashboard() {
         </div>
       )}
 
+      {/* Success toast */}
+      {sentOk && (
+        <div style={{ position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)', background: '#2e7d32', color: '#fff', padding: '12px 22px', borderRadius: '10px', fontSize: '13px', fontFamily: F, zIndex: 600, display: 'flex', gap: '10px', alignItems: 'center', boxShadow: '0 8px 24px rgba(0,0,0,0.2)', whiteSpace: 'nowrap' }}>
+          ✓ Email sent successfully
+        </div>
+      )}
+
       {/* Error toast */}
       {error && (
         <div style={{ position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)', background: '#c62828', color: '#fff', padding: '12px 20px', borderRadius: '10px', fontSize: '13px', fontFamily: F, zIndex: 600, display: 'flex', gap: '12px', alignItems: 'center', boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}>
@@ -565,19 +574,60 @@ function EmailView({ email, folder, onReply, onReplyAll, onForward, onStar, onDe
 
       {/* Attachments */}
       {email.attachments?.length > 0 && (
-        <div style={{ padding: '0.75rem 1.75rem', borderTop: `1px solid ${BDR}`, flexShrink: 0 }}>
-          <div style={{ fontSize: '10px', fontWeight: 800, color: GRAY, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div style={{ padding: '0.75rem 1.75rem 1rem', borderTop: `1px solid ${BDR}`, flexShrink: 0 }}>
+          <div style={{ fontSize: '10px', fontWeight: 800, color: GRAY, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Paperclip size={11} /> Attachments ({email.attachments.length})
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-            {email.attachments.map((a, i) => (
-              <div key={i} style={{ background: '#f4f7fb', border: `1px solid ${BDR}`, borderRadius: '8px', padding: '7px 12px', fontSize: '12px', color: DARK }}>
-                {a.filename} <span style={{ color: GRAY }}>({(a.size / 1024).toFixed(1)} KB)</span>
-              </div>
-            ))}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {email.attachments.map((a, i) => <AttachmentChip key={i} a={a} />)}
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+// ─── Attachment Chip ─────────────────────────────────────────────────────────
+
+function AttachmentChip({ a }) {
+  const [preview, setPreview] = useState(false)
+  const isImage = a.contentType?.startsWith('image/')
+  const dataUri = a.content ? `data:${a.contentType};base64,${a.content}` : null
+
+  const download = () => {
+    if (!dataUri) return
+    const el = document.createElement('a')
+    el.href = dataUri
+    el.download = a.filename
+    el.click()
+  }
+
+  return (
+    <div>
+      {/* Image preview */}
+      {isImage && dataUri && preview && (
+        <div style={{ marginBottom: '8px' }}>
+          <img src={dataUri} alt={a.filename} style={{ maxWidth: '100%', maxHeight: '260px', borderRadius: '8px', border: `1px solid ${BDR}`, display: 'block' }} />
+        </div>
+      )}
+      {/* Chip row */}
+      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#f4f7fb', border: `1px solid ${BDR}`, borderRadius: '9px', padding: '7px 12px' }}>
+        <Paperclip size={13} color={GRAY} style={{ flexShrink: 0 }} />
+        <span style={{ fontSize: '12px', color: DARK, maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.filename}</span>
+        <span style={{ fontSize: '11px', color: GRAY, whiteSpace: 'nowrap' }}>({(a.size / 1024).toFixed(0)} KB)</span>
+        {isImage && dataUri && (
+          <button onClick={() => setPreview(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: BLUE, fontSize: '11px', fontFamily: F, padding: '0 2px', whiteSpace: 'nowrap' }}>
+            {preview ? 'Hide' : 'Preview'}
+          </button>
+        )}
+        {dataUri ? (
+          <button onClick={download} title="Download" style={{ background: 'none', border: 'none', cursor: 'pointer', color: BLUE, display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontFamily: F, padding: '0 2px', whiteSpace: 'nowrap' }}>
+            <Download size={12} /> Download
+          </button>
+        ) : (
+          <span style={{ fontSize: '11px', color: GRAY, fontStyle: 'italic' }}>too large to preview</span>
+        )}
+      </div>
     </div>
   )
 }
