@@ -11,9 +11,6 @@
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
-    "imapflow": "^1.0.164",
-    "mailparser": "^3.7.1",
-    "nodemailer": "^6.9.13",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-navigation-menu": "^1.2.14",
     "@radix-ui/react-scroll-area": "^1.2.10",
@@ -21,10 +18,14 @@
     "clsx": "^2.1.1",
     "firebase": "^12.12.1",
     "framer-motion": "^12.38.0",
+    "imapflow": "^1.0.164",
     "lucide-react": "^1.8.0",
+    "mailparser": "^3.7.1",
+    "nodemailer": "^6.9.13",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-router-dom": "^7.14.2",
+    "resend": "^4.8.0",
     "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {

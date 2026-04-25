@@ -272,9 +272,7 @@ export default function MailDashboard() {
     <div style={{ minHeight: '100vh', background: '#f4f7fb', fontFamily: F, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
       <div style={{ background: '#fff', border: `1px solid ${BDR}`, borderRadius: '20px', padding: '2.5rem 2rem', width: '100%', maxWidth: '400px', boxShadow: '0 24px 60px rgba(21,101,192,0.08)' }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={{ width: '52px', height: '52px', background: '#e3f2fd', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
-            <Inbox size={24} color={BLUE} />
-          </div>
+          <img src="/logo.png" alt="Afolaray" style={{ height: '52px', objectFit: 'contain', marginBottom: '1rem' }} />
           <div style={{ fontWeight: 800, fontSize: '20px', color: DARK }}>Afolaray Mail</div>
           <div style={{ fontSize: '13px', color: GRAY, fontWeight: 300, marginTop: '5px' }}>Sign in with your work email</div>
         </div>
@@ -300,8 +298,13 @@ export default function MailDashboard() {
       {(!mobile || mobPage === 'list') && (
         <div style={{ width: mobile ? '100%' : '220px', flexShrink: 0, background: S.bg, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
+          {/* Logo */}
+          <div style={{ padding: '1.25rem 1rem 0.5rem', flexShrink: 0 }}>
+            <img src="/logo.png" alt="Afolaray" style={{ height: '32px', objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.9 }} />
+          </div>
+
           {/* Compose */}
-          <div style={{ padding: '1.25rem 1rem 0.75rem', flexShrink: 0 }}>
+          <div style={{ padding: '0.5rem 1rem 0.75rem', flexShrink: 0 }}>
             <button onClick={() => openCompose()} style={{ width: '100%', background: BLUE, color: '#fff', border: 'none', borderRadius: '10px', padding: '11px', fontFamily: F, fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 4px 16px rgba(21,101,192,0.4)' }}>
               <PenSquare size={14} /> Compose
             </button>

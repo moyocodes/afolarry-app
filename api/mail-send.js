@@ -1,34 +1,50 @@
-import { guard, mkSmtp, isAuthError } from './_lib.js'
+import { Resend } from 'resend'
+import { guard } from './_lib.js'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  const { email, password, to, cc, subject, html, text, inReplyTo, references, attachments } = req.body ?? {}
+  const { email, to, cc, subject, html, text, inReplyTo, references, attachments } = req.body ?? {}
 
   try { guard(email) } catch (e) {
     return res.status(403).json({ error: e.message })
   }
 
-  const transport = mkSmtp(email, password)
-  const mail = { from: email, to, subject, html: html || text, text }
-  if (cc)         mail.cc         = cc
-  if (inReplyTo)  mail.inReplyTo  = inReplyTo
-  if (references) mail.references = references
-  if (attachments?.length) {
-    mail.attachments = attachments.map(a => ({
-      filename:    a.filename,
-      content:     Buffer.from(a.content, 'base64'),
-      contentType: a.contentType,
-    }))
+  const key = process.env.RESEND_API_KEY
+  if (!key) return res.status(500).json({ error: 'RESEND_API_KEY environment variable is not set' })
+
+  const resend = new Resend(key)
+
+  const toArr = typeof to === 'string'
+    ? to.split(',').map(s => s.trim()).filter(Boolean)
+    : (Array.isArray(to) ? to : [])
+
+  const payload = {
+    from: email,
+    to:   toArr,
+    subject,
+    html: html || `<pre style="font-family:sans-serif;white-space:pre-wrap">${text ?? ''}</pre>`,
+    text: text ?? '',
+    ...(cc ? { cc: cc.split(',').map(s => s.trim()).filter(Boolean) } : {}),
+    ...(inReplyTo || references ? {
+      headers: {
+        ...(inReplyTo  ? { 'In-Reply-To': inReplyTo  } : {}),
+        ...(references ? { 'References':  references  } : {}),
+      },
+    } : {}),
+    ...(attachments?.length ? {
+      attachments: attachments.map(a => ({
+        filename: a.filename,
+        content:  Buffer.from(a.content, 'base64'),
+      })),
+    } : {}),
   }
 
   try {
-    await transport.sendMail(mail)
-    return res.json({ success: true })
+    const { data, error } = await resend.emails.send(payload)
+    if (error) return res.status(400).json({ error: error.message })
+    return res.json({ success: true, id: data?.id })
   } catch (err) {
-    if (isAuthError(err) || err?.responseCode === 535) {
-      return res.status(401).json({ error: 'Wrong email or password' })
-    }
-    return res.status(500).json({ error: err.message || 'SMTP error' })
+    return res.status(500).json({ error: err.message || 'Send failed' })
   }
 }
