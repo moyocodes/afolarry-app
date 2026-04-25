@@ -16,6 +16,7 @@ import Schedules from './pages/Schedules'
 import Cars from './pages/Cars'
 import TrackShipment from './pages/TrackShipment'
 import ContactPage from './pages/ContactPage'
+import MailDashboard from './pages/MailDashboard'
 
 function ScrollToTop() {
   const { pathname, hash } = useLocation()
@@ -42,7 +43,7 @@ function Layout() {
     <>
       <ScrollToTop />
       <Navbar />
-      <main>
+      <main style={{ paddingTop: '88px' }}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
@@ -62,10 +63,16 @@ function Layout() {
   )
 }
 
+function AppContent() {
+  const { pathname } = useLocation()
+  if (pathname.startsWith('/mail')) return <MailDashboard />
+  return <Layout />
+}
+
 export default function App() {
   return (
     <BrowserRouter>
-      <Layout />
+      <AppContent />
     </BrowserRouter>
   )
 }

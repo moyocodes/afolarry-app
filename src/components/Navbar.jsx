@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Anchor, Phone } from "lucide-react";
+import { Menu, X, Phone } from "lucide-react";
 
 const navLinks = [
   { to: "/", label: "Home" },
@@ -130,54 +130,12 @@ export default function Navbar() {
         }}
       >
         {/* Logo */}
-        <Link
-          to="/"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "9px",
-            textDecoration: "none",
-          }}
-        >
-          <div
-            style={{
-              width: "36px",
-              height: "36px",
-              background: "#1565c0",
-              borderRadius: "9px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
-            <Anchor size={17} color="#fff" strokeWidth={2.2} />
-          </div>
-          <div>
-            <div
-              style={{
-                fontSize: "13px",
-                fontWeight: 700,
-                color: "#0d1b2e",
-                lineHeight: 1.2,
-                letterSpacing: "0.01em",
-              }}
-            >
-              AFOLARAY NIGERIA
-            </div>
-            <div
-              style={{
-                fontSize: "9px",
-                color: "#5a7599",
-                fontWeight: 400,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-              }}
-            >
-              LIMITED
-            </div>
-          </div>
-        </Link>
+        <Link to="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
+     <img
+  src="/logo.png"
+  alt="Afolaray Nigeria Limited"
+  style={{ height: "clamp(100px, 10vw, 100px)", width: "auto", display: "block" }}
+/>       </Link>
 
         {/* Desktop links */}
         <div
