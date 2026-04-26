@@ -233,33 +233,35 @@ function AdminDrawer({ open, onClose, user, cars, onRefresh }) {
 
   const uploadImage = () =>
     new Promise((resolve, reject) => {
-      if (!imgFile) return resolve(form.image)
+      if (!imgFile) return resolve(form.image);
 
-      const reader = new FileReader()
-      reader.onerror = () => reject(new Error('Failed to read file'))
-      reader.onload = e => {
-        const xhr = new XMLHttpRequest()
-        xhr.open('POST', '/api/upload')
-        xhr.setRequestHeader('Content-Type', 'application/json')
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("Failed to read file"));
+      reader.onload = (e) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/upload");
+        xhr.setRequestHeader("Content-Type", "application/json");
         // Track upload progress to our API endpoint
-        xhr.upload.onprogress = ev => {
+        xhr.upload.onprogress = (ev) => {
           if (ev.lengthComputable)
-            setUploadProgress(Math.round(ev.loaded / ev.total * 100))
-        }
+            setUploadProgress(Math.round((ev.loaded / ev.total) * 100));
+        };
         xhr.onload = () => {
           try {
-            const data = JSON.parse(xhr.responseText)
-            if (xhr.status === 200) resolve(data.url)
-            else reject(new Error(data.error || 'Upload failed'))
+            const data = JSON.parse(xhr.responseText);
+            if (xhr.status === 200) resolve(data.url);
+            else reject(new Error(data.error || "Upload failed"));
           } catch {
-            reject(new Error('Invalid response from upload API'))
+            reject(new Error("Invalid response from upload API"));
           }
-        }
-        xhr.onerror = () => reject(new Error('Network error during upload'))
-        xhr.send(JSON.stringify({ file: e.target.result, filename: imgFile.name }))
-      }
-      reader.readAsDataURL(imgFile)
-    })
+        };
+        xhr.onerror = () => reject(new Error("Network error during upload"));
+        xhr.send(
+          JSON.stringify({ file: e.target.result, filename: imgFile.name }),
+        );
+      };
+      reader.readAsDataURL(imgFile);
+    });
 
   const save = async (e) => {
     e.preventDefault();
@@ -721,18 +723,16 @@ export default function Cars() {
             <label className="text-[9px] font-bold text-[#5a7599] tracking-[0.1em] uppercase">
               Type
             </label>
-            <select
+            <input
               value={filterType}
+              type="text"
+              placeholder="Tokunbo, Used Nigeria…, Luxury"
               onChange={(e) => {
                 setFilterType(e.target.value);
                 setPage(1);
               }}
               className={`${inp} min-w-[130px]`}
-            >
-              {types.map((t) => (
-                <option key={t}>{t}</option>
-              ))}
-            </select>
+            />
           </div>
 
           {/* Min price */}
