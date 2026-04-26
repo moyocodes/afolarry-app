@@ -1,9 +1,9 @@
 import { v2 as cloudinary } from 'cloudinary'
 
 cloudinary.config({
-  cloud_name: "dvi57tjbp",
-  api_key:    "317272765527647",
-  api_secret: "A74wlzZ5-RSlath8LUFjKltX-JE",
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key:    process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 })
 
 export default async function handler(req, res) {
