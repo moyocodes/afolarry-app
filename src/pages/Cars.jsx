@@ -1201,7 +1201,7 @@ export default function Cars() {
                     onClick={() => setOrderCar(car)}
                     className="w-full bg-[#1565c0] hover:bg-[#1255a8] text-white border-none py-2.5 rounded-[9px] font-[Sora,sans-serif] text-[13px] font-bold cursor-pointer transition"
                   >
-                    Order This Car
+                    Pre-Order This Car
                   </motion.button>
                 </div>
               </motion.div>
