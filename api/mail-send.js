@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import { Resend } from 'resend'
 import { guard } from './_lib.js'
 

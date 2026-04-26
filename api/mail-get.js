@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import { simpleParser } from 'mailparser'
 import { guard, mkImap, isAuthError, openMailbox } from './_lib.js'
 

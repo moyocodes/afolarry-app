@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import { guard, mkImap, PAGE_SIZE, isAuthError, openMailbox } from './_lib.js'
 
 export default async function handler(req, res) {
