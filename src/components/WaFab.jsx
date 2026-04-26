@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Send, MessageCircle } from "lucide-react";
-import { useEffect } from "react";
+
 
 const WA_NUM = "2347033576017";
 

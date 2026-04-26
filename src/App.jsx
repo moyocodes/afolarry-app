@@ -15,6 +15,7 @@ import Schedules from "./pages/Schedules";
 import Cars from "./pages/Cars";
 import TrackShipment from "./pages/TrackShipment";
 import ContactPage from "./pages/ContactPage";
+import NotFound from "./pages/NotFound";
 import MailDashboard from "./pages/MailDashboard";
 
 function ScrollToTop() {
@@ -45,14 +46,15 @@ function Layout() {
       <main>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/services" element={<ServicesPage />} />
-          <Route path="/how-it-works" element={<HowItWorks />} />
+          {/* <Route path="/about" element={<About />} /> */}
+          {/* <Route path="/services" element={<ServicesPage />} />
+          <Route path="/how-it-works" element={<HowItWorks />} /> */}
           <Route path="/solutions" element={<Solutions />} />
           <Route path="/schedules" element={<Schedules />} />
           <Route path="/cars" element={<Cars />} />
           <Route path="/track" element={<TrackShipment />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
       <Footer />
