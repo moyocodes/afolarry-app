@@ -43,7 +43,7 @@ function Layout() {
     <>
       <ScrollToTop />
       <Navbar />
-      <main style={{ paddingTop: '88px' }}>
+      <main >
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />

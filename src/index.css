@@ -1,142 +1,153 @@
-@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&display=swap');
-@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap');
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── shadcn/ui CSS variable tokens ────────────────────────────────────────── */
+
+@layer base {
+  :root {
+    --background:   0 0% 100%;
+    --foreground:   222 47% 11%;
+
+    --card:         0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover:      0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary:      222 47% 11%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary:    210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted:        210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent:       210 40% 96%;
+    --accent-foreground: 222 47% 11%;
+
+    --destructive:  0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border:       214 32% 91%;
+    --input:        214 32% 91%;
+    --ring:         222 84% 5%;
+
+    --radius: 0.625rem;
+  }
+
+  .dark {
+    --background:   222 47% 11%;
+    --foreground:   210 40% 98%;
+
+    --card:         222 47% 11%;
+    --card-foreground: 210 40% 98%;
+
+    --popover:      222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary:      210 40% 98%;
+    --primary-foreground: 222 47% 11%;
+
+    --secondary:    217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted:        217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent:       217 33% 17%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive:  0 62% 30%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border:       217 33% 17%;
+    --input:        217 33% 17%;
+    --ring:         212 100% 80%;
+  }
+
+  * {
+    @apply border-border box-border;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    line-height: 1.6;
+  }
+
+  img, video {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  button, input, textarea, select {
+    font-family: inherit;
+  }
+}
+
+/* ── Responsive utilities ──────────────────────────────────────────────────── */
+
+@layer utilities {
+  /* Prevent horizontal scroll on mobile */
+  .overflow-x-safe {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
+  /* Safe padding for mobile notches */
+  .px-safe {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+
+  /* Text that clips with ellipsis */
+  .truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .truncate-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+/* ── Global responsive fixes ───────────────────────────────────────────────── */
+
+/* Prevent content overflow on small screens */
 * {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+  min-width: 0;
 }
 
-html {
-  scroll-behavior: smooth;
+/* Sections that use full padding — scale down on mobile */
+section,
+.page-section {
+  padding-left: clamp(1rem, 5vw, 3rem);
+  padding-right: clamp(1rem, 5vw, 3rem);
 }
 
-body {
-  font-family: 'Sora', sans-serif;
-  background: #fff;
-  color: #0d1b2e;
-  overflow-x: hidden;
-  -webkit-font-smoothing: antialiased;
-}
-
-#root {
-  width: 100%;
-}
-
-img,
-video,
-iframe {
-  max-width: 100%;
-}
-
-.section-pad {
-  padding-left: 3rem !important;
-  padding-right: 3rem !important;
-}
-
-.responsive-two-col {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4rem;
-}
-
-.responsive-contact-grid {
-  display: grid;
-  grid-template-columns: 1fr 1.5fr;
-  gap: 4rem;
-}
-
-.responsive-three-col {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2rem;
-}
-
-.responsive-four-col {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1.5rem;
-}
-
-.responsive-form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.responsive-service-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1px;
-}
-
-.responsive-detail-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-  align-items: start;
-}
-
-.map-review-badge {
-  position: absolute;
-  left: 2rem;
-  bottom: 2rem;
-  max-width: 360px;
-}
-
-.responsive-footer-grid {
-  display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr 1fr;
-  gap: 2.5rem;
-}
-
-.hero-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-@media (max-width: 1024px) {
-  .section-pad {
-    padding-left: 1.5rem !important;
-    padding-right: 1.5rem !important;
-  }
-
-  .responsive-two-col,
-  .responsive-contact-grid,
-  .responsive-three-col,
-  .responsive-four-col,
-  .responsive-detail-grid {
-    grid-template-columns: 1fr !important;
-    gap: 2rem !important;
-  }
-
-  .responsive-service-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-  }
-
-  .responsive-footer-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 2rem !important;
-  }
-}
-
-@media (max-width: 768px) {
-  .section-pad {
+/* Page headers and filter bars that use 3rem padding */
+@media (max-width: 640px) {
+  [style*="padding: '1.2rem 3rem'"],
+  [style*='padding: "1.2rem 3rem"'] {
     padding-left: 1rem !important;
     padding-right: 1rem !important;
-  }
-
-  .responsive-form-grid,
-  .responsive-service-grid,
-  .hero-stats-grid,
-  .responsive-footer-grid {
-    grid-template-columns: 1fr !important;
-  }
-
-  .map-review-badge {
-    left: 1rem;
-    right: 1rem;
-    bottom: 1rem;
-    max-width: none;
   }
 }

@@ -1,9 +1,10 @@
-import HomeHero from '../sections/HomeHero'
-import HomeAbout from '../sections/HomeAbout'
-import HomeServices from '../sections/HomeServices'
-import HomeHowItWorks from '../sections/HomeHowItWorks'
-import HomeFAQ from '../sections/HomeFAQ'
-import HomeContact from '../sections/HomeContact'
+import HomeHero from "../sections/HomeHero";
+import HomeAbout from "../sections/HomeAbout";
+import HomeServices from "../sections/HomeServices";
+import HomeHowItWorks from "../sections/HomeHowItWorks";
+import HomeFAQ from "../sections/HomeFAQ";
+import HomeReviews from "../sections/HomeReviews";
+import HomeContact from "../sections/HomeContact";
 
 export default function Home() {
   return (
@@ -13,7 +14,8 @@ export default function Home() {
       <HomeServices />
       <HomeHowItWorks />
       <HomeFAQ />
+
       <HomeContact />
     </>
-  )
+  );
 }

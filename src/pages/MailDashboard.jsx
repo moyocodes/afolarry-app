@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { signInWithEmailAndPassword, signOut as fbSignOut } from 'firebase/auth'
+import { auth } from '../lib/firebase'
 import {
   Inbox, Send, Star, Trash2, PenSquare, Calendar, LogOut,
   Search, RefreshCw, Reply, Forward, ChevronLeft, MailOpen,
@@ -159,6 +161,8 @@ export default function MailDashboard() {
       const c = { email: lEmail, password: lPass }
       sessionStorage.setItem('afl_mail', JSON.stringify(c))
       setCreds(c); setEmails(data.emails); setStats({ total: data.total, unseen: data.unseen })
+      // Also sign into Firebase so Cars admin access works
+      signInWithEmailAndPassword(auth, lEmail, lPass).catch(() => {})
     } catch (e) {
       setLErr(e.message?.includes('Wrong') ? 'Wrong email or password' : e.message || 'Login failed')
     } finally { setLLoad(false) }
@@ -245,6 +249,7 @@ export default function MailDashboard() {
 
   const logout = () => {
     sessionStorage.removeItem('afl_mail')
+    fbSignOut(auth).catch(() => {})
     setCreds(null); setEmails([]); setSelected(null); setError(null)
   }
 

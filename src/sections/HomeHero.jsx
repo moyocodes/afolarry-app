@@ -1,46 +1,26 @@
-import { useEffect, useRef, useState } from "react";
-import { motion, useInView, useMotionValue, animate } from "framer-motion";
+import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { ArrowRight, ChevronDown } from "lucide-react";
+import {
+  ArrowRight,
+  ChevronDown,
+  Car,
+  FileText,
+  Shield,
+  Package,
+} from "lucide-react";
 
 const words = ["Connecting", "You", "to", "Global", "Vehicle", "Markets"];
+
 const heroPoster =
   "https://i.pinimg.com/1200x/f2/65/b7/f265b71d3e22c7f70ad1a410fbca9f0b.jpg";
+
 const heroVideoSrc = "/animate-it.mp4";
-function Counter({ to, suffix = "" }) {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true });
-  const count = useMotionValue(0);
-  const [display, setDisplay] = useState("0");
 
-  useEffect(() => {
-    if (!inView) return;
-    const ctrl = animate(count, to, {
-      duration: 2,
-      ease: "easeOut",
-      onUpdate(v) {
-        setDisplay(
-          to >= 1000
-            ? Math.round(v).toLocaleString()
-            : Math.round(v).toString(),
-        );
-      },
-    });
-    return ctrl.stop;
-  }, [inView, to, count]);
-
-  return (
-    <span ref={ref}>
-      {display}
-      {suffix}
-    </span>
-  );
-}
-
-const stats = [
-  { value: 12, suffix: "+", label: "Years Experience" },
-  { value: 8500, suffix: "+", label: "Vehicles Delivered" },
-  { value: 100, suffix: "%", label: "Client Satisfaction" },
+const services = [
+  { Icon: Car, title: "Vehicle Import" },
+  { Icon: FileText, title: "Documentation" },
+  { Icon: Shield, title: "Customs Clearance" },
+  { Icon: Package, title: "Logistics" },
 ];
 
 export default function HomeHero() {
@@ -81,15 +61,16 @@ export default function HomeHero() {
               "linear-gradient(to bottom, rgba(4,14,30,0.78) 0%, rgba(4,14,30,0.55) 50%, rgba(4,14,30,0.92) 100%)",
           }}
         />
-        {/* subtle blue glow */}
+
+        {/* glow */}
         <div
           style={{
             position: "absolute",
             top: "30%",
             left: "50%",
             transform: "translateX(-50%)",
-            width: "700px",
-            height: "700px",
+            width: "clamp(300px, 70vw, 700px)",
+            height: "clamp(300px, 70vw, 700px)",
             borderRadius: "50%",
             background:
               "radial-gradient(circle, rgba(21,101,192,0.18) 0%, transparent 70%)",
@@ -107,7 +88,7 @@ export default function HomeHero() {
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          padding: "7rem 3rem 2rem",
+          padding: "clamp(5rem, 8vw, 7rem) clamp(1.2rem, 4vw, 3rem) 2rem",
           maxWidth: "1280px",
           margin: "0 auto",
           width: "100%",
@@ -119,6 +100,7 @@ export default function HomeHero() {
             display: "flex",
             flexWrap: "wrap",
             gap: "0 14px",
+            rowGap: "8px",
             marginBottom: "1.6rem",
             alignItems: "baseline",
           }}
@@ -135,14 +117,13 @@ export default function HomeHero() {
               }}
               style={{
                 fontFamily: "'Sora',sans-serif",
-                fontSize: "clamp(2.6rem, 5.5vw, 5rem)",
+                fontSize: "clamp(2.4rem, 6vw, 5rem)",
                 fontWeight: 800,
                 color: ["Global", "Vehicle", "Markets"].includes(word)
                   ? "#42a5f5"
                   : "#fff",
                 lineHeight: 1.05,
                 letterSpacing: "-0.03em",
-                display: "inline-block",
               }}
             >
               {word}
@@ -154,13 +135,13 @@ export default function HomeHero() {
         <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.75, duration: 0.7, ease: "easeOut" }}
+          transition={{ delay: 0.75, duration: 0.7 }}
           style={{
             fontFamily: "'Sora',sans-serif",
             fontSize: "clamp(14px,1.8vw,17px)",
             color: "rgba(255,255,255,0.62)",
             lineHeight: 1.85,
-            maxWidth: "540px",
+            maxWidth: "min(540px, 100%)",
             fontWeight: 300,
             marginBottom: "2.4rem",
           }}
@@ -169,80 +150,90 @@ export default function HomeHero() {
           and international logistics. Efficiency meets reliability.
         </motion.p>
 
-        {/* CTAs */}
+        {/* CTA */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.9, duration: 0.6 }}
-          style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginBottom: "1.6rem" }}
+          style={{
+            display: "flex",
+            gap: "12px",
+            flexWrap: "wrap",
+            marginBottom: "2rem",
+            width: "100%",
+          }}
         >
-          <Link to="/track">
+          <Link to="/track" style={{ width: "100%", maxWidth: "260px" }}>
             <motion.div
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.97 }}
               style={{
                 display: "flex",
                 alignItems: "center",
+                justifyContent: "center",
                 gap: "8px",
                 background: "#1565c0",
                 color: "#fff",
-                padding: "14px 28px",
+                padding: "14px 20px",
                 borderRadius: "10px",
                 fontFamily: "'Sora',sans-serif",
                 fontSize: "14px",
                 fontWeight: 700,
                 cursor: "pointer",
                 textDecoration: "none",
+                width: "100%",
               }}
             >
               Track Shipment <ArrowRight size={16} />
             </motion.div>
           </Link>
-        
         </motion.div>
 
+        {/* Services Preview */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.05, duration: 0.65 }}
-          className="hero-stats-grid"
           style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-            gap: "1px",
-            background: "rgba(255,255,255,0.12)",
-            border: "1px solid rgba(255,255,255,0.14)",
-            borderRadius: "22px",
-            overflow: "hidden",
-            maxWidth: "760px",
-            backdropFilter: "blur(18px)",
+            display: "flex",
+            gap: "1.5rem",
+            flexWrap: "wrap",
+            justifyContent: "center",
+            maxWidth: "600px",
           }}
         >
-          {stats.map((s) => (
-            <div
-              key={s.label}
+          {services.map((service, i) => (
+            <motion.div
+              key={service.title}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 1.2 + i * 0.1, duration: 0.5 }}
               style={{
-                padding: "1.2rem 1rem",
-                background: "rgba(6,15,28,0.28)",
-                textAlign: "center",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "8px",
+                padding: "12px",
+                background: "rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                borderRadius: "12px",
+                backdropFilter: "blur(10px)",
+                minWidth: "80px",
               }}
             >
-              <div
+              <service.Icon size={20} color="rgba(255,255,255,0.8)" />
+              <span
                 style={{
-                  fontFamily: "'Sora',sans-serif",
-                  fontSize: "clamp(1.6rem,3vw,2.2rem)",
-                  fontWeight: 800,
-                  color: "#fff",
-                  letterSpacing: "-0.03em",
-                  lineHeight: 1,
+                  fontSize: "10px",
+                  color: "rgba(255,255,255,0.7)",
+                  textAlign: "center",
+                  fontWeight: 500,
+                  lineHeight: 1.2,
                 }}
               >
-                <Counter to={s.value} suffix={s.suffix} />
-              </div>
-              <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.64)", marginTop: "8px", fontWeight: 500 }}>
-                {s.label}
-              </div>
-            </div>
+                {service.title}
+              </span>
+            </motion.div>
           ))}
         </motion.div>
       </div>
@@ -250,10 +241,10 @@ export default function HomeHero() {
       {/* Scroll cue */}
       <motion.div
         animate={{ y: [0, 8, 0] }}
-        transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+        transition={{ repeat: Infinity, duration: 2 }}
         style={{
           position: "absolute",
-          bottom: "120px",
+          bottom: "clamp(40px, 8vh, 120px)",
           left: "50%",
           transform: "translateX(-50%)",
           zIndex: 2,
