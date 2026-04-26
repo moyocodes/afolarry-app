@@ -51,17 +51,25 @@ export default function Navbar() {
   return (
     <>
       {/* Top bar */}
-      <div className="bg-blue-700 text-white text-xs px-6 py-2 flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <Phone size={14} />
-          <span>Call or WhatsApp:</span>
-          <a href="tel:+2347033576017" className="font-bold">
-            +234 703 357 6017
-          </a>
+      <div className="bg-blue-700 text-white text-xs px-4 sm:px-6 py-2 flex justify-between items-center">
+        {/* Mobile: icon only | Desktop: full text */}
+        <a
+          href="tel:+2347033576017"
+          className="flex items-center gap-2 hover:text-blue-200 transition"
+        >
+          <Phone size={14} className="shrink-0" />
+          <span className="hidden sm:inline">Call or WhatsApp:</span>
+          <span className="font-bold hidden sm:inline">+234 703 357 6017</span>
+          <span className="font-bold sm:hidden">+234 703 357 6017</span>
+        </a>
+
+        {/* Mobile: initials badge | Desktop: full name */}
+        <div className="flex items-center gap-1.5">
+         
+          <span className="hidden sm:inline font-semibold tracking-widest text-[10px]">
+            AFOLARAY NIGERIA LIMITED
+          </span>
         </div>
-        <span className="font-semibold tracking-widest text-[10px]">
-          AFOLARAY NIGERIA LIMITED
-        </span>
       </div>
 
       {/* Navbar */}
@@ -71,9 +79,9 @@ export default function Navbar() {
         className="sticky top-0 z-50 bg-white text-blue-700 border-b border-gray-200 shadow-sm"
       >
         <div className="flex items-center justify-between px-6 h-[68px]">
-          {/* fo */}
+          {/* Logo */}
           <Link to="/" className="flex items-center" onClick={() => setOpen(false)}>
-            <img src="/logo.png" className="h-32 w-auto" />
+            <img src="/logo.png" className="h-16 w-auto" />
           </Link>
 
           {/* Desktop nav */}
