@@ -51,11 +51,11 @@ export default function Navbar() {
   return (
     <>
       {/* Top bar */}
-      <div className="bg-blue-700 text-white text-xs px-4 sm:px-6 py-2 flex justify-between items-center">
+      <div className="bg-blue-900/100 text-white text-xs px-4 sm:px-6 py-2 flex justify-between items-center">
         {/* Mobile: icon only | Desktop: full text */}
         <a
           href="tel:+2347033576017"
-          className="flex items-center gap-2 hover:text-blue-200 transition"
+          className="flex items-center gap-2 hover:text-blue-800 transition"
         >
           <Phone size={14} className="shrink-0" />
           <span className="hidden sm:inline">Call or WhatsApp:</span>
@@ -76,7 +76,7 @@ export default function Navbar() {
       <motion.nav
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="sticky top-0 z-50 bg-white text-blue-700 border-b border-gray-200 shadow-sm"
+        className="sticky top-0 z-50 bg-white text-blue-800 border-b border-gray-200 shadow-sm"
       >
         <div className="flex items-center justify-between px-6 h-[68px]">
           {/* Logo */}
@@ -93,8 +93,8 @@ export default function Navbar() {
                 onClick={(e) => handleNavClick(e, l)}
                 className={`text-sm px-3 py-1.5 rounded-md transition ${
                   isActive(l)
-                    ? "text-blue-700 bg-blue-100 font-semibold"
-                    : "text-slate-600 hover:text-blue-700 hover:bg-blue-50"
+                    ? "text-blue-800 bg-blue-100 font-semibold"
+                    : "text-slate-600 hover:text-blue-800 hover:bg-blue-50"
                 }`}
               >
                 {l.label}
@@ -104,17 +104,17 @@ export default function Navbar() {
 
           {/* Actions */}
           <div className="hidden lg:flex items-center gap-2">
-            <Button variant="outline" className="border-blue-400 text-blue-700">
+            <Button variant="outline" className="border-blue-800 text-blue-800">
               Get a Quote
             </Button>
-            <Button className="bg-blue-700 hover:bg-blue-800 text-white">
+            <Button className="bg-blue-800 hover:bg-blue-800 text-white">
               Track Shipment
             </Button>
           </div>
 
           {/* Mobile toggle */}
           <button
-            className="lg:hidden p-1 text-blue-700"
+            className="lg:hidden p-1 text-blue-800"
             onClick={() => setOpen((prev) => !prev)}
           >
             {open ? <X size={24} /> : <Menu size={24} />}
@@ -138,8 +138,8 @@ export default function Navbar() {
                     onClick={(e) => handleNavClick(e, l)}
                     className={`p-2.5 rounded-md text-sm transition ${
                       isActive(l)
-                        ? "bg-blue-100 text-blue-700 font-semibold"
-                        : "text-slate-700 hover:bg-blue-50 hover:text-blue-700"
+                        ? "bg-blue-100 text-blue-800 font-semibold"
+                        : "text-slate-700 hover:bg-blue-50 hover:text-blue-800"
                     }`}
                   >
                     {l.label}
@@ -147,12 +147,12 @@ export default function Navbar() {
                 ))}
 
                 <div className="flex gap-2 mt-3">
-                  <Button className="w-full bg-blue-700 hover:bg-blue-800 text-white">
+                  <Button className="w-full bg-blue-800 hover:bg-blue-800 text-white">
                     Get a Quote
                   </Button>
                   <Button
                     variant="outline"
-                    className="w-full border-blue-400 text-blue-700"
+                    className="w-full border-blue-800 text-blue-800"
                   >
                     Call Now
                   </Button>
