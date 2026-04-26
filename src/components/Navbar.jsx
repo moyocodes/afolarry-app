@@ -17,15 +17,8 @@ const navLinks = [
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const loc = useLocation();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 10);
-    window.addEventListener("scroll", fn);
-    return () => window.removeEventListener("scroll", fn);
-  }, []);
 
   const isActive = (link) => {
     if (link.sectionId)
@@ -34,10 +27,11 @@ export default function Navbar() {
   };
 
   const handleNavClick = (e, link) => {
+    setOpen(false);
+
     if (!link.sectionId) return;
 
     e.preventDefault();
-    setOpen(false);
 
     if (loc.pathname === "/") {
       document
@@ -46,7 +40,7 @@ export default function Navbar() {
 
       navigate(
         { pathname: "/", hash: `#${link.sectionId}` },
-        { replace: true },
+        { replace: true }
       );
       return;
     }
@@ -74,33 +68,25 @@ export default function Navbar() {
       <motion.nav
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className={`sticky top-0 z-50 transition-all duration-300 ${
-          scrolled
-            ? "bg-blue-700 text-white border-b border-blue-600 shadow-md"
-            : "bg-white text-blue-700 border-b border-gray-200"
-        }`}
+        className="sticky top-0 z-50 bg-white text-blue-700 border-b border-gray-200 shadow-sm"
       >
-        <div className="flex items-center justify-between px-6 h-[58px]">
-          {/* Logo */}
-          <Link to="/" className="flex items-center">
-            <img src="/logo.png" className="h-12 w-auto" />
+        <div className="flex items-center justify-between px-6 h-[68px]">
+          {/* fo */}
+          <Link to="/" className="flex items-center" onClick={() => setOpen(false)}>
+            <img src="/logo.png" className="h-32 w-auto" />
           </Link>
 
           {/* Desktop nav */}
-          <div className="hidden lg:flex items-center gap-2">
+          <div className="hidden lg:flex items-center gap-1">
             {navLinks.map((l) => (
               <Link
                 key={l.to}
                 to={l.to}
                 onClick={(e) => handleNavClick(e, l)}
-                className={`text-sm px-3 py-1 rounded-md transition ${
+                className={`text-sm px-3 py-1.5 rounded-md transition ${
                   isActive(l)
-                    ? scrolled
-                      ? "text-white bg-white/20 font-semibold"
-                      : "text-blue-700 bg-blue-100 font-semibold"
-                    : scrolled
-                      ? "text-white/80 hover:text-white hover:bg-white/10"
-                      : "text-slate-600 hover:text-blue-700 hover:bg-blue-50"
+                    ? "text-blue-700 bg-blue-100 font-semibold"
+                    : "text-slate-600 hover:text-blue-700 hover:bg-blue-50"
                 }`}
               >
                 {l.label}
@@ -110,31 +96,20 @@ export default function Navbar() {
 
           {/* Actions */}
           <div className="hidden lg:flex items-center gap-2">
-            <Button
-              variant="outline"
-              className={
-                scrolled
-                  ? "border-white text-white hover:bg-white hover:text-blue-700"
-                  : "border-blue-400 text-blue-700"
-              }
-            >
+            <Button variant="outline" className="border-blue-400 text-blue-700">
               Get a Quote
             </Button>
-
-            <Button
-              className={
-                scrolled
-                  ? "bg-white text-blue-700 hover:bg-gray-100"
-                  : "bg-blue-700 hover:bg-blue-800"
-              }
-            >
+            <Button className="bg-blue-700 hover:bg-blue-800 text-white">
               Track Shipment
             </Button>
           </div>
 
           {/* Mobile toggle */}
-          <button className="lg:hidden" onClick={() => setOpen(!open)}>
-            {open ? <X /> : <Menu />}
+          <button
+            className="lg:hidden p-1 text-blue-700"
+            onClick={() => setOpen((prev) => !prev)}
+          >
+            {open ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
 
@@ -145,49 +120,31 @@ export default function Navbar() {
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className={`lg:hidden overflow-hidden border-t ${
-                scrolled
-                  ? "border-blue-600 bg-blue-700"
-                  : "border-gray-200 bg-white"
-              }`}
+              className="lg:hidden overflow-hidden border-t border-gray-200 bg-white"
             >
-              <div className="flex flex-col p-4 gap-2">
+              <div className="flex flex-col p-4 gap-1">
                 {navLinks.map((l) => (
                   <Link
                     key={l.to}
                     to={l.to}
                     onClick={(e) => handleNavClick(e, l)}
-                    className={`p-2 rounded-md ${
+                    className={`p-2.5 rounded-md text-sm transition ${
                       isActive(l)
-                        ? scrolled
-                          ? "bg-white/20 text-white font-semibold"
-                          : "bg-blue-100 text-blue-700 font-semibold"
-                        : scrolled
-                          ? "text-white/80 hover:bg-white/10"
-                          : "text-slate-700 hover:bg-blue-50"
+                        ? "bg-blue-100 text-blue-700 font-semibold"
+                        : "text-slate-700 hover:bg-blue-50 hover:text-blue-700"
                     }`}
                   >
                     {l.label}
                   </Link>
                 ))}
 
-                <div className="flex gap-2 mt-2">
-                  <Button
-                    className={
-                      scrolled
-                        ? "w-full bg-white text-blue-700 hover:bg-gray-100"
-                        : "w-full"
-                    }
-                  >
+                <div className="flex gap-2 mt-3">
+                  <Button className="w-full bg-blue-700 hover:bg-blue-800 text-white">
                     Get a Quote
                   </Button>
                   <Button
-                    variant="secondary"
-                    className={
-                      scrolled
-                        ? "w-full bg-white/20 text-white border-white/30 hover:bg-white/30"
-                        : "w-full"
-                    }
+                    variant="outline"
+                    className="w-full border-blue-400 text-blue-700"
                   >
                     Call Now
                   </Button>

@@ -1,17 +1,8 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import {
-  Ship,
-  FileText,
-  Package,
-  Truck,
-  Gavel,
-  MapPin,
-  ArrowRight,
-} from "lucide-react";
+import { Ship, FileText, Package, Truck, Gavel } from "lucide-react";
 import PageHeader from "../components/PageHeader";
 
-const S = { fontFamily: "'Sora',sans-serif" };
 const fade = {
   hidden: { opacity: 0, y: 24 },
   show: (i = 0) => ({
@@ -62,127 +53,89 @@ const destinations = [
   },
 ];
 
+const transportCards = [
+  {
+    title: "Sea Freight",
+    bg: "bg-[#e3f2fd]",
+    features: [
+      "FCL and LCL shipments",
+      "RoRo and break-bulk options",
+      "Door-to-port or door-to-door",
+    ],
+    body: "Ideal when cost efficiency is essential and timelines are planned. We coordinate export documentation, port handling, and customs clearance for smooth ocean transit.",
+  },
+  {
+    title: "Ocean Compliance",
+    bg: "bg-[#f7faff]",
+    features: [
+      "Export documentation support",
+      "Customs coordination",
+      "Real-time tracking updates",
+    ],
+    body: "Our team handles shipping instructions, compliance checks, and vessel scheduling to keep cargo moving across North America and West Africa.",
+  },
+];
+
+const auctionItems = [
+  {
+    title: "Transport from Auctions",
+    body: "We pick up vehicles from auction yards and coordinate inland delivery to the nearest port for sea shipment.",
+  },
+  {
+    title: "Bid & Buy Assistance",
+    body: "Guidance on paperwork, title readiness, and export procedures so your purchase ships without delays.",
+  },
+];
+
 export default function Solutions() {
   return (
-    <div style={S}>
+    <div className="font-[Sora,sans-serif]">
       <PageHeader
         eyebrow="Solutions"
         title="Sea Freight Solutions Built for Vehicle Logistics"
         description="We move vehicles, machinery, and cargo by sea only. From planning and documentation to loading and port delivery, our team keeps every shipment on course."
         image="https://images.unsplash.com/photo-1565891741441-64926e441838?w=1600&q=80&auto=format&fit=crop"
       >
-        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+        <div className="flex flex-wrap gap-3">
           <Link
             to="/track"
-            style={{
-              fontSize: "13px",
-              color: "#fff",
-              background: "rgba(255,255,255,0.15)",
-              border: "1px solid rgba(255,255,255,0.3)",
-              padding: "11px 22px",
-              borderRadius: "9px",
-              textDecoration: "none",
-              fontWeight: 600,
-              backdropFilter: "blur(8px)",
-            }}
+            className="text-[13px] text-white bg-white/15 border border-white/30 px-5 py-2.5 rounded-[9px] font-semibold backdrop-blur-sm hover:bg-white/25 transition no-underline"
           >
             Track Shipment
           </Link>
           <Link
             to="/#contact"
-            style={{
-              fontSize: "13px",
-              color: "#1565c0",
-              background: "#fff",
-              padding: "11px 22px",
-              borderRadius: "9px",
-              textDecoration: "none",
-              fontWeight: 700,
-            }}
+            className="text-[13px] text-[#1565c0] bg-white px-5 py-2.5 rounded-[9px] font-bold hover:bg-blue-50 transition no-underline"
           >
             Request a Quote
           </Link>
         </div>
       </PageHeader>
 
-      {/* Mode of transport */}
-      <section
-        style={{ padding: "5rem 3rem", maxWidth: "1280px", margin: "0 auto" }}
-      >
+      {/* ── Mode of Transport ── */}
+      <section className="py-20 px-6 sm:px-10 lg:px-16 max-w-screen-xl mx-auto">
         <motion.div
           variants={fade}
           initial="hidden"
           whileInView="show"
           viewport={{ once: true }}
-          style={{ marginBottom: "3rem" }}
+          className="mb-12"
         >
-          <div
-            style={{
-              fontSize: "11px",
-              fontWeight: 700,
-              color: "#42a5f5",
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              marginBottom: "0.6rem",
-            }}
-          >
+          <p className="text-[11px] font-bold text-[#42a5f5] tracking-[0.12em] uppercase mb-2">
             Mode of Transport
-          </div>
-          <h2
-            style={{
-              fontSize: "clamp(1.5rem,3vw,2.2rem)",
-              fontWeight: 700,
-              color: "#0d1b2e",
-              lineHeight: 1.2,
-              marginBottom: "0.6rem",
-            }}
-          >
+          </p>
+          <h2 className="text-2xl sm:text-3xl lg:text-[2.2rem] font-bold text-[#0d1b2e] leading-tight mb-3">
             We operate exclusively by sea.
           </h2>
-          <p
-            style={{
-              fontSize: "14px",
-              color: "#5a7599",
-              lineHeight: 1.8,
-              fontWeight: 300,
-              maxWidth: "560px",
-            }}
-          >
+          <p className="text-sm text-[#5a7599] font-light leading-relaxed max-w-[560px]">
             Ideal when cost efficiency is essential and timelines are planned.
             We coordinate export documentation, port handling, and customs
             clearance for smooth ocean transit.
           </p>
         </motion.div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "2rem",
-          }}
-        >
-          {[
-            {
-              title: "Sea Freight",
-              color: "#e3f2fd",
-              features: [
-                "FCL and LCL shipments",
-                "RoRo and break-bulk options",
-                "Door-to-port or door-to-door",
-              ],
-              body: "Ideal when cost efficiency is essential and timelines are planned. We coordinate export documentation, port handling, and customs clearance for smooth ocean transit.",
-            },
-            {
-              title: "Ocean Compliance",
-              color: "#f7faff",
-              features: [
-                "Export documentation support",
-                "Customs coordination",
-                "Real-time tracking updates",
-              ],
-              body: "Our team handles shipping instructions, compliance checks, and vessel scheduling to keep cargo moving across North America and West Africa.",
-            },
-          ].map((item, i) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          {transportCards.map((item, i) => (
             <motion.div
               key={item.title}
               variants={fade}
@@ -190,116 +143,51 @@ export default function Solutions() {
               initial="hidden"
               whileInView="show"
               viewport={{ once: true }}
-              style={{
-                background: item.color,
-                border: "1px solid #dce8f7",
-                borderRadius: "16px",
-                padding: "2rem",
-              }}
+              className={`${item.bg} border border-[#dce8f7] rounded-2xl p-8`}
             >
-              <Ship
-                size={28}
-                color="#1565c0"
-                style={{ marginBottom: "1rem" }}
-              />
-              <h3
-                style={{
-                  fontSize: "17px",
-                  fontWeight: 700,
-                  color: "#0d1b2e",
-                  marginBottom: "0.8rem",
-                }}
-              >
+              <Ship size={28} className="text-[#1565c0] mb-4" />
+              <h3 className="text-[17px] font-bold text-[#0d1b2e] mb-3">
                 {item.title}
               </h3>
-              <p
-                style={{
-                  fontSize: "13px",
-                  color: "#5a7599",
-                  lineHeight: 1.8,
-                  fontWeight: 300,
-                  marginBottom: "1.2rem",
-                }}
-              >
+              <p className="text-[13px] text-[#5a7599] font-light leading-[1.8] mb-5">
                 {item.body}
               </p>
-              {item.features.map((f) => (
-                <div
-                  key={f}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    fontSize: "13px",
-                    color: "#0c447c",
-                    marginBottom: "6px",
-                  }}
-                >
-                  <span
-                    style={{
-                      width: "6px",
-                      height: "6px",
-                      borderRadius: "50%",
-                      background: "#1565c0",
-                      flexShrink: 0,
-                      display: "inline-block",
-                    }}
-                  />
-                  {f}
-                </div>
-              ))}
+              <ul className="space-y-1.5">
+                {item.features.map((f) => (
+                  <li
+                    key={f}
+                    className="flex items-center gap-2 text-[13px] text-[#0c447c]"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#1565c0] shrink-0 inline-block" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
             </motion.div>
           ))}
         </div>
       </section>
 
-      {/* Cargo types */}
-      <section
-        style={{
-          padding: "4rem 3rem",
-          background: "#f7faff",
-          borderTop: "1px solid #dce8f7",
-          borderBottom: "1px solid #dce8f7",
-        }}
-      >
-        <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
+      {/* ── Cargo Types ── */}
+      <section className="py-16 px-6 sm:px-10 lg:px-16 bg-[#f7faff] border-y border-[#dce8f7]">
+        <div className="max-w-screen-xl mx-auto">
           <motion.div
             variants={fade}
             initial="hidden"
             whileInView="show"
             viewport={{ once: true }}
-            style={{ marginBottom: "2.5rem" }}
+            className="mb-10"
           >
-            <div
-              style={{
-                fontSize: "11px",
-                fontWeight: 700,
-                color: "#42a5f5",
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                marginBottom: "0.6rem",
-              }}
-            >
+            <p className="text-[11px] font-bold text-[#42a5f5] tracking-[0.12em] uppercase mb-2">
               Cargo Types We Handle
-            </div>
-            <h2
-              style={{
-                fontSize: "clamp(1.5rem,3vw,2.2rem)",
-                fontWeight: 700,
-                color: "#0d1b2e",
-              }}
-            >
+            </p>
+            <h2 className="text-2xl sm:text-3xl lg:text-[2.2rem] font-bold text-[#0d1b2e]">
               Flexible sea freight solutions for vehicles, equipment, and
               general cargo.
             </h2>
           </motion.div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(4,1fr)",
-              gap: "1.2rem",
-            }}
-          >
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {cargoTypes.map((c, i) => (
               <motion.div
                 key={c.title}
@@ -308,46 +196,15 @@ export default function Solutions() {
                 initial="hidden"
                 whileInView="show"
                 viewport={{ once: true }}
-                style={{
-                  background: "#fff",
-                  border: "1px solid #dce8f7",
-                  borderRadius: "14px",
-                  padding: "1.6rem",
-                }}
+                className="bg-white border border-[#dce8f7] rounded-2xl p-6"
               >
-                <div
-                  style={{
-                    width: "44px",
-                    height: "44px",
-                    borderRadius: "10px",
-                    background: "#e3f2fd",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#1565c0",
-                    marginBottom: "1rem",
-                  }}
-                >
+                <div className="w-11 h-11 rounded-[10px] bg-[#e3f2fd] flex items-center justify-center text-[#1565c0] mb-4">
                   {c.icon}
                 </div>
-                <h4
-                  style={{
-                    fontSize: "13px",
-                    fontWeight: 700,
-                    color: "#0d1b2e",
-                    marginBottom: "0.5rem",
-                  }}
-                >
+                <h4 className="text-[13px] font-bold text-[#0d1b2e] mb-2">
                   {c.title}
                 </h4>
-                <p
-                  style={{
-                    fontSize: "12px",
-                    color: "#5a7599",
-                    lineHeight: 1.7,
-                    fontWeight: 300,
-                  }}
-                >
+                <p className="text-[12px] text-[#5a7599] font-light leading-[1.7]">
                   {c.body}
                 </p>
               </motion.div>
@@ -356,106 +213,41 @@ export default function Solutions() {
         </div>
       </section>
 
-      {/* Auction services */}
-      <section
-        style={{ padding: "5rem 3rem", maxWidth: "1280px", margin: "0 auto" }}
-      >
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "4rem",
-            alignItems: "center",
-          }}
-        >
+      {/* ── Auction Services ── */}
+      <section className="py-20 px-6 sm:px-10 lg:px-16 max-w-screen-xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           <motion.div
             variants={fade}
             initial="hidden"
             whileInView="show"
             viewport={{ once: true }}
           >
-            <div
-              style={{
-                fontSize: "11px",
-                fontWeight: 700,
-                color: "#42a5f5",
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                marginBottom: "0.6rem",
-              }}
-            >
+            <p className="text-[11px] font-bold text-[#42a5f5] tracking-[0.12em] uppercase mb-2">
               Auction Services
-            </div>
-            <h2
-              style={{
-                fontSize: "clamp(1.5rem,3vw,2.2rem)",
-                fontWeight: 700,
-                color: "#0d1b2e",
-                lineHeight: 1.2,
-                marginBottom: "1rem",
-              }}
-            >
+            </p>
+            <h2 className="text-2xl sm:text-3xl lg:text-[2.2rem] font-bold text-[#0d1b2e] leading-tight mb-8">
               Support for auction vehicles from bid to vessel loading.
             </h2>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "1.2rem",
-              }}
-            >
-              {[
-                {
-                  title: "Transport from Auctions",
-                  body: "We pick up vehicles from auction yards and coordinate inland delivery to the nearest port for sea shipment.",
-                },
-                {
-                  title: "Bid & Buy Assistance",
-                  body: "Guidance on paperwork, title readiness, and export procedures so your purchase ships without delays.",
-                },
-              ].map((item) => (
+            <div className="flex flex-col gap-4">
+              {auctionItems.map((item) => (
                 <div
                   key={item.title}
-                  style={{
-                    background: "#f7faff",
-                    border: "1px solid #dce8f7",
-                    borderRadius: "12px",
-                    padding: "1.4rem",
-                  }}
+                  className="bg-[#f7faff] border border-[#dce8f7] rounded-xl p-5"
                 >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      marginBottom: "0.5rem",
-                    }}
-                  >
-                    <Gavel size={16} color="#1565c0" />
-                    <h4
-                      style={{
-                        fontSize: "14px",
-                        fontWeight: 700,
-                        color: "#0d1b2e",
-                      }}
-                    >
+                  <div className="flex items-center gap-2 mb-2">
+                    <Gavel size={16} className="text-[#1565c0] shrink-0" />
+                    <h4 className="text-[14px] font-bold text-[#0d1b2e]">
                       {item.title}
                     </h4>
                   </div>
-                  <p
-                    style={{
-                      fontSize: "13px",
-                      color: "#5a7599",
-                      lineHeight: 1.75,
-                      fontWeight: 300,
-                    }}
-                  >
+                  <p className="text-[13px] text-[#5a7599] font-light leading-[1.75]">
                     {item.body}
                   </p>
                 </div>
               ))}
             </div>
           </motion.div>
+
           <motion.div
             variants={fade}
             custom={1}
@@ -463,68 +255,36 @@ export default function Solutions() {
             whileInView="show"
             viewport={{ once: true }}
           >
-            <div
-              style={{
-                borderRadius: "20px",
-                overflow: "hidden",
-                boxShadow: "0 20px 50px rgba(21,101,192,0.12)",
-              }}
-            >
+            <div className="rounded-[20px] overflow-hidden shadow-[0_20px_50px_rgba(21,101,192,0.12)]">
               <img
                 src="https://i.pinimg.com/webp80/1200x/08/19/bd/0819bd2a262765ebc497725b0721daea.webp"
                 alt="Vehicle auction"
-                style={{
-                  width: "100%",
-                  display: "block",
-                  aspectRatio: "4/3",
-                  objectFit: "cover",
-                }}
+                className="w-full block aspect-[4/3] object-cover"
               />
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Destinations */}
-      <section style={{ padding: "4rem 3rem", background: "#0d1b2e" }}>
-        <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
+      {/* ── Destinations ── */}
+      <section className="py-16 px-6 sm:px-10 lg:px-16 bg-[#0d1b2e]">
+        <div className="max-w-screen-xl mx-auto">
           <motion.div
             variants={fade}
             initial="hidden"
             whileInView="show"
             viewport={{ once: true }}
-            style={{ marginBottom: "2.5rem" }}
+            className="mb-10"
           >
-            <div
-              style={{
-                fontSize: "11px",
-                fontWeight: 700,
-                color: "#42a5f5",
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                marginBottom: "0.6rem",
-              }}
-            >
+            <p className="text-[11px] font-bold text-[#42a5f5] tracking-[0.12em] uppercase mb-2">
               Destinations
-            </div>
-            <h2
-              style={{
-                fontSize: "clamp(1.5rem,3vw,2.2rem)",
-                fontWeight: 700,
-                color: "#fff",
-              }}
-            >
+            </p>
+            <h2 className="text-2xl sm:text-3xl lg:text-[2.2rem] font-bold text-white">
               Focused routes across North America and West Africa.
             </h2>
           </motion.div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(3,1fr)",
-              gap: "1.2rem",
-              marginBottom: "2.5rem",
-            }}
-          >
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
             {destinations.map((d, i) => (
               <motion.div
                 key={d.name}
@@ -533,66 +293,29 @@ export default function Solutions() {
                 initial="hidden"
                 whileInView="show"
                 viewport={{ once: true }}
-                style={{
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  borderRadius: "14px",
-                  padding: "1.6rem",
-                }}
+                className="bg-white/[0.06] border border-white/10 rounded-2xl p-6"
               >
-                <div style={{ fontSize: "28px", marginBottom: "0.8rem" }}>
-                  {d.flag}
-                </div>
-                <h4
-                  style={{
-                    fontSize: "14px",
-                    fontWeight: 700,
-                    color: "#fff",
-                    marginBottom: "0.5rem",
-                  }}
-                >
+                <div className="text-[28px] mb-3">{d.flag}</div>
+                <h4 className="text-[14px] font-bold text-white mb-2">
                   {d.name}
                 </h4>
-                <p
-                  style={{
-                    fontSize: "12px",
-                    color: "rgba(255,255,255,0.55)",
-                    lineHeight: 1.7,
-                    fontWeight: 300,
-                  }}
-                >
+                <p className="text-[12px] text-white/55 font-light leading-[1.7]">
                   {d.body}
                 </p>
               </motion.div>
             ))}
           </div>
-          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+
+          <div className="flex flex-wrap gap-3">
             <Link
               to="/track"
-              style={{
-                fontSize: "13px",
-                color: "#fff",
-                background: "rgba(255,255,255,0.12)",
-                border: "1px solid rgba(255,255,255,0.2)",
-                padding: "11px 22px",
-                borderRadius: "9px",
-                textDecoration: "none",
-                fontWeight: 600,
-              }}
+              className="text-[13px] text-white bg-white/[0.12] border border-white/20 px-5 py-2.5 rounded-[9px] font-semibold hover:bg-white/20 transition no-underline"
             >
               Track Shipment
             </Link>
             <Link
               to="/contact"
-              style={{
-                fontSize: "13px",
-                color: "#0d1b2e",
-                background: "#fff",
-                padding: "11px 22px",
-                borderRadius: "9px",
-                textDecoration: "none",
-                fontWeight: 700,
-              }}
+              className="text-[13px] text-[#0d1b2e] bg-white px-5 py-2.5 rounded-[9px] font-bold hover:bg-blue-50 transition no-underline"
             >
               Speak to an Expert
             </Link>
