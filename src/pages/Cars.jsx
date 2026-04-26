@@ -10,14 +10,13 @@ import {
   query,
   orderBy,
 } from "firebase/firestore";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
   signOut,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
 } from "firebase/auth";
-import { db, storage, auth } from "../lib/firebase";
+import { db, auth } from "../lib/firebase";
 import PageHeader from "../components/PageHeader";
 import {
   Search,
@@ -480,19 +479,33 @@ function AdminDrawer({ open, onClose, user, cars, onRefresh }) {
 
   const uploadImage = () =>
     new Promise((resolve, reject) => {
-      if (!imgFile) return resolve(form.image);
-      const storageRef = ref(storage, `cars/${Date.now()}_${imgFile.name}`);
-      const task = uploadBytesResumable(storageRef, imgFile);
-      task.on(
-        "state_changed",
-        (snap) =>
-          setUploadProgress(
-            Math.round((snap.bytesTransferred / snap.totalBytes) * 100),
-          ),
-        reject,
-        async () => resolve(await getDownloadURL(task.snapshot.ref)),
-      );
-    });
+      if (!imgFile) return resolve(form.image)
+
+      const reader = new FileReader()
+      reader.onerror = () => reject(new Error('Failed to read file'))
+      reader.onload = e => {
+        const xhr = new XMLHttpRequest()
+        xhr.open('POST', '/api/upload')
+        xhr.setRequestHeader('Content-Type', 'application/json')
+        // Track upload progress to our API endpoint
+        xhr.upload.onprogress = ev => {
+          if (ev.lengthComputable)
+            setUploadProgress(Math.round(ev.loaded / ev.total * 100))
+        }
+        xhr.onload = () => {
+          try {
+            const data = JSON.parse(xhr.responseText)
+            if (xhr.status === 200) resolve(data.url)
+            else reject(new Error(data.error || 'Upload failed'))
+          } catch {
+            reject(new Error('Invalid response from upload API'))
+          }
+        }
+        xhr.onerror = () => reject(new Error('Network error during upload'))
+        xhr.send(JSON.stringify({ file: e.target.result, filename: imgFile.name }))
+      }
+      reader.readAsDataURL(imgFile)
+    })
 
   const save = async (e) => {
     e.preventDefault();
