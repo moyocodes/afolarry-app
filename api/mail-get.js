@@ -12,6 +12,9 @@ export default async function handler(req, res) {
     return res.status(403).json({ error: e.message })
   }
 
+  // FIX: validate uid before attempting any IMAP operation
+  if (!uid) return res.status(400).json({ error: 'uid is required' })
+
   const client = mkImap(email, password)
   try {
     await client.connect()
@@ -72,6 +75,7 @@ export default async function handler(req, res) {
         }
       }
 
+      if (!result) return res.status(404).json({ error: 'Message not found' })
       return res.json(result)
     } finally { lock.release() }
   } catch (err) {

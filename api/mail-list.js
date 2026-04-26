@@ -19,7 +19,7 @@ export default async function handler(req, res) {
     const { lock, folder: actualFolder } = await openMailbox(client, rawFolder)
     try {
       if (isStarred) {
-        const uids = await client.search({ flagged: true })
+        const uids = await client.search({ flagged: true }, { uid: true })
         if (!uids.length) return res.json({ emails: [], total: 0, unseen: 0, page: 1 })
 
         const emails = []
@@ -39,16 +39,16 @@ export default async function handler(req, res) {
         return res.json({ emails: emails.reverse(), total: emails.length, unseen: 0, page: 1 })
       }
 
-      // Use client.mailbox.exists instead of STATUS on the selected mailbox
-      // (calling STATUS on the currently selected mailbox violates RFC 3501)
       const total = client.mailbox.exists ?? 0
       const unseen = folder === 'INBOX'
         ? (await client.search({ seen: false })).length
         : 0
 
-      if (total === 0) return res.json({ emails: [], total: 0, unseen: 0, page, folder: actualFolder })
+      if (total === 0) return res.json({ emails: [], total: 0, unseen, page, folder: actualFolder })
 
       const hi = total - (page - 1) * PAGE_SIZE
+      // FIX: guard against hi < 1 (page beyond last message)
+      if (hi < 1) return res.json({ emails: [], total, unseen, page, folder: actualFolder })
       const lo = Math.max(1, hi - PAGE_SIZE + 1)
 
       const emails = []

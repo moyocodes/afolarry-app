@@ -23,13 +23,10 @@ const FOLDER_CREATE_NAME = {
 }
 
 // Opens the best-matching mailbox and returns { lock, folder: actualName }.
-//
-// Namecheap/cPanel Dovecot servers often use the INBOX. namespace prefix so
-// LIST "" "*" only returns INBOX. We therefore scan four patterns to catch
-// every possible layout, then fall back to auto-creating the folder.
 export async function openMailbox(client, folder) {
   // 1. Try direct open with common names (fastest path, no extra round-trip)
   const directNames = {
+    INBOX:  ['INBOX'],                                              // FIX: was missing
     Sent:   ['Sent', 'INBOX.Sent', 'Sent Messages', 'Sent Items'],
     Spam:   ['Junk', 'Spam', 'INBOX.Junk', 'INBOX.Spam', 'Junk Mail'],
     Trash:  ['Trash', 'INBOX.Trash', 'Deleted', 'Deleted Messages'],

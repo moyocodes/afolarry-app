@@ -9,6 +9,9 @@ export default async function handler(req, res) {
     return res.status(403).json({ error: e.message })
   }
 
+  if (!uid)    return res.status(400).json({ error: 'uid is required' })
+  if (!action) return res.status(400).json({ error: 'action is required' })
+
   const client = mkImap(email, password)
   try {
     await client.connect()
@@ -28,12 +31,20 @@ export default async function handler(req, res) {
           await client.messageFlagsRemove({ uid }, ['\\Seen'], { uid: true })
           break
         case 'delete':
-          if (actualFolder.toLowerCase().includes('trash') || actualFolder.toLowerCase().includes('deleted')) {
+          if (/trash|deleted/i.test(actualFolder)) {
+            // Already in trash — permanently delete
             await client.messageDelete({ uid }, { uid: true })
           } else {
-            // Try to move to the real Trash folder, fall back to delete
+            // Move to Trash; fall back to permanent delete if move fails
             try {
-              await client.messageMove({ uid }, 'Trash', { uid: true })
+              const { lock: trashLock, folder: trashFolder } = await openMailbox(
+                // We need the trash path — look it up via openMailbox on a temp client
+                // to avoid re-using the locked client. Instead, attempt move directly.
+                client, 'Trash'
+              )
+              // openMailbox would steal the lock — release first, then move
+              trashLock.release()
+              await client.messageMove({ uid }, trashFolder, { uid: true })
             } catch {
               await client.messageDelete({ uid }, { uid: true })
             }
