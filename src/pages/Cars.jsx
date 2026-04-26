@@ -10,12 +10,7 @@ import {
   query,
   orderBy,
 } from "firebase/firestore";
-import {
-  signOut,
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-} from "firebase/auth";
+import { signOut, onAuthStateChanged } from "firebase/auth";
 import { db, auth } from "../lib/firebase";
 import PageHeader from "../components/PageHeader";
 import {
@@ -77,6 +72,14 @@ function OrderModal({ car, onClose }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Request failed");
+      addDoc(collection(db, "orders"), {
+        ...fields,
+        car_name: car.name,
+        car_price: fmt(car.price),
+        car_type: car.type,
+        status: "new",
+        createdAt: Date.now(),
+      }).catch(() => {});
       setStatus("ok");
       setTimeout(() => {
         setStatus(null);
@@ -195,255 +198,6 @@ function OrderModal({ car, onClose }) {
               A confirmation copy will be sent to your email.
             </p>
           )}
-        </form>
-      </motion.div>
-    </motion.div>
-  );
-}
-
-// ─── Login Modal ──────────────────────────────────────────────────────────────
-function LoginModal({ onClose, onLogin }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [status, setStatus] = useState(null); // null | 'logging' | 'ok' | 'err'
-
-  const login = async (e) => {
-    e.preventDefault();
-    setStatus("logging");
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      setStatus("ok");
-      setTimeout(() => {
-        setStatus(null);
-        onLogin();
-        onClose();
-      }, 1000);
-    } catch (err) {
-      setStatus("err");
-      setTimeout(() => setStatus(null), 3000);
-    }
-  };
-
-  const inp =
-    "bg-white/10 border border-white/15 text-white placeholder:text-white/35 px-3.5 py-2.5 rounded-lg font-[Sora,sans-serif] text-[13px] outline-none w-full focus:border-[#42a5f5] transition";
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-[rgba(13,27,46,0.82)] z-[900] flex items-center justify-center p-4"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <motion.div
-        initial={{ scale: 0.94, y: 20 }}
-        animate={{ scale: 1, y: 0 }}
-        exit={{ scale: 0.94, y: 20 }}
-        className="bg-[#0d1b2e] rounded-[18px] border border-white/10 p-8 w-full max-w-[400px] max-h-[90vh] overflow-y-auto"
-      >
-        {/* Header */}
-        <div className="flex items-start justify-between mb-6">
-          <div>
-            <p className="text-[11px] font-bold text-[#42a5f5] tracking-[0.1em] uppercase mb-1">
-              Admin Login
-            </p>
-            <p className="text-[15px] font-bold text-white">
-              Access Admin Panel
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="bg-white/10 rounded-lg w-9 h-9 flex items-center justify-center text-white hover:bg-white/20 transition shrink-0"
-          >
-            <X size={16} />
-          </button>
-        </div>
-
-        <form onSubmit={login} className="flex flex-col gap-3">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold text-white/40 tracking-[0.1em] uppercase">
-              Email
-            </label>
-            <input
-              type="email"
-              placeholder="admin@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className={inp}
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold text-white/40 tracking-[0.1em] uppercase">
-              Password
-            </label>
-            <input
-              type="password"
-              placeholder="Enter password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className={inp}
-            />
-          </div>
-
-          <motion.button
-            type="submit"
-            disabled={status === "logging" || status === "ok"}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className={`mt-2 flex items-center justify-center gap-2 text-white border-none py-3 rounded-[9px] font-[Sora,sans-serif] text-[13px] font-bold cursor-pointer transition
-              ${status === "ok" ? "bg-[#2e7d32]" : status === "err" ? "bg-[#c62828]" : "bg-[#1e88e5]"}
-              ${status === "logging" || status === "ok" ? "opacity-70 cursor-not-allowed" : ""}`}
-          >
-            {status === "logging" ? (
-              "Logging in…"
-            ) : status === "ok" ? (
-              <>
-                <CheckCircle size={15} /> Logged in!
-              </>
-            ) : status === "err" ? (
-              <>
-                <AlertCircle size={15} /> Invalid credentials
-              </>
-            ) : (
-              "Login"
-            )}
-          </motion.button>
-        </form>
-      </motion.div>
-    </motion.div>
-  );
-}
-
-// ─── Sign Up Modal ──────────────────────────────────────────────────────────────
-function SignUpModal({ onClose, onSignUp }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [status, setStatus] = useState(null); // null | 'signing' | 'ok' | 'err'
-
-  const signUp = async (e) => {
-    e.preventDefault();
-    if (password !== confirmPassword) {
-      setStatus("Passwords do not match");
-      setTimeout(() => setStatus(null), 3000);
-      return;
-    }
-    setStatus("signing");
-    try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      setStatus("ok");
-      setTimeout(() => {
-        setStatus(null);
-        onSignUp();
-        onClose();
-      }, 1000);
-    } catch (err) {
-      setStatus(err.message || "err");
-      setTimeout(() => setStatus(null), 3000);
-    }
-  };
-
-  const inp =
-    "bg-white/10 border border-white/15 text-white placeholder:text-white/35 px-3.5 py-2.5 rounded-lg font-[Sora,sans-serif] text-[13px] outline-none w-full focus:border-[#42a5f5] transition";
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-[rgba(13,27,46,0.82)] z-[900] flex items-center justify-center p-4"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <motion.div
-        initial={{ scale: 0.94, y: 20 }}
-        animate={{ scale: 1, y: 0 }}
-        exit={{ scale: 0.94, y: 20 }}
-        className="bg-[#0d1b2e] rounded-[18px] border border-white/10 p-8 w-full max-w-[400px] max-h-[90vh] overflow-y-auto"
-      >
-        {/* Header */}
-        <div className="flex items-start justify-between mb-6">
-          <div>
-            <p className="text-[11px] font-bold text-[#42a5f5] tracking-[0.1em] uppercase mb-1">
-              Create Account
-            </p>
-            <p className="text-[15px] font-bold text-white">
-              Admin Account Setup
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="bg-white/10 rounded-lg w-9 h-9 flex items-center justify-center text-white hover:bg-white/20 transition shrink-0"
-          >
-            <X size={16} />
-          </button>
-        </div>
-
-        <form onSubmit={signUp} className="flex flex-col gap-3">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold text-white/40 tracking-[0.1em] uppercase">
-              Email
-            </label>
-            <input
-              type="email"
-              placeholder="admin@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className={inp}
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold text-white/40 tracking-[0.1em] uppercase">
-              Password
-            </label>
-            <input
-              type="password"
-              placeholder="Enter password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className={inp}
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold text-white/40 tracking-[0.1em] uppercase">
-              Confirm Password
-            </label>
-            <input
-              type="password"
-              placeholder="Confirm password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              className={inp}
-            />
-          </div>
-
-          <motion.button
-            type="submit"
-            disabled={status === "signing" || status === "ok"}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className={`mt-2 flex items-center justify-center gap-2 text-white border-none py-3 rounded-[9px] font-[Sora,sans-serif] text-[13px] font-bold cursor-pointer transition
-              ${status === "ok" ? "bg-[#2e7d32]" : status && status !== "signing" ? "bg-[#c62828]" : "bg-[#1e88e5]"}
-              ${status === "signing" || status === "ok" ? "opacity-70 cursor-not-allowed" : ""}`}
-          >
-            {status === "signing" ? (
-              "Creating account…"
-            ) : status === "ok" ? (
-              <>
-                <CheckCircle size={15} /> Account created!
-              </>
-            ) : status ? (
-              <>
-                <AlertCircle size={15} /> {status}
-              </>
-            ) : (
-              "Create Account"
-            )}
-          </motion.button>
         </form>
       </motion.div>
     </motion.div>
@@ -891,8 +645,6 @@ export default function Cars() {
   const [page, setPage] = useState(1);
   const [orderCar, setOrderCar] = useState(null);
   const [adminOpen, setAdminOpen] = useState(true);
-  const [loginOpen, setLoginOpen] = useState(false);
-  const [signUpOpen, setSignUpOpen] = useState(false);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => setUser(u));
@@ -942,83 +694,6 @@ export default function Cars() {
         description="Browse in-stock vehicles or place a pre-order for upcoming arrivals."
         image="https://images.unsplash.com/photo-1502877338535-766e1452684a?w=1600&q=80&auto=format&fit=crop"
       />
-
-      {/* Admin Login */}
-      {!user && (
-        <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-2 mx-6 sm:mx-10 lg:mx-12 rounded-lg mb-4">
-          <p className="text-sm">
-            Admin Access:{" "}
-            <button
-              onClick={() => setLoginOpen(true)}
-              className="underline text-blue-600 hover:text-blue-800"
-            >
-              Login
-            </button>{" "}
-            or{" "}
-            <button
-              onClick={() => setSignUpOpen(true)}
-              className="underline text-blue-600 hover:text-blue-800"
-            >
-              Create Account
-            </button>{" "}
-            to manage cars.
-          </p>
-        </div>
-      )}
-
-      {/* Seed Mock Cars for Testing */}
-      {import.meta.env.DEV && user && cars.length === 0 && (
-        <div className="bg-blue-100 border border-blue-300 text-blue-800 px-4 py-2 mx-6 sm:mx-10 lg:mx-12 rounded-lg mb-4">
-          <p className="text-sm">
-            No cars found.{" "}
-            <button
-              onClick={async () => {
-                const mockCars = [
-                  {
-                    name: "Toyota Camry (Used)",
-                    type: "Used Nigeria",
-                    location: "Nigeria (Used)",
-                    price: 8500000,
-                    status: "available",
-                    description: "Reliable sedan in excellent condition.",
-                    createdAt: Date.now(),
-                  },
-                  {
-                    name: "Honda Civic (Tokunbo)",
-                    type: "Tokunbo",
-                    location: "Nigeria (Used)",
-                    price: 6500000,
-                    status: "available",
-                    description: "Fuel-efficient and stylish.",
-                    createdAt: Date.now() - 1000,
-                  },
-                  {
-                    name: "Ford Explorer (Pre-Order)",
-                    type: "Pre-Order",
-                    location: "USA",
-                    price: 15000000,
-                    status: "preorder",
-                    description: "Powerful SUV, arriving soon.",
-                    createdAt: Date.now() - 2000,
-                  },
-                ];
-                try {
-                  for (const car of mockCars) {
-                    await addDoc(collection(db, "cars"), car);
-                  }
-                  load(); // Reload cars
-                } catch (err) {
-                  alert("Failed to seed mock cars: " + err.message);
-                }
-              }}
-              className="underline text-blue-600 hover:text-blue-800"
-            >
-              Seed Mock Cars
-            </button>{" "}
-            for testing.
-          </p>
-        </div>
-      )}
 
       {/* ── Filters ── */}
       <div className="bg-[#f7faff] border-b border-[#dce8f7] px-6 sm:px-10 lg:px-12 py-4">
@@ -1252,15 +927,6 @@ export default function Cars() {
       <AnimatePresence>
         {orderCar && (
           <OrderModal car={orderCar} onClose={() => setOrderCar(null)} />
-        )}
-        {loginOpen && (
-          <LoginModal onClose={() => setLoginOpen(false)} onLogin={() => {}} />
-        )}
-        {signUpOpen && (
-          <SignUpModal
-            onClose={() => setSignUpOpen(false)}
-            onSignUp={() => {}}
-          />
         )}
       </AnimatePresence>
 

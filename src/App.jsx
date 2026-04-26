@@ -17,6 +17,7 @@ import TrackShipment from "./pages/TrackShipment";
 import ContactPage from "./pages/ContactPage";
 import NotFound from "./pages/NotFound";
 import MailDashboard from "./pages/MailDashboard";
+import AdminShield from "./pages/AdminShield";
 
 function ScrollToTop() {
   const { pathname, hash } = useLocation();
@@ -65,7 +66,8 @@ function Layout() {
 
 function AppContent() {
   const { pathname } = useLocation();
-  if (pathname.startsWith("/mail")) return <MailDashboard />;
+  if (pathname.startsWith("/mail"))   return <MailDashboard token={pathname.split('/')[2] || null} />;
+  if (pathname.startsWith("/shield")) return <AdminShield />;
   return <Layout />;
 }
 

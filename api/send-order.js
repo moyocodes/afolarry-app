@@ -1,8 +1,6 @@
 import 'dotenv/config'
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 const FROM   = 'Afolaray Nigeria Limited <noreply@afolaray.com>'
 const ORDERS = 'contact@afolaray.com'
 
@@ -15,6 +13,8 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing required fields' })
 
   const esc = v => String(v || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+  const resend = new Resend(process.env.RESEND_API_KEY)
 
   try {
     await Promise.all([

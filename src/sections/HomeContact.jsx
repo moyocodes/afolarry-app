@@ -1,4 +1,6 @@
 import { useRef, useState } from "react";
+import { addDoc, collection } from "firebase/firestore";
+import { db } from "../lib/firebase";
 import { motion } from "framer-motion";
 import {
   MapPin,
@@ -76,6 +78,15 @@ export default function HomeContact() {
         }),
       });
       if (!res.ok) throw new Error("Failed");
+      addDoc(collection(db, "enquiries"), {
+        from_name: fd.get("from_name"),
+        from_email: fd.get("from_email"),
+        phone: fd.get("phone"),
+        service: fd.get("service"),
+        message: fd.get("message"),
+        status: "new",
+        createdAt: Date.now(),
+      }).catch(() => {});
       setStatus("ok");
       formRef.current.reset();
       setTimeout(() => setStatus(null), 5000);
