@@ -58,7 +58,7 @@ export default async function handler(req, res) {
 
       // ── Notify Afolaray team ──────────────────────────────────────────────
       resend.emails.send({
-        from:    "Afolaray Website <noreply@afolaray.com>",
+        from:    "Afolaray Contact <contact@afolaray.com>",
         to:      ["Yusuffafolabi@gmail.com", "contact@afolaray.com"],
         replyTo: from_email,
         subject: subjectLine,
@@ -79,8 +79,9 @@ export default async function handler(req, res) {
 
       // ── Confirmation to customer ──────────────────────────────────────────
       resend.emails.send({
-        from:    "Afolaray Nigeria Limited <noreply@afolaray.com>",
+        from:    "Afolaray Contact <contact@afolaray.com>",
         to:      from_email,
+        replyTo: ["contact@afolaray.com", "Yusuffafolabi@gmail.com"],
         subject: "We received your message — Afolaray Nigeria Limited",
         html: wrapper(`
           ${header("Message received")}

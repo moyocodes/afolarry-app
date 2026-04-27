@@ -104,12 +104,16 @@ export default function Navbar() {
 
           {/* Actions */}
           <div className="hidden lg:flex items-center gap-2">
-            <Button variant="outline" className="border-blue-800 text-blue-800">
-              Get a Quote
-            </Button>
-            <Button className="bg-blue-800 hover:bg-blue-800 text-white">
-              Track Shipment
-            </Button>
+            <Link to="/#contact">
+              <Button variant="outline" className="border-blue-800 text-blue-800">
+                Get a Quote
+              </Button>
+            </Link>
+            <Link to="/track">
+              <Button className="bg-blue-800 hover:bg-blue-800 text-white">
+                Track Shipment
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile toggle */}
@@ -147,15 +151,19 @@ export default function Navbar() {
                 ))}
 
                 <div className="flex gap-2 mt-3">
-                  <Button className="w-full bg-blue-800 hover:bg-blue-800 text-white">
-                    Get a Quote
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full border-blue-800 text-blue-800"
-                  >
-                    Call Now
-                  </Button>
+                  <Link to="/contact" className="flex-1" onClick={() => setOpen(false)}>
+                    <Button className="w-full bg-blue-800 hover:bg-blue-800 text-white">
+                      Get a Quote
+                    </Button>
+                  </Link>
+                  <a href="tel:+2347033576017" className="flex-1" onClick={() => setOpen(false)}>
+                    <Button
+                      variant="outline"
+                      className="w-full border-blue-800 text-blue-800"
+                    >
+                      Call Now
+                    </Button>
+                  </a>
                 </div>
               </div>
             </motion.div>
