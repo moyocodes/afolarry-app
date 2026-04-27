@@ -12,7 +12,6 @@ const fade = (dir = 0) => ({
 });
 
 const stats = [
-
   { num: "8,500+", label: "Vehicles Delivered" },
   { num: "100%", label: "Client Satisfaction" },
 ];
@@ -21,101 +20,43 @@ export default function HomeAbout() {
   return (
     <section
       id="about"
-      style={{
-        padding: "7rem clamp(1.2rem, 4vw, 3rem)",
-        background: "#fff",
-        scrollMarginTop: "96px",
-      }}
+      className="bg-white py-16 px-4 md:px-8 md:py-28 scroll-mt-24"
     >
-      <div
-        style={{
-          maxWidth: "1280px",
-          margin: "0 auto",
-          display: "grid",
-          gridTemplateColumns:
-            "repeat(auto-fit, minmax(min(100%, 440px), 1fr))",
-          gap: "4rem",
-          alignItems: "center",
-        }}
-      >
-        {/* Text column */}
+      <div className="max-w-6xl mx-auto grid gap-12 md:grid-cols-[1.1fr_0.9fr] items-center">
+        {/* TEXT */}
         <motion.div
-          className="about-text-column"
+          className="order-2 md:order-1"
           variants={fade(-1)}
           initial="hidden"
           whileInView="show"
           viewport={{ once: true, margin: "-80px" }}
         >
-          <div
-            style={{
-              fontFamily: "'Sora',sans-serif",
-              fontSize: "11px",
-              fontWeight: 700,
-              color: "#42a5f5",
-              letterSpacing: "0.15em",
-              textTransform: "uppercase",
-              marginBottom: "0.8rem",
-            }}
-          >
+          <p className="text-[10px] font-bold tracking-[0.15em] text-blue-400 uppercase mb-2">
             Who We Are
-          </div>
-          <h2
-            style={{
-              fontFamily: "'Sora',sans-serif",
-              fontSize: "clamp(1.8rem,3.5vw,2.6rem)",
-              fontWeight: 800,
-              color: "#0d1b2e",
-              lineHeight: 1.1,
-              letterSpacing: "-0.025em",
-              marginBottom: "1.4rem",
-            }}
-          >
+          </p>
+
+          <h2 className="font-extrabold text-[1.8rem] md:text-[2.6rem] leading-tight tracking-tight text-[#0d1b2e] mb-5">
             About Afolaray
             <br />
             Nigeria Limited
           </h2>
-          <p
-            style={{
-              fontFamily: "'Sora',sans-serif",
-              fontSize: "15px",
-              color: "#5a7599",
-              lineHeight: 1.9,
-              fontWeight: 300,
-              marginBottom: "1rem",
-            }}
-          >
+
+          <p className="text-[14px] md:text-[15px] text-[#5a7599] leading-relaxed md:leading-loose mb-3">
             Afolaray Nigeria Limited is a premier vehicle import company
             dedicated to simplifying the global vehicle trade. With over a
             decade of experience, we have established ourselves as a trusted
             partner for individuals and dealerships looking to move vehicles
             across borders.
           </p>
-          <p
-            style={{
-              fontFamily: "'Sora',sans-serif",
-              fontSize: "15px",
-              color: "#5a7599",
-              lineHeight: 1.9,
-              fontWeight: 300,
-            }}
-          >
+
+          <p className="text-[14px] md:text-[15px] text-[#5a7599] leading-relaxed md:leading-loose">
             Our mission is to provide transparent, efficient, and secure
             logistics solutions — from procurement and customs clearance to
             final delivery — ensuring complete peace of mind for our clients.
           </p>
 
-          {/* Stats row */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-              // gap: "4rem",
-              marginTop: "2rem",
-              paddingTop: "2rem",
-              paddingBottom: "0.5rem",
-              borderTop: "1px solid #dce8f7",
-            }}
-          >
+          {/* STATS */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-6 md:gap-10 mt-8 pt-6 border-t border-blue-100">
             {stats.map((s, i) => (
               <motion.div
                 key={s.label}
@@ -125,181 +66,83 @@ export default function HomeAbout() {
                 transition={{ delay: 0.2 + i * 0.1, duration: 0.5 }}
               >
                 <div
-                  style={{
-                    fontFamily: "'Sora',sans-serif",
-                    fontSize: s.num === "100%" ? "2.5rem" : "2rem",
-                    fontWeight: 800,
-                    color: s.num === "100%" ? "#1565c0" : "#0d1b2e",
-                    lineHeight: 1,
-                    letterSpacing: "-0.03em",
-                    marginBottom: "0.4rem",
-                  }}
+                  className={`font-extrabold leading-none tracking-tight mb-1 
+                  ${s.num === "100%" ? "text-blue-700 text-3xl md:text-[2.5rem]" : "text-[#0d1b2e] text-2xl md:text-[2rem]"}`}
                 >
                   {s.num}
                 </div>
-                <div
-                  style={{
-                    fontFamily: "'Sora',sans-serif",
-                    fontSize: "12px",
-                    color: s.num === "100%" ? "#1565c0" : "#5a7599",
-                    fontWeight: 500,
-                    lineHeight: 1.5,
-                  }}
+
+                <p
+                  className={`text-[11px] md:text-[12px] leading-snug font-medium
+                  ${s.num === "100%" ? "text-blue-700" : "text-[#5a7599]"}`}
                 >
                   {s.label}
-                </div>
+                </p>
               </motion.div>
             ))}
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              gap: "12px",
-              flexWrap: "wrap",
-              marginTop: "2rem",
-            }}
-          >
+          {/* BUTTONS */}
+          <div className="flex flex-wrap gap-3 mt-8">
             <Link
               to="/#services"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "#1565c0",
-                color: "#fff",
-                padding: "12px 22px",
-                borderRadius: "10px",
-                textDecoration: "none",
-                fontFamily: "'Sora',sans-serif",
-                fontSize: "13px",
-                fontWeight: 700,
-              }}
+              className="inline-flex items-center justify-center bg-blue-700 text-white px-5 py-3 rounded-lg text-[13px] font-bold"
             >
               Explore Services
             </Link>
+
             <Link
               to="/#contact"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "#f0f7ff",
-                color: "#1565c0",
-                border: "1px solid #dce8f7",
-                padding: "12px 22px",
-                borderRadius: "10px",
-                textDecoration: "none",
-                fontFamily: "'Sora',sans-serif",
-                fontSize: "13px",
-                fontWeight: 700,
-              }}
+              className="inline-flex items-center justify-center bg-blue-50 text-blue-700 border border-blue-100 px-5 py-3 rounded-lg text-[13px] font-bold"
             >
               Get a Quote
             </Link>
           </div>
         </motion.div>
 
-        {/* Image column */}
+        {/* IMAGE */}
         <motion.div
-          className="about-image-column"
+          className="order-1 md:order-2 relative pl-4 pb-6 md:pl-6 md:pb-8"
           variants={fade(1)}
           initial="hidden"
           whileInView="show"
           viewport={{ once: true, margin: "-80px" }}
-          style={{
-            position: "relative",
-            paddingBottom: "28px",
-            paddingLeft: "24px",
-          }}
         >
           <motion.div
             whileHover={{ scale: 1.02 }}
             transition={{ duration: 0.5 }}
-            style={{
-              borderRadius: "20px",
-              overflow: "hidden",
-              aspectRatio: "4/3",
-              boxShadow: "0 30px 80px rgba(21,101,192,0.16)",
-            }}
+            className="rounded-2xl overflow-hidden aspect-[4/3] shadow-[0_30px_80px_rgba(21,101,192,0.16)]"
           >
             <img
               src="https://afolary-limited-5d4i.vercel.app/assets/Afolary-image-DbVIOQKx.jpg"
               alt="Afolaray Nigeria Limited operations"
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                display: "block",
-              }}
+              className="w-full h-full object-cover"
             />
-            <div
-              style={{
-                position: "absolute",
-                bottom: 28,
-                left: 24,
-                right: 0,
-                padding: "1.2rem 1.5rem",
-                background:
-                  "linear-gradient(to top, rgba(4,14,30,0.72) 0%, transparent 100%)",
-                borderRadius: "0 0 20px 20px",
-              }}
-            >
-              <div
-                style={{
-                  fontFamily: "'Sora',sans-serif",
-                  fontSize: "11px",
-                  color: "rgba(255,255,255,0.65)",
-                  fontWeight: 400,
-                  letterSpacing: "0.05em",
-                }}
-              >
+
+            {/* overlay */}
+            <div className="absolute bottom-6 left-4 right-0 px-5 py-4 bg-gradient-to-t from-[rgba(4,14,30,0.72)] to-transparent rounded-b-2xl">
+              <p className="text-[10px] md:text-[11px] text-white/70">
                 Afolaray Nigeria Limited · Lagos operations
-              </div>
+              </p>
             </div>
           </motion.div>
 
-          {/* Floating stat card */}
+          {/* FLOATING CARD */}
           <motion.div
             initial={{ opacity: 0, scale: 0.85 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ delay: 0.45, duration: 0.6 }}
-            style={{
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              background: "#1565c0",
-              color: "#fff",
-              borderRadius: "14px",
-              padding: "1.2rem 1.4rem",
-              boxShadow: "0 16px 40px rgba(21,101,192,0.35)",
-            }}
+            className="absolute bottom-0 left-0 bg-blue-700 text-white rounded-xl px-5 py-4 shadow-[0_16px_40px_rgba(21,101,192,0.35)]"
           >
-            <div
-              style={{
-                fontFamily: "'Sora',sans-serif",
-                fontSize: "2rem",
-                fontWeight: 800,
-                lineHeight: 1,
-              }}
-            >
+            <div className="text-2xl md:text-[2rem] font-extrabold leading-none">
               12+
             </div>
-            <div
-              style={{
-                fontFamily: "'Sora',sans-serif",
-                fontSize: "11px",
-                fontWeight: 400,
-                opacity: 0.85,
-                marginTop: "3px",
-                lineHeight: 1.4,
-              }}
-            >
+            <p className="text-[10px] md:text-[11px] opacity-80 leading-snug mt-1">
               Years of
               <br />
               experience
-            </div>
+            </p>
           </motion.div>
         </motion.div>
       </div>
