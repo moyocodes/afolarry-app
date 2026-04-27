@@ -645,6 +645,7 @@ export default function Cars() {
   const [user, setUser] = useState(null);
   const [cars, setCars] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [filterType, setFilterType] = useState("All");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
@@ -660,13 +661,14 @@ export default function Cars() {
 
   const load = async () => {
     setLoading(true);
+    setFetchError(false);
     try {
       const snap = await getDocs(
         query(collection(db, "cars"), orderBy("createdAt", "desc")),
       );
       setCars(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
     } catch {
-      setCars([]);
+      setFetchError(true);
     } finally {
       setLoading(false);
     }
@@ -795,9 +797,39 @@ export default function Cars() {
       {/* ── Grid ── */}
       <section className="py-12 px-6 sm:px-10 lg:px-12 max-w-screen-xl mx-auto">
         {loading ? (
-          <p className="text-center py-16 text-[#5a7599] text-[14px]">
-            Loading cars…
-          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div
+                key={i}
+                className="bg-white border border-[#dce8f7] rounded-2xl overflow-hidden shadow-[0_2px_12px_rgba(21,101,192,0.05)] animate-pulse"
+              >
+                <div className="aspect-[16/10] bg-[#e8f0fb]" />
+                <div className="p-5 flex flex-col gap-3">
+                  <div className="h-4 bg-[#e8f0fb] rounded-md w-3/4" />
+                  <div className="h-3 bg-[#e8f0fb] rounded-md w-1/2" />
+                  <div className="h-3 bg-[#e8f0fb] rounded-md w-2/5" />
+                  <div className="h-5 bg-[#e8f0fb] rounded-md w-1/3 mt-1" />
+                  <div className="h-9 bg-[#e8f0fb] rounded-[9px] mt-1" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : fetchError ? (
+          <div className="text-center py-20 px-4">
+            <div className="text-5xl mb-4">📡</div>
+            <p className="text-[18px] font-bold text-[#0d1b2e] mb-2">
+              Could not load cars
+            </p>
+            <p className="text-[14px] text-[#5a7599] font-light max-w-[380px] mx-auto mb-6">
+              Check your internet connection and try again.
+            </p>
+            <button
+              onClick={load}
+              className="bg-[#1565c0] hover:bg-[#1255a8] text-white border-none px-6 py-2.5 rounded-[9px] font-[Sora,sans-serif] text-[13px] font-bold cursor-pointer transition"
+            >
+              Retry
+            </button>
+          </div>
         ) : cars.length === 0 ? (
           <div className="text-center py-20 px-4">
             <div className="text-5xl mb-4">🚗</div>
