@@ -36,10 +36,10 @@ const fmt = (n) =>
 
 const BLANK_FORM = {
   name: "",
-  type: "Used Nigeria",
+  type: "Luxury/Supercars",
   location: "Nigeria",
   price: "",
-  status: "available",
+  status: "preorder",
   image: "",
   description: "",
 };
@@ -939,25 +939,59 @@ export default function Cars() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-3 mt-12">
+          <div className="flex items-center justify-center gap-1.5 mt-12 flex-wrap">
+            {/* Prev */}
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className={`flex items-center border border-[#dce8f7] rounded-lg px-3.5 py-2 text-[#1565c0] transition
-                ${page === 1 ? "bg-[#f7faff] opacity-40 cursor-not-allowed" : "bg-[#e3f2fd] hover:bg-[#bbdefb] cursor-pointer"}`}
+              className={`flex items-center gap-1 border border-[#dce8f7] rounded-lg px-3 py-2 text-[12px] font-semibold font-[Sora,sans-serif] transition
+                ${page === 1 ? "bg-[#f7faff] text-[#b0c4de] cursor-not-allowed" : "bg-white text-[#1565c0] hover:bg-[#e3f2fd] cursor-pointer"}`}
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={14} /> Prev
             </button>
-            <span className="text-[13px] text-[#5a7599] font-medium">
-              Page {page} of {totalPages}
-            </span>
+
+            {/* Page numbers */}
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter((n) => {
+                if (totalPages <= 7) return true;
+                if (n === 1 || n === totalPages) return true;
+                if (Math.abs(n - page) <= 2) return true;
+                return false;
+              })
+              .reduce((acc, n, idx, arr) => {
+                if (idx > 0 && n - arr[idx - 1] > 1)
+                  acc.push("…" + n);
+                acc.push(n);
+                return acc;
+              }, [])
+              .map((n, idx) =>
+                typeof n === "string" ? (
+                  <span
+                    key={n + idx}
+                    className="px-2 py-2 text-[12px] text-[#5a7599] select-none"
+                  >
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={n}
+                    onClick={() => setPage(n)}
+                    className={`w-9 h-9 rounded-lg border text-[12px] font-semibold font-[Sora,sans-serif] transition
+                      ${page === n ? "bg-[#1565c0] border-[#1565c0] text-white cursor-default" : "bg-white border-[#dce8f7] text-[#1565c0] hover:bg-[#e3f2fd] cursor-pointer"}`}
+                  >
+                    {n}
+                  </button>
+                )
+              )}
+
+            {/* Next */}
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className={`flex items-center border border-[#dce8f7] rounded-lg px-3.5 py-2 text-[#1565c0] transition
-                ${page === totalPages ? "bg-[#f7faff] opacity-40 cursor-not-allowed" : "bg-[#e3f2fd] hover:bg-[#bbdefb] cursor-pointer"}`}
+              className={`flex items-center gap-1 border border-[#dce8f7] rounded-lg px-3 py-2 text-[12px] font-semibold font-[Sora,sans-serif] transition
+                ${page === totalPages ? "bg-[#f7faff] text-[#b0c4de] cursor-not-allowed" : "bg-white text-[#1565c0] hover:bg-[#e3f2fd] cursor-pointer"}`}
             >
-              <ChevronRight size={16} />
+              Next <ChevronRight size={14} />
             </button>
           </div>
         )}
