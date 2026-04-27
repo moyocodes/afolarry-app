@@ -1,4 +1,6 @@
 import { useRef, useState } from "react";
+import { addDoc, collection } from "firebase/firestore";
+import { db } from "../lib/firebase";
 import { motion } from "framer-motion";
 import { MapPin, Phone, Mail, CheckCircle, AlertCircle } from "lucide-react";
 import WaFab from "../components/WaFab";
@@ -49,6 +51,15 @@ export default function ContactPage() {
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error("Failed to send");
+      addDoc(collection(db, "enquiries"), {
+        from_name: payload.from_name,
+        from_email: payload.from_email,
+        phone: payload.phone,
+        service: payload.service,
+        message: payload.message,
+        status: "new",
+        createdAt: Date.now(),
+      }).catch(() => {});
       setStatus("ok");
       formRef.current.reset();
       setTimeout(() => setStatus(null), 5000);
