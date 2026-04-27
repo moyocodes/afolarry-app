@@ -532,6 +532,7 @@ function AdminDrawer({ open, onClose, user, cars, onRefresh }) {
                     >
                       <option value="available">Available Now</option>
                       <option value="preorder">Pre-Order</option>
+                      <option value="sold">Sold</option>
                     </select>
                   </div>
 
@@ -839,9 +840,19 @@ export default function Cars() {
                   {/* Status badge */}
                   <div
                     className={`absolute top-2.5 left-2.5 text-white text-[9px] font-bold px-2.5 py-0.5 rounded-full tracking-[0.06em]
-                    ${car.status === "available" ? "bg-[#2e7d32]" : "bg-[#e65100]"}`}
+    ${
+      car.status === "available"
+        ? "bg-[#2e7d32]"
+        : car.status === "sold"
+          ? "bg-[#616161]"
+          : "bg-[#e65100]"
+    }`}
                   >
-                    {car.status === "available" ? "Available Now" : "Pre-Order"}
+                    {car.status === "available"
+                      ? "Available Now"
+                      : car.status === "sold"
+                        ? "Sold"
+                        : "Pre-Order"}
                   </div>
                   {/* ✅ Admin quick-edit: opens drawer and navigates to edit form */}
                   {user && (
@@ -875,12 +886,18 @@ export default function Cars() {
                     {fmt(car.price)}
                   </p>
                   <motion.button
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => setOrderCar(car)}
-                    className="w-full bg-[#1565c0] hover:bg-[#1255a8] text-white border-none py-2.5 rounded-[9px] font-[Sora,sans-serif] text-[13px] font-bold cursor-pointer transition"
+                    onClick={() => car.status !== "sold" && setOrderCar(car)}
+                    disabled={car.status === "sold"}
+                    className={`w-full border-none py-2.5 rounded-[9px] font-[Sora,sans-serif] text-[13px] font-bold transition
+    ${
+      car.status === "sold"
+        ? "bg-[#e0e0e0] text-[#9e9e9e] cursor-not-allowed"
+        : "bg-[#1565c0] hover:bg-[#1255a8] text-white cursor-pointer"
+    }`}
                   >
-                    Pre-Order This Car
+                    {car.status === "sold"
+                      ? "Unavailable"
+                      : "Pre-Order This Car"}
                   </motion.button>
                 </div>
               </motion.div>
