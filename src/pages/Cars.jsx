@@ -876,7 +876,7 @@ export default function Cars() {
       car.status === "available"
         ? "bg-[#2e7d32]"
         : car.status === "sold"
-          ? "bg-[#616161]"
+          ? "bg-[#c62828]"
           : "bg-[#e65100]"
     }`}
                   >
