@@ -37,7 +37,7 @@ const fmt = (n) =>
 const BLANK_FORM = {
   name: "",
   type: "Used Nigeria",
-  location: "Nigeria (Used)",
+  location: "Nigeria",
   price: "",
   status: "available",
   image: "",
@@ -483,7 +483,7 @@ function AdminDrawer({ open, onClose, user, cars, onRefresh }) {
                       key: "location",
                       label: "Location",
                       type: "text",
-                      placeholder: "Nigeria (Used)",
+                      placeholder: "Nigeria ",
                     },
                   ].map((f) => (
                     <div key={f.key} className="flex flex-col gap-1">
@@ -503,18 +503,15 @@ function AdminDrawer({ open, onClose, user, cars, onRefresh }) {
 
                   <div className="flex flex-col gap-1">
                     <label className={lbl}>Type</label>
-                    <select
+                    <input
+                      type="text"
                       value={form.type}
                       onChange={(e) =>
                         setForm((p) => ({ ...p, type: e.target.value }))
                       }
+                      placeholder="e.g. Used Nigeria, Tokunbo, New..."
                       className={inp}
-                    >
-                      <option>Used Nigeria</option>
-                      <option>Tokunbo</option>
-                      <option>Pre-Order</option>
-                      <option>New</option>
-                    </select>
+                    />
                   </div>
 
                   <div className="flex flex-col gap-1">
