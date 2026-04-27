@@ -42,7 +42,54 @@ const BLANK_FORM = {
   status: "preorder",
   image: "",
   description: "",
+  preorderEnds: "",
 };
+
+// ─── Countdown ────────────────────────────────────────────────────────────────
+function Countdown({ endsAt }) {
+  const calc = () => {
+    const diff = endsAt - Date.now();
+    if (diff <= 0) return null;
+    return {
+      d: Math.floor(diff / 86400000),
+      h: Math.floor((diff % 86400000) / 3600000),
+      m: Math.floor((diff % 3600000) / 60000),
+      s: Math.floor((diff % 60000) / 1000),
+    };
+  };
+
+  const [t, setT] = useState(calc);
+
+  useEffect(() => {
+    const id = setInterval(() => setT(calc()), 1000);
+    return () => clearInterval(id);
+  }, [endsAt]);
+
+  if (!t) return null;
+
+  const pad = (n) => String(n).padStart(2, "0");
+
+  return (
+    <div className="mb-3 bg-[#fff8f0] border border-[#ffe0b2] rounded-xl px-3 py-2.5">
+      <p className="text-[9px] font-bold text-[#e65100] tracking-[0.1em] uppercase mb-1.5">
+        Pre-order ends in
+      </p>
+      <div className="flex gap-2">
+        {[
+          { v: t.d, l: "Days" },
+          { v: t.h, l: "Hrs" },
+          { v: t.m, l: "Min" },
+          { v: t.s, l: "Sec" },
+        ].map(({ v, l }) => (
+          <div key={l} className="flex-1 text-center bg-white rounded-lg py-1.5 border border-[#ffe0b2]">
+            <p className="text-[15px] font-bold text-[#0d1b2e] leading-none">{pad(v)}</p>
+            <p className="text-[9px] text-[#e65100] font-semibold mt-0.5">{l}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // ─── Order Modal ──────────────────────────────────────────────────────────────
 function OrderModal({ car, onClose }) {
@@ -270,7 +317,12 @@ function AdminDrawer({ open, onClose, user, cars, onRefresh }) {
     setUploadProgress(null);
     try {
       const imageUrl = await uploadImage();
-      const data = { ...form, price: Number(form.price), image: imageUrl };
+      const data = {
+        ...form,
+        price: Number(form.price),
+        image: imageUrl,
+        preorderEnds: form.preorderEnds ? new Date(form.preorderEnds).getTime() : null,
+      };
       if (editId) {
         await updateDoc(doc(db, "cars", editId), data);
       } else {
@@ -300,6 +352,9 @@ function AdminDrawer({ open, onClose, user, cars, onRefresh }) {
       status: car.status,
       image: car.image || "",
       description: car.description || "",
+      preorderEnds: car.preorderEnds
+        ? new Date(car.preorderEnds).toISOString().slice(0, 16)
+        : "",
     });
     setEditId(car.id);
     setImgFile(null);
@@ -534,6 +589,32 @@ function AdminDrawer({ open, onClose, user, cars, onRefresh }) {
                       <option value="preorder">Pre-Order</option>
                       <option value="sold">Sold</option>
                     </select>
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className={lbl}>Pre-order Ends (optional)</label>
+                    <div className="flex gap-2 items-center">
+                      <input
+                        type="datetime-local"
+                        value={form.preorderEnds}
+                        onChange={(e) =>
+                          setForm((p) => ({ ...p, preorderEnds: e.target.value }))
+                        }
+                        className={`${inp} flex-1`}
+                      />
+                      {form.preorderEnds && (
+                        <button
+                          type="button"
+                          onClick={() => setForm((p) => ({ ...p, preorderEnds: "" }))}
+                          className="bg-[#ffebee] hover:bg-[#ffcdd2] border-none rounded-lg p-2 cursor-pointer text-[#c62828] flex shrink-0 transition"
+                        >
+                          <X size={14} />
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-[#5a7599]">
+                      Leave blank for no countdown.
+                    </p>
                   </div>
 
                   {/* Image */}
@@ -914,6 +995,7 @@ export default function Cars() {
                       {car.description}
                     </p>
                   )}
+                  {car.preorderEnds && <Countdown endsAt={car.preorderEnds} />}
                   <p className="text-[17px] font-bold text-[#1565c0] mb-4">
                     {fmt(car.price)}
                   </p>
