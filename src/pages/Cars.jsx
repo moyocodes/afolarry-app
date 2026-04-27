@@ -431,12 +431,19 @@ function AdminDrawer({ open, onClose, user, cars, onRefresh }) {
                           {fmt(car.price)}
                         </p>
                         <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full
-                          ${car.status === "available" ? "bg-[#e8f5e9] text-[#2e7d32]" : "bg-[#fff3e0] text-[#e65100]"}`}
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            car.status === "available"
+                              ? "bg-[#e8f5e9] text-[#2e7d32]"
+                              : car.status === "sold"
+                                ? "bg-[#f5f5f5] text-[#616161]"
+                                : "bg-[#fff3e0] text-[#e65100]"
+                          }`}
                         >
                           {car.status === "available"
                             ? "Available"
-                            : "Pre-Order"}
+                            : car.status === "sold"
+                              ? "Sold"
+                              : "Pre-Order"}
                         </span>
                       </div>
                       <div className="flex gap-1.5 shrink-0">
