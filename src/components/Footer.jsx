@@ -254,9 +254,20 @@ export default function Footer() {
           <p style={{ fontSize: "11px", color: "#9ab2cc", fontWeight: 300 }}>
             © 2025 Afolaray Nigeria Limited · All rights reserved.
           </p>
-          <p style={{ fontSize: "11px", color: "#9ab2cc", fontWeight: 300 }}>
-            Lagos, Nigeria · +234 703 357 6017
-          </p>
+          <div style={{ display: "flex", gap: "1rem", alignItems: "center", flexWrap: "wrap" }}>
+            <Link
+              to="/terms"
+              style={{ fontSize: "11px", color: "#9ab2cc", fontWeight: 300, textDecoration: "none" }}
+            >
+              Terms &amp; Conditions
+            </Link>
+            <Link
+              to="/privacy"
+              style={{ fontSize: "11px", color: "#9ab2cc", fontWeight: 300, textDecoration: "none" }}
+            >
+              Privacy Policy
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

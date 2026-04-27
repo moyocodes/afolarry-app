@@ -1,7 +1,7 @@
 import { Resend } from "resend";
 
 const FROM = "Afolaray Nigeria Limited <noreply@afolaray.com>";
-const ORDERS = "contact@afolaray.com";
+const ORDERS = ["Yusuffafolabi@gmail.com", "contact@afolaray.com"];
 
 export default async function handler(req, res) {
   if (req.method !== "POST")

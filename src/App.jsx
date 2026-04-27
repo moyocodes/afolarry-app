@@ -18,6 +18,8 @@ import ContactPage from "./pages/ContactPage";
 import NotFound from "./pages/NotFound";
 import MailDashboard from "./pages/MailDashboard";
 import AdminShield from "./pages/AdminShield";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 
 function ScrollToTop() {
   const { pathname, hash } = useLocation();
@@ -55,6 +57,8 @@ function Layout() {
           <Route path="/cars" element={<Cars />} />
           <Route path="/track" element={<TrackShipment />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

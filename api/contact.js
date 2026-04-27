@@ -59,7 +59,7 @@ export default async function handler(req, res) {
       // ── Notify Afolaray team ──────────────────────────────────────────────
       resend.emails.send({
         from:    "Afolaray Website <noreply@afolaray.com>",
-        to:      "contact@afolaray.com",
+        to:      ["Yusuffafolabi@gmail.com", "contact@afolaray.com"],
         replyTo: from_email,
         subject: subjectLine,
         html: wrapper(`
