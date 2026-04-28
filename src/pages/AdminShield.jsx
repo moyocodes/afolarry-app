@@ -4,20 +4,19 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   onAuthStateChanged,
-  signOut,
+  sendPasswordResetEmail,
 } from 'firebase/auth'
-import { auth } from '../lib/firebase'
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { auth, db } from '../lib/firebase'
 import {
   ShieldCheck,
-  LogOut,
   CheckCircle,
   AlertCircle,
-  Car,
-  Ship,
   Lock,
   UserPlus,
   Eye,
   EyeOff,
+  Home,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
@@ -37,26 +36,39 @@ const placeholderStyle = `
 `
 
 export default function AdminShield() {
-  const [user, setUser]       = useState(undefined) // undefined = loading
-  const [mode, setMode]       = useState('login')   // 'login' | 'signup'
-  const [email, setEmail]     = useState('')
+  const [loading, setLoading]   = useState(true)
+  const [mode, setMode]         = useState('login')
+  const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
-  const [confirm, setConfirm] = useState('')
-  const [status, setStatus]     = useState(null)      // null | 'working' | 'ok' | string(err)
-  const [showPass, setShowPass] = useState(false)
-  const [showConf, setShowConf] = useState(false)
-  const navigate                = useNavigate()
+  const [confirm, setConfirm]   = useState('')
+  const [status, setStatus]           = useState(null)
+  const [showPass, setShowPass]       = useState(false)
+  const [showConf, setShowConf]       = useState(false)
+  const [resetStatus, setResetStatus] = useState(null)
+  const navigate                      = useNavigate()
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, u => setUser(u ?? null))
+    const unsub = onAuthStateChanged(auth, u => {
+      setLoading(false)
+      if (u) navigate('/admin', { replace: true })
+    })
     return unsub
   }, [])
 
-  const reset = () => {
-    setEmail('')
-    setPassword('')
-    setConfirm('')
-    setStatus(null)
+  const reset = () => { setEmail(''); setPassword(''); setConfirm(''); setStatus(null) }
+
+  const sendReset = async () => {
+    const e = email.trim()
+    if (!e) { setResetStatus('no-email'); setTimeout(() => setResetStatus(null), 3000); return }
+    setResetStatus('sending')
+    try {
+      await sendPasswordResetEmail(auth, e)
+      setResetStatus('sent')
+      setTimeout(() => setResetStatus(null), 5000)
+    } catch {
+      setResetStatus('error')
+      setTimeout(() => setResetStatus(null), 4000)
+    }
   }
 
   const submit = async e => {
@@ -67,142 +79,34 @@ export default function AdminShield() {
     }
     setStatus('working')
     try {
-      if (mode === 'login') {
-        await signInWithEmailAndPassword(auth, email, password)
-      } else {
-        await createUserWithEmailAndPassword(auth, email, password)
-      }
+      const cred = mode === 'login'
+        ? await signInWithEmailAndPassword(auth, email, password)
+        : await createUserWithEmailAndPassword(auth, email, password)
+
+      // Mirror user to Firestore so admin dashboard can list users
+      await setDoc(doc(db, 'adminUsers', cred.user.uid), {
+        uid: cred.user.uid,
+        email: cred.user.email,
+        lastLogin: serverTimestamp(),
+        isAdmin: true,
+        ...(mode === 'signup' ? { createdAt: serverTimestamp(), role: 'admin' } : {}),
+      }, { merge: true })
+
       setStatus('ok')
+      // auth listener handles navigation to /admin
     } catch (err) {
       setStatus(err.message || 'Authentication failed')
       setTimeout(() => setStatus(null), 4000)
     }
   }
 
-  const logout = async () => {
-    await signOut(auth).catch(() => {})
-    reset()
-  }
+  if (loading) return (
+    <div style={{ ...S, minHeight: '100dvh', background: '#060e1a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: 32, height: 32, border: '3px solid rgba(255,255,255,0.15)', borderTopColor: '#42a5f5', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+    </div>
+  )
 
-  // Still loading Firebase auth state
-  if (user === undefined) {
-    return (
-      <div style={{ ...S, minHeight: '100dvh', background: '#060e1a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ width: 32, height: 32, border: '3px solid rgba(255,255,255,0.15)', borderTopColor: '#42a5f5', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
-      </div>
-    )
-  }
-
-  // ── Logged in ──────────────────────────────────────────────────────────────
-  if (user) {
-    return (
-      <div
-        style={{
-          ...S,
-          minHeight: '100dvh',
-          background: 'radial-gradient(ellipse at 50% 30%, #0d2a50 0%, #060e1a 70%)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '2rem',
-        }}
-      >
-        {/* Glow */}
-        <div style={{ position: 'fixed', top: '20%', left: '50%', transform: 'translateX(-50%)', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(21,101,192,0.18) 0%, transparent 70%)', pointerEvents: 'none' }} />
-
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', stiffness: 280, damping: 22 }}
-          style={{ textAlign: 'center', maxWidth: 400, width: '100%' }}
-        >
-          {/* Shield icon */}
-          <motion.div
-            initial={{ y: -10 }}
-            animate={{ y: [0, -8, 0] }}
-            transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 100,
-              height: 100,
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #1565c0 0%, #0d47a1 100%)',
-              boxShadow: '0 0 60px rgba(21,101,192,0.5), 0 0 120px rgba(21,101,192,0.2)',
-              marginBottom: 28,
-            }}
-          >
-            <ShieldCheck size={48} color="#fff" strokeWidth={1.5} />
-          </motion.div>
-
-          <p style={{ fontSize: 11, fontWeight: 700, color: '#42a5f5', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>
-            Admin Access
-          </p>
-          <h1 style={{ fontSize: 26, fontWeight: 700, color: '#fff', margin: '0 0 6px' }}>
-            You're in
-          </h1>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: 36 }}>
-            {user.email}
-          </p>
-
-          {/* Actions */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => navigate('/cars')}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                background: 'linear-gradient(135deg, #1565c0 0%, #1255a8 100%)',
-                color: '#fff', border: 'none', borderRadius: 14, padding: '14px 24px',
-                fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'Sora,sans-serif',
-                boxShadow: '0 4px 20px rgba(21,101,192,0.35)',
-              }}
-            >
-              <Car size={18} />
-              Manage Cars
-            </motion.button>
-
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => navigate('/shipments')}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                background: 'linear-gradient(135deg, #0d47a1 0%, #0a3880 100%)',
-                color: '#fff', border: 'none', borderRadius: 14, padding: '14px 24px',
-                fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'Sora,sans-serif',
-                boxShadow: '0 4px 20px rgba(13,71,161,0.35)',
-              }}
-            >
-              <Ship size={18} />
-              Manage Shipments
-            </motion.button>
-
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={logout}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-                color: 'rgba(255,255,255,0.6)', borderRadius: 14, padding: '14px 24px',
-                fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'Sora,sans-serif',
-              }}
-            >
-              <LogOut size={16} />
-              Sign Out
-            </motion.button>
-          </div>
-        </motion.div>
-      </div>
-    )
-  }
-
-  // ── Auth form ──────────────────────────────────────────────────────────────
   return (
     <div
       style={{
@@ -217,6 +121,25 @@ export default function AdminShield() {
       }}
     >
       <style>{placeholderStyle}</style>
+
+      {/* Home button — top left */}
+      <motion.button
+        whileHover={{ scale: 1.04 }}
+        whileTap={{ scale: 0.97 }}
+        onClick={() => navigate('/')}
+        style={{
+          position: 'fixed', top: 20, left: 20,
+          display: 'flex', alignItems: 'center', gap: 7,
+          background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)',
+          borderRadius: 10, padding: '9px 16px',
+          color: '#fff', fontSize: 13, fontWeight: 700,
+          cursor: 'pointer', fontFamily: 'Sora,sans-serif',
+          backdropFilter: 'blur(8px)',
+        }}
+      >
+        <Home size={15} /> Home
+      </motion.button>
+
       <div style={{ position: 'fixed', top: '20%', left: '50%', transform: 'translateX(-50%)', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(21,101,192,0.14) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
       <motion.div
@@ -302,11 +225,8 @@ export default function AdminShield() {
                 className={`shield-inp ${inp}`}
                 style={{ ...inpStyle, paddingRight: 44 }}
               />
-              <button
-                type="button"
-                onClick={() => setShowPass(p => !p)}
-                style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.35)', display: 'flex', padding: 0 }}
-              >
+              <button type="button" onClick={() => setShowPass(p => !p)}
+                style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.35)', display: 'flex', padding: 0 }}>
                 {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
@@ -333,11 +253,8 @@ export default function AdminShield() {
                     className={`shield-inp ${inp}`}
                     style={{ ...inpStyle, paddingRight: 44 }}
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowConf(p => !p)}
-                    style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.35)', display: 'flex', padding: 0 }}
-                  >
+                  <button type="button" onClick={() => setShowConf(p => !p)}
+                    style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.35)', display: 'flex', padding: 0 }}>
                     {showConf ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
@@ -359,7 +276,8 @@ export default function AdminShield() {
                   ? 'linear-gradient(135deg, #c62828, #b71c1c)'
                   : 'linear-gradient(135deg, #1565c0, #0d47a1)',
               color: '#fff', border: 'none', borderRadius: 12, padding: '14px 24px',
-              fontSize: 14, fontWeight: 700, cursor: status === 'working' || status === 'ok' ? 'not-allowed' : 'pointer',
+              fontSize: 14, fontWeight: 700,
+              cursor: status === 'working' || status === 'ok' ? 'not-allowed' : 'pointer',
               fontFamily: 'Sora,sans-serif',
               opacity: status === 'working' || status === 'ok' ? 0.75 : 1,
               boxShadow: '0 4px 20px rgba(21,101,192,0.3)',
@@ -376,6 +294,32 @@ export default function AdminShield() {
               mode === 'login' ? 'Sign In' : 'Create Account'
             )}
           </motion.button>
+
+          {mode === 'login' && (
+            <div style={{ textAlign: 'center', marginTop: 12 }}>
+              <button
+                type="button"
+                onClick={sendReset}
+                disabled={resetStatus === 'sending' || resetStatus === 'sent'}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  fontSize: 12, fontWeight: 600, fontFamily: 'Sora,sans-serif',
+                  color: resetStatus === 'sent' ? '#66bb6a'
+                    : resetStatus === 'error' ? '#ef9a9a'
+                    : resetStatus === 'no-email' ? '#ffb74d'
+                    : 'rgba(255,255,255,0.35)',
+                  transition: 'color 0.2s',
+                  padding: 0,
+                }}
+              >
+                {resetStatus === 'sending' ? 'Sending…'
+                  : resetStatus === 'sent' ? '✓ Reset email sent — check your inbox'
+                  : resetStatus === 'error' ? 'Could not send — try again'
+                  : resetStatus === 'no-email' ? 'Enter your email above first'
+                  : 'Forgot password?'}
+              </button>
+            </div>
+          )}
         </form>
       </motion.div>
     </div>

@@ -39,6 +39,8 @@
     --radius: 0.625rem;
   }
 
+
+
   .dark {
     --background: 222 47% 11%;
     --foreground: 210 40% 98%;
@@ -139,7 +141,17 @@
 * {
   min-width: 0;
 }
+  #photo {
+    border: 2px solid blue;
+  }
 
+  h1 {
+    color: blue;
+  }
+
+  h2 {
+    color: grey;
+  }
 /* Sections that use full padding — scale down on mobile */
 section,
 .page-section {
