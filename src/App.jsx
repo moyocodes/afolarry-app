@@ -7,9 +7,6 @@ import Footer from "./components/Footer";
 import ScreenCTA from "./components/ScreenCTA";
 
 import Home from "./pages/Home";
-import About from "./pages/About";
-import ServicesPage from "./pages/ServicesPage";
-import HowItWorks from "./pages/HowItWorks";
 import Solutions from "./pages/Solutions";
 import Schedules from "./pages/Schedules";
 import Cars from "./pages/Cars";
@@ -20,6 +17,7 @@ import MailDashboard from "./pages/MailDashboard";
 import AdminShield from "./pages/AdminShield";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
+import ShipmentsAdmin from "./pages/ShipmentsAdmin";
 
 function ScrollToTop() {
   const { pathname, hash } = useLocation();
@@ -70,8 +68,9 @@ function Layout() {
 
 function AppContent() {
   const { pathname } = useLocation();
-  if (pathname.startsWith("/mail"))   return <MailDashboard token={pathname.split('/')[2] || null} />;
-  if (pathname.startsWith("/shield")) return <AdminShield />;
+  if (pathname.startsWith("/mail"))      return <MailDashboard token={pathname.split('/')[2] || null} />;
+  if (pathname.startsWith("/shield"))    return <AdminShield />;
+  if (pathname.startsWith("/shipments")) return <ShipmentsAdmin />;
   return <Layout />;
 }
 

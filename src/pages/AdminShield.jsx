@@ -13,6 +13,7 @@ import {
   CheckCircle,
   AlertCircle,
   Car,
+  Ship,
   Lock,
   UserPlus,
   Eye,
@@ -163,6 +164,22 @@ export default function AdminShield() {
             >
               <Car size={18} />
               Manage Cars
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => navigate('/shipments')}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                background: 'linear-gradient(135deg, #0d47a1 0%, #0a3880 100%)',
+                color: '#fff', border: 'none', borderRadius: 14, padding: '14px 24px',
+                fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'Sora,sans-serif',
+                boxShadow: '0 4px 20px rgba(13,71,161,0.35)',
+              }}
+            >
+              <Ship size={18} />
+              Manage Shipments
             </motion.button>
 
             <motion.button
