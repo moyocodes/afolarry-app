@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   collection, getDocs, addDoc, updateDoc, deleteDoc,
-  doc, query, orderBy, getDoc, setDoc,
+  doc, query, orderBy, getDoc, setDoc, serverTimestamp,
 } from 'firebase/firestore'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { db, auth } from '../lib/firebase'
@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   Car, Ship, Users, ShieldCheck, LogOut, Plus, Pencil, Trash2,
   X, ChevronLeft, ChevronRight, Save, CheckCircle, Clock, Upload,
-  Home, Search, Package, Globe, ToggleLeft, ToggleRight,
+  Home, Search, Package, Globe, ToggleLeft, ToggleRight, UserCheck, UserX,
 } from 'lucide-react'
 
 const S = { fontFamily: "'Sora',sans-serif" }
@@ -23,6 +23,29 @@ const fmtDate = ts => ts
 
 const inp = 'w-full px-3 py-2.5 rounded-lg border border-[#dce8f7] bg-white text-[#0d1b2e] font-[Sora,sans-serif] text-[13px] outline-none focus:border-[#1565c0] transition'
 const lbl = 'text-[10px] font-bold text-[#5a7599] tracking-[0.1em] uppercase'
+
+// ── SHARED UPLOAD HELPER (Cloudinary via /api/upload) ─────────────────────
+function uploadFile(file) {
+  return new Promise((resolve, reject) => {
+    if (!file) return resolve(null)
+    const reader = new FileReader()
+    reader.onerror = () => reject(new Error('Failed to read file'))
+    reader.onload = e => {
+      const xhr = new XMLHttpRequest()
+      xhr.open('POST', '/api/upload')
+      xhr.setRequestHeader('Content-Type', 'application/json')
+      xhr.onload = () => {
+        try {
+          const data = JSON.parse(xhr.responseText)
+          xhr.status === 200 ? resolve(data.url) : reject(new Error(data.error || 'Upload failed'))
+        } catch { reject(new Error('Invalid response')) }
+      }
+      xhr.onerror = () => reject(new Error('Network error'))
+      xhr.send(JSON.stringify({ file: e.target.result, filename: file.name }))
+    }
+    reader.readAsDataURL(file)
+  })
+}
 
 // ── Shared Pagination ──────────────────────────────────────────────────────
 function Pagination({ page, total, onChange }) {
@@ -37,36 +60,22 @@ function Pagination({ page, total, onChange }) {
 
   return (
     <div className="flex items-center justify-center gap-1.5 mt-8 flex-wrap">
-      <button
-        onClick={() => onChange(Math.max(1, page - 1))}
-        disabled={page === 1}
-        className={`flex items-center gap-1 border border-[#dce8f7] rounded-lg px-3 py-2 text-[12px] font-semibold font-[Sora,sans-serif] transition
-          ${page === 1 ? 'bg-[#f7faff] text-[#b0c4de] cursor-not-allowed' : 'bg-white text-[#1565c0] hover:bg-[#e3f2fd] cursor-pointer'}`}
-      >
+      <button onClick={() => onChange(Math.max(1, page - 1))} disabled={page === 1}
+        className={`flex items-center gap-1 border border-[#dce8f7] rounded-lg px-3 py-2 text-[12px] font-semibold font-[Sora,sans-serif] transition ${page === 1 ? 'bg-[#f7faff] text-[#b0c4de] cursor-not-allowed' : 'bg-white text-[#1565c0] hover:bg-[#e3f2fd] cursor-pointer'}`}>
         <ChevronLeft size={14} /> Prev
       </button>
-
       {pages.map((n, i) =>
         typeof n === 'string' ? (
           <span key={i} className="px-2 py-2 text-[12px] text-[#5a7599] select-none">…</span>
         ) : (
-          <button
-            key={n}
-            onClick={() => onChange(n)}
-            className={`w-9 h-9 rounded-lg border text-[12px] font-semibold font-[Sora,sans-serif] transition
-              ${page === n ? 'bg-[#1565c0] border-[#1565c0] text-white cursor-default' : 'bg-white border-[#dce8f7] text-[#1565c0] hover:bg-[#e3f2fd] cursor-pointer'}`}
-          >
+          <button key={n} onClick={() => onChange(n)}
+            className={`w-9 h-9 rounded-lg border text-[12px] font-semibold font-[Sora,sans-serif] transition ${page === n ? 'bg-[#1565c0] border-[#1565c0] text-white cursor-default' : 'bg-white border-[#dce8f7] text-[#1565c0] hover:bg-[#e3f2fd] cursor-pointer'}`}>
             {n}
           </button>
         )
       )}
-
-      <button
-        onClick={() => onChange(Math.min(total, page + 1))}
-        disabled={page === total}
-        className={`flex items-center gap-1 border border-[#dce8f7] rounded-lg px-3 py-2 text-[12px] font-semibold font-[Sora,sans-serif] transition
-          ${page === total ? 'bg-[#f7faff] text-[#b0c4de] cursor-not-allowed' : 'bg-white text-[#1565c0] hover:bg-[#e3f2fd] cursor-pointer'}`}
-      >
+      <button onClick={() => onChange(Math.min(total, page + 1))} disabled={page === total}
+        className={`flex items-center gap-1 border border-[#dce8f7] rounded-lg px-3 py-2 text-[12px] font-semibold font-[Sora,sans-serif] transition ${page === total ? 'bg-[#f7faff] text-[#b0c4de] cursor-not-allowed' : 'bg-white text-[#1565c0] hover:bg-[#e3f2fd] cursor-pointer'}`}>
         Next <ChevronRight size={14} />
       </button>
     </div>
@@ -93,6 +102,7 @@ function CarsSection({ readOnly = false }) {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
 
+  // ✅ Fixed: was incorrectly fetching 'trackingPortals'
   const load = async () => {
     setLoading(true)
     try {
@@ -108,10 +118,8 @@ function CarsSection({ readOnly = false }) {
   }
 
   const pickFile = e => {
-    const file = e.target.files[0]
-    if (!file) return
-    setImgFile(file)
-    setImgPreview(URL.createObjectURL(file))
+    const file = e.target.files[0]; if (!file) return
+    setImgFile(file); setImgPreview(URL.createObjectURL(file))
     setForm(p => ({ ...p, image: '' }))
   }
 
@@ -166,8 +174,7 @@ function CarsSection({ readOnly = false }) {
 
   const remove = async id => {
     if (!window.confirm('Delete this car?')) return
-    await deleteDoc(doc(db, 'cars', id)).catch(() => {})
-    load()
+    await deleteDoc(doc(db, 'cars', id)).catch(() => {}); load()
   }
 
   const filtered = cars.filter(c => !search || c.name.toLowerCase().includes(search.toLowerCase()))
@@ -177,10 +184,8 @@ function CarsSection({ readOnly = false }) {
   if (view === 'form') return (
     <div>
       <div className="flex items-center gap-3 mb-6">
-        <button
-          onClick={() => { resetForm(); setView('list') }}
-          className="flex items-center gap-1.5 bg-[#e3f2fd] hover:bg-[#bbdefb] border-none rounded-lg px-3 py-2 text-[#1565c0] text-[12px] font-semibold cursor-pointer transition"
-        >
+        <button onClick={() => { resetForm(); setView('list') }}
+          className="flex items-center gap-1.5 bg-[#e3f2fd] hover:bg-[#bbdefb] border-none rounded-lg px-3 py-2 text-[#1565c0] text-[12px] font-semibold cursor-pointer transition">
           <ChevronLeft size={14} /> Back to Cars
         </button>
         <h2 className="text-[18px] font-bold text-[#0d1b2e]">{editId ? 'Edit Car' : 'Add New Car'}</h2>
@@ -196,15 +201,10 @@ function CarsSection({ readOnly = false }) {
           ].map(f => (
             <div key={f.key} className="flex flex-col gap-1.5">
               <label className={lbl}>{f.label}</label>
-              <input
-                type={f.type} placeholder={f.placeholder} value={form[f.key]}
-                required={f.req}
-                onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
-                className={inp}
-              />
+              <input type={f.type} placeholder={f.placeholder} value={form[f.key]} required={f.req}
+                onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} className={inp} />
             </div>
           ))}
-
           <div className="flex flex-col gap-1.5">
             <label className={lbl}>Status</label>
             <select value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value }))} className={inp}>
@@ -213,15 +213,11 @@ function CarsSection({ readOnly = false }) {
               <option value="sold">Sold</option>
             </select>
           </div>
-
           <div className="flex flex-col gap-1.5">
             <label className={lbl}>Pre-order Ends (optional)</label>
             <div className="flex gap-2 items-center">
-              <input
-                type="datetime-local" value={form.preorderEnds}
-                onChange={e => setForm(p => ({ ...p, preorderEnds: e.target.value }))}
-                className={`${inp} flex-1`}
-              />
+              <input type="datetime-local" value={form.preorderEnds}
+                onChange={e => setForm(p => ({ ...p, preorderEnds: e.target.value }))} className={`${inp} flex-1`} />
               {form.preorderEnds && (
                 <button type="button" onClick={() => setForm(p => ({ ...p, preorderEnds: '' }))}
                   className="bg-[#ffebee] border-none rounded-lg p-2 cursor-pointer text-[#c62828] flex shrink-0">
@@ -234,11 +230,9 @@ function CarsSection({ readOnly = false }) {
 
         <div className="flex flex-col gap-1.5">
           <label className={lbl}>Image</label>
-          <input
-            type="text" placeholder="Paste image URL (optional)" value={form.image}
+          <input type="text" placeholder="Paste image URL (optional)" value={form.image}
             onChange={e => { setForm(p => ({ ...p, image: e.target.value })); setImgFile(null); setImgPreview(e.target.value || null) }}
-            className={inp}
-          />
+            className={inp} />
           <label className="flex items-center justify-center gap-2 bg-[#f7faff] border-2 border-dashed border-[#c7d7f5] rounded-lg py-2.5 cursor-pointer text-[12px] text-[#5a7599] font-medium hover:border-[#1565c0] transition">
             <Upload size={14} className="text-[#1565c0]" />
             {imgFile ? imgFile.name : 'Click to upload image'}
@@ -247,11 +241,8 @@ function CarsSection({ readOnly = false }) {
           {imgPreview && (
             <div className="relative">
               <img src={imgPreview} alt="preview" className="w-full h-[140px] object-cover rounded-lg border border-[#dce8f7]" />
-              <button
-                type="button"
-                onClick={() => { setImgFile(null); setImgPreview(null); setForm(p => ({ ...p, image: '' })) }}
-                className="absolute top-1.5 right-1.5 bg-black/55 border-none rounded-md p-1 cursor-pointer text-white flex"
-              >
+              <button type="button" onClick={() => { setImgFile(null); setImgPreview(null); setForm(p => ({ ...p, image: '' })) }}
+                className="absolute top-1.5 right-1.5 bg-black/55 border-none rounded-md p-1 cursor-pointer text-white flex">
                 <X size={13} />
               </button>
             </div>
@@ -265,15 +256,10 @@ function CarsSection({ readOnly = false }) {
 
         <div className="flex flex-col gap-1.5">
           <label className={lbl}>Description</label>
-          <textarea rows={3} value={form.description}
-            onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-            className={`${inp} resize-y`}
-          />
+          <textarea rows={3} value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} className={`${inp} resize-y`} />
         </div>
 
-        {saveErr && (
-          <div className="text-[12px] text-[#c62828] bg-[#ffebee] px-3 py-2.5 rounded-lg">{saveErr}</div>
-        )}
+        {saveErr && <div className="text-[12px] text-[#c62828] bg-[#ffebee] px-3 py-2.5 rounded-lg">{saveErr}</div>}
 
         <div className="flex gap-3">
           <button type="submit" disabled={saving}
@@ -300,8 +286,7 @@ function CarsSection({ readOnly = false }) {
           <div className="relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5a7599] pointer-events-none" />
             <input type="text" placeholder="Search cars…" value={search}
-              onChange={e => { setSearch(e.target.value); setPage(1) }}
-              className={`${inp} pl-9 min-w-[180px]`} />
+              onChange={e => { setSearch(e.target.value); setPage(1) }} className={`${inp} pl-9 min-w-[180px]`} />
           </div>
           {!readOnly && (
             <button onClick={() => { resetForm(); setView('form') }}
@@ -325,12 +310,9 @@ function CarsSection({ readOnly = false }) {
           {paged.map(car => (
             <div key={car.id} className="bg-white border border-[#dce8f7] rounded-2xl overflow-hidden shadow-[0_2px_10px_rgba(21,101,192,0.05)]">
               <div className="aspect-[16/9] bg-[#f7faff] overflow-hidden relative">
-                {car.image
-                  ? <img src={car.image} alt={car.name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
-                  : <div className="w-full h-full flex items-center justify-center text-[#5a7599] text-[12px]">No image</div>
-                }
-                <span className={`absolute top-2 left-2 text-[9px] font-bold px-2.5 py-0.5 rounded-full text-white
-                  ${car.status === 'available' ? 'bg-[#2e7d32]' : car.status === 'sold' ? 'bg-[#c62828]' : 'bg-[#e65100]'}`}>
+                {car.image ? <img src={car.image} alt={car.name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+                  : <div className="w-full h-full flex items-center justify-center text-[#5a7599] text-[12px]">No image</div>}
+                <span className={`absolute top-2 left-2 text-[9px] font-bold px-2.5 py-0.5 rounded-full text-white ${car.status === 'available' ? 'bg-[#2e7d32]' : car.status === 'sold' ? 'bg-[#c62828]' : 'bg-[#e65100]'}`}>
                   {car.status === 'available' ? 'Available' : car.status === 'sold' ? 'Sold' : 'Pre-Order'}
                 </span>
               </div>
@@ -355,7 +337,6 @@ function CarsSection({ readOnly = false }) {
           ))}
         </div>
       )}
-
       <Pagination page={page} total={totalPages} onChange={p => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }) }} />
     </div>
   )
@@ -370,8 +351,7 @@ const STATUSES = ['Pending', 'Booking Confirmed', 'In Transit', 'Departed', 'Arr
 const BLANK_SHIP = {
   shipmentId: '', status: 'Pending', customerName: '', customerEmail: '',
   recipientEmail: '', origin: '', destination: '', carrier: '', vessel: '',
-  vin: '', carMake: '',
-  eta: '', notes: '',
+  vin: '', carMake: '', eta: '', notes: '',
   milestones: DEFAULT_MILESTONES.map(label => ({ label, done: false, date: '' })),
 }
 
@@ -418,21 +398,14 @@ function ShipmentsSection({ readOnly = false }) {
     e.preventDefault(); setSaving(true); setSaveErr(null)
     try {
       const data = {
-        ...form,
-        shipmentId: form.shipmentId.trim().toUpperCase(),
+        ...form, shipmentId: form.shipmentId.trim().toUpperCase(),
         eta: form.eta ? new Date(form.eta).getTime() : null,
-        milestones: form.milestones.map(m => ({
-          label: m.label, done: m.done,
-          date: m.date ? new Date(m.date).getTime() : null,
-        })),
+        milestones: form.milestones.map(m => ({ label: m.label, done: m.done, date: m.date ? new Date(m.date).getTime() : null })),
       }
       if (editId) await updateDoc(doc(db, 'shipments', editId), data)
       else await addDoc(collection(db, 'shipments'), { ...data, createdAt: Date.now() })
       if (sendEmail) {
-        fetch('/api/shipment-notify', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...data, isUpdate: !!editId }),
-        }).catch(() => {})
+        fetch('/api/shipment-notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...data, isUpdate: !!editId }) }).catch(() => {})
       }
       resetForm(); setView('list'); load()
     } catch (err) { setSaveErr(err.message || 'Save failed') } finally { setSaving(false) }
@@ -440,8 +413,7 @@ function ShipmentsSection({ readOnly = false }) {
 
   const remove = async id => {
     if (!window.confirm('Delete this shipment?')) return
-    await deleteDoc(doc(db, 'shipments', id)).catch(() => {})
-    load()
+    await deleteDoc(doc(db, 'shipments', id)).catch(() => {}); load()
   }
 
   const setField = (k, v) => setForm(p => ({ ...p, [k]: v }))
@@ -449,11 +421,7 @@ function ShipmentsSection({ readOnly = false }) {
     ...p, milestones: p.milestones.map((m, idx) => idx === i ? { ...m, [key]: val } : m),
   }))
 
-  const filtered = shipments.filter(s =>
-    !search ||
-    s.shipmentId?.toLowerCase().includes(search.toLowerCase()) ||
-    s.customerName?.toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = shipments.filter(s => !search || s.shipmentId?.toLowerCase().includes(search.toLowerCase()) || s.customerName?.toLowerCase().includes(search.toLowerCase()))
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER))
   const paged = filtered.slice((page - 1) * PER, page * PER)
 
@@ -512,13 +480,7 @@ function ShipmentsSection({ readOnly = false }) {
           {form.milestones.map((m, i) => (
             <div key={i} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border ${m.done ? 'bg-[#f0f7ff] border-[#bbdefb]' : 'bg-[#f7faff] border-[#dce8f7]'}`}>
               <button type="button" onClick={() => setMilestone(i, 'done', !m.done)}
-                style={{
-                  background: m.done ? '#1565c0' : '#fff',
-                  border: `2px solid ${m.done ? '#1565c0' : '#dce8f7'}`,
-                  borderRadius: '50%', width: 22, height: 22,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: 'pointer', flexShrink: 0, transition: 'all 0.2s',
-                }}>
+                style={{ background: m.done ? '#1565c0' : '#fff', border: `2px solid ${m.done ? '#1565c0' : '#dce8f7'}`, borderRadius: '50%', width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, transition: 'all 0.2s' }}>
                 {m.done ? <CheckCircle size={13} color="#fff" /> : <Clock size={11} color="#9ab2cc" />}
               </button>
               <span className={`flex-1 text-[13px] ${m.done ? 'font-semibold text-[#0d1b2e]' : 'text-[#5a7599]'}`}>{m.label}</span>
@@ -528,10 +490,8 @@ function ShipmentsSection({ readOnly = false }) {
           ))}
         </div>
 
-        <div
-          onClick={() => setSendEmail(p => !p)}
-          className={`flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer select-none transition ${sendEmail ? 'bg-[#e3f2fd] border-[#bbdefb]' : 'bg-[#f7faff] border-[#dce8f7]'}`}
-        >
+        <div onClick={() => setSendEmail(p => !p)}
+          className={`flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer select-none transition ${sendEmail ? 'bg-[#e3f2fd] border-[#bbdefb]' : 'bg-[#f7faff] border-[#dce8f7]'}`}>
           <div style={{ width: 36, height: 20, borderRadius: 999, background: sendEmail ? '#1565c0' : '#dce8f7', position: 'relative', flexShrink: 0, transition: 'background 0.18s' }}>
             <div style={{ position: 'absolute', top: 2, left: sendEmail ? 18 : 2, width: 16, height: 16, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.2)', transition: 'left 0.18s' }} />
           </div>
@@ -568,8 +528,7 @@ function ShipmentsSection({ readOnly = false }) {
           <div className="relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5a7599] pointer-events-none" />
             <input type="text" placeholder="Search shipments…" value={search}
-              onChange={e => { setSearch(e.target.value); setPage(1) }}
-              className={`${inp} pl-9 min-w-[180px]`} />
+              onChange={e => { setSearch(e.target.value); setPage(1) }} className={`${inp} pl-9 min-w-[180px]`} />
           </div>
           {!readOnly && (
             <button onClick={() => { resetForm(); setView('form') }}
@@ -597,15 +556,8 @@ function ShipmentsSection({ readOnly = false }) {
               </div>
               <div className="flex-1 min-w-[120px]">
                 <p className="text-[14px] font-bold text-[#0d1b2e]">{s.shipmentId}</p>
-                <p className="text-[12px] text-[#5a7599]">
-                  {s.origin || '—'} → {s.destination || '—'}
-                  {s.customerName ? ` · ${s.customerName}` : ''}
-                </p>
-                {(s.carMake || s.vin) && (
-                  <p className="text-[11px] text-[#9ab2cc] mt-0.5">
-                    {s.carMake}{s.carMake && s.vin ? ' · ' : ''}{s.vin}
-                  </p>
-                )}
+                <p className="text-[12px] text-[#5a7599]">{s.origin || '—'} → {s.destination || '—'}{s.customerName ? ` · ${s.customerName}` : ''}</p>
+                {(s.carMake || s.vin) && <p className="text-[11px] text-[#9ab2cc] mt-0.5">{s.carMake}{s.carMake && s.vin ? ' · ' : ''}{s.vin}</p>}
               </div>
               <div className="flex flex-col items-end gap-1 shrink-0">
                 <span className="text-[11px] font-bold bg-[#e3f2fd] text-[#1565c0] px-2.5 py-0.5 rounded-full">{s.status}</span>
@@ -621,23 +573,23 @@ function ShipmentsSection({ readOnly = false }) {
           ))}
         </div>
       )}
-
       <Pagination page={page} total={totalPages} onChange={setPage} />
     </div>
   )
 }
 
-// ── USERS SECTION (Firebase Auth users mirrored to Firestore) ─────────────
+// ── USERS SECTION ──────────────────────────────────────────────────────────
 function UsersSection() {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
 
+  // ✅ No orderBy — avoids excluding users without lastLogin
   const load = async () => {
     setLoading(true)
     try {
-      const snap = await getDocs(query(collection(db, 'adminUsers'), orderBy('lastLogin', 'desc')))
+      const snap = await getDocs(collection(db, 'adminUsers'))
       setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() })))
     } catch { setUsers([]) } finally { setLoading(false) }
   }
@@ -649,15 +601,18 @@ function UsersSection() {
     setUsers(p => p.map(u => u.id === id ? { ...u, isAdmin: next } : u))
   }
 
-  const remove = async id => {
-    if (!window.confirm('Remove this user record? Their Firebase Auth account stays active — delete it in Firebase Console if needed.')) return
-    await deleteDoc(doc(db, 'adminUsers', id)).catch(() => {})
-    load()
+  // ✅ Approve / reject account
+  const setApproval = async (id, approved) => {
+    await updateDoc(doc(db, 'adminUsers', id), { approved }).catch(() => {})
+    setUsers(p => p.map(u => u.id === id ? { ...u, approved } : u))
   }
 
-  const filtered = users.filter(u =>
-    !search || u.email?.toLowerCase().includes(search.toLowerCase())
-  )
+  const remove = async id => {
+    if (!window.confirm('Remove this user record? Their Firebase Auth account stays active — delete it in Firebase Console if needed.')) return
+    await deleteDoc(doc(db, 'adminUsers', id)).catch(() => {}); load()
+  }
+
+  const filtered = users.filter(u => !search || u.email?.toLowerCase().includes(search.toLowerCase()))
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER))
   const paged = filtered.slice((page - 1) * PER, page * PER)
 
@@ -667,22 +622,25 @@ function UsersSection() {
     return d.toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
   }
 
+  // Count pending approvals for badge
+  const pendingCount = users.filter(u => u.approved === false).length
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div>
           <h2 className="text-[20px] font-bold text-[#0d1b2e]">Admin Users</h2>
-          <p className="text-[13px] text-[#5a7599] font-light">{users.length} user{users.length !== 1 ? 's' : ''} · Firebase Auth accounts</p>
+          <p className="text-[13px] text-[#5a7599] font-light">
+            {users.length} user{users.length !== 1 ? 's' : ''}
+            {pendingCount > 0 && <span className="ml-2 bg-[#e65100] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{pendingCount} pending</span>}
+          </p>
         </div>
         <div className="relative">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5a7599] pointer-events-none" />
           <input type="text" placeholder="Search by email…" value={search}
-            onChange={e => { setSearch(e.target.value); setPage(1) }}
-            className={`${inp} pl-9 min-w-[200px]`} />
+            onChange={e => { setSearch(e.target.value); setPage(1) }} className={`${inp} pl-9 min-w-[200px]`} />
         </div>
       </div>
-
-    
 
       {loading ? (
         <div className="text-center py-12 text-[#5a7599] text-[13px]">Loading…</div>
@@ -695,7 +653,7 @@ function UsersSection() {
       ) : (
         <div className="flex flex-col gap-3">
           {paged.map(u => (
-            <div key={u.id} className="bg-white border border-[#dce8f7] rounded-2xl p-5 flex items-start gap-4 flex-wrap">
+            <div key={u.id} className={`bg-white border rounded-2xl p-5 flex items-start gap-4 flex-wrap ${u.approved === false ? 'border-[#ffe082] bg-[#fffde7]' : 'border-[#dce8f7]'}`}>
               {/* Avatar */}
               <div className="w-12 h-12 rounded-full shrink-0 overflow-hidden border-2 border-[#dce8f7]"
                 style={{ background: 'linear-gradient(135deg,#1565c0,#0d47a1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -707,41 +665,44 @@ function UsersSection() {
               {/* Info */}
               <div className="flex-1 min-w-[160px]">
                 {u.name && <p className="text-[14px] font-bold text-[#0d1b2e] mb-0.5">{u.name}</p>}
-                <p className={`text-[${u.name ? '12' : '14'}px] font-${u.name ? 'normal' : 'bold'} text-[#${u.name ? '5a7599' : '0d1b2e'}] mb-0.5`}>{u.email}</p>
+                <p className={`text-[${u.name ? '12' : '14'}px] ${u.name ? 'text-[#5a7599]' : 'font-bold text-[#0d1b2e]'} mb-0.5`}>{u.email}</p>
                 {u.address && <p className="text-[11px] text-[#9ab2cc] mb-0.5">{u.address}</p>}
                 <p className="text-[11px] text-[#9ab2cc] font-mono">{u.uid}</p>
-                {u.lastLogin && <p className="text-[11px] text-[#9ab2cc] mt-0.5">Last login: {toDate(u.lastLogin)}</p>}
+                {u.createdAt && <p className="text-[11px] text-[#9ab2cc] mt-0.5">Created: {toDate(u.createdAt)}</p>}
+                {u.lastLogin && <p className="text-[11px] text-[#9ab2cc]">Last login: {toDate(u.lastLogin)}</p>}
 
-                {/* ID Card badge */}
                 <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                  {/* Approval badge */}
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${u.approved === false ? 'bg-[#fff3e0] text-[#e65100]' : 'bg-[#e8f5e9] text-[#2e7d32]'}`}>
+                    {u.approved === false ? '⏳ Pending Approval' : '✓ Approved'}
+                  </span>
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${u.idCard ? 'bg-[#e8f5e9] text-[#2e7d32]' : 'bg-[#fff3e0] text-[#e65100]'}`}>
                     {u.idCard ? '✓ ID Verified' : '⚠ No ID Card'}
                   </span>
-                  {u.idCard && (
-                    <a href={u.idCard} target="_blank" rel="noopener noreferrer"
-                      className="text-[10px] font-semibold text-[#1565c0] underline">
-                      View ID
-                    </a>
-                  )}
+                  {u.profileImage && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#e3f2fd] text-[#1565c0]">✓ Photo</span>}
+                  {u.idCard && <a href={u.idCard} target="_blank" rel="noopener noreferrer" className="text-[10px] font-semibold text-[#1565c0] underline">View ID</a>}
                 </div>
               </div>
 
               {/* Controls */}
               <div className="flex items-center gap-2 shrink-0 flex-wrap">
-                {/* isAdmin toggle */}
-                <button
-                  onClick={() => toggleAdmin(u.id, u.isAdmin !== false)}
+                {/* ✅ Approve / Reject buttons */}
+                {u.approved === false ? (
+                  <button onClick={() => setApproval(u.id, true)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#e8f5e9', border: '1px solid #a5d6a7', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 11, fontWeight: 700, color: '#2e7d32', transition: 'all 0.2s' }}>
+                    <UserCheck size={13} /> Approve
+                  </button>
+                ) : (
+                  <button onClick={() => setApproval(u.id, false)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff3e0', border: '1px solid #ffcc80', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 11, fontWeight: 700, color: '#e65100', transition: 'all 0.2s' }}>
+                    <UserX size={13} /> Revoke
+                  </button>
+                )}
+
+                {/* Full / View Only toggle */}
+                <button onClick={() => toggleAdmin(u.id, u.isAdmin !== false)}
                   title={u.isAdmin !== false ? 'Click to set View Only' : 'Click to grant Full Access'}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 6,
-                    background: u.isAdmin !== false ? '#e3f2fd' : '#f5f5f5',
-                    border: `1px solid ${u.isAdmin !== false ? '#bbdefb' : '#e0e0e0'}`,
-                    borderRadius: 8, padding: '6px 12px', cursor: 'pointer',
-                    fontSize: 11, fontWeight: 700,
-                    color: u.isAdmin !== false ? '#1565c0' : '#9e9e9e',
-                    transition: 'all 0.2s',
-                  }}
-                >
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, background: u.isAdmin !== false ? '#e3f2fd' : '#f5f5f5', border: `1px solid ${u.isAdmin !== false ? '#bbdefb' : '#e0e0e0'}`, borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 11, fontWeight: 700, color: u.isAdmin !== false ? '#1565c0' : '#9e9e9e', transition: 'all 0.2s' }}>
                   {u.isAdmin !== false ? 'Full Access' : 'View Only'}
                 </button>
 
@@ -754,33 +715,9 @@ function UsersSection() {
           ))}
         </div>
       )}
-
       <Pagination page={page} total={totalPages} onChange={setPage} />
     </div>
   )
-}
-
-// ── SHARED UPLOAD HELPER ───────────────────────────────────────────────────
-function uploadFile(file) {
-  return new Promise((resolve, reject) => {
-    if (!file) return resolve(null)
-    const reader = new FileReader()
-    reader.onerror = () => reject(new Error('Failed to read file'))
-    reader.onload = e => {
-      const xhr = new XMLHttpRequest()
-      xhr.open('POST', '/api/upload')
-      xhr.setRequestHeader('Content-Type', 'application/json')
-      xhr.onload = () => {
-        try {
-          const data = JSON.parse(xhr.responseText)
-          xhr.status === 200 ? resolve(data.url) : reject(new Error(data.error || 'Upload failed'))
-        } catch { reject(new Error('Invalid response')) }
-      }
-      xhr.onerror = () => reject(new Error('Network error'))
-      xhr.send(JSON.stringify({ file: e.target.result, filename: file.name }))
-    }
-    reader.readAsDataURL(file)
-  })
 }
 
 // ── PROFILE COMPLETION MODAL ───────────────────────────────────────────────
@@ -794,22 +731,17 @@ function ProfileModal({ uid, email, onComplete }) {
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState(null)
 
-  const pickProfile = e => {
-    const f = e.target.files[0]; if (!f) return
-    setProfileFile(f); setProfilePreview(URL.createObjectURL(f))
-  }
-  const pickId = e => {
-    const f = e.target.files[0]; if (!f) return
-    setIdFile(f); setIdFileName(f.name)
-  }
+  const pickProfile = e => { const f = e.target.files[0]; if (!f) return; setProfileFile(f); setProfilePreview(URL.createObjectURL(f)) }
+  const pickId = e => { const f = e.target.files[0]; if (!f) return; setIdFile(f); setIdFileName(f.name) }
 
   const submit = async e => {
     e.preventDefault()
     if (!idFile) { setErr('ID card is required to continue.'); return }
     setSaving(true); setErr(null)
     try {
+      // ✅ Both files go to Cloudinary via /api/upload
       const [profileUrl, idUrl] = await Promise.all([uploadFile(profileFile), uploadFile(idFile)])
-      const updates = { name, address, idCard: idUrl, profileComplete: true }
+      const updates = { name, address, idCard: idUrl, profileComplete: true, updatedAt: serverTimestamp() }
       if (profileUrl) updates.profileImage = profileUrl
       await setDoc(doc(db, 'adminUsers', uid), updates, { merge: true })
       onComplete(updates)
@@ -818,55 +750,23 @@ function ProfileModal({ uid, email, onComplete }) {
   }
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 9999,
-      background: 'rgba(6,14,26,0.92)', backdropFilter: 'blur(12px)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '1.5rem', fontFamily: "'Sora',sans-serif",
-    }}>
-      <motion.div
-        initial={{ y: 28, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        style={{
-          background: 'rgba(13,27,46,0.95)', border: '1px solid rgba(255,255,255,0.1)',
-          borderRadius: 24, padding: '36px 32px', width: '100%', maxWidth: 460,
-          boxShadow: '0 24px 80px rgba(0,0,0,0.5)',
-        }}
-      >
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(6,14,26,0.92)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', fontFamily: "'Sora',sans-serif" }}>
+      <motion.div initial={{ y: 28, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+        style={{ background: 'rgba(13,27,46,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 24, padding: '36px 32px', width: '100%', maxWidth: 460, boxShadow: '0 24px 80px rgba(0,0,0,0.5)' }}>
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <div style={{
-            width: 64, height: 64, borderRadius: '50%', margin: '0 auto 14px',
-            background: 'linear-gradient(135deg,#1565c0,#0d47a1)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 32px rgba(21,101,192,0.4)',
-          }}>
+          <div style={{ width: 64, height: 64, borderRadius: '50%', margin: '0 auto 14px', background: 'linear-gradient(135deg,#1565c0,#0d47a1)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 32px rgba(21,101,192,0.4)' }}>
             <ShieldCheck size={28} color="#fff" strokeWidth={1.5} />
           </div>
-          <p style={{ fontSize: 10, fontWeight: 700, color: '#42a5f5', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>
-            Account Setup
-          </p>
-          <h2 style={{ fontSize: 18, fontWeight: 800, color: '#fff', margin: '0 0 6px' }}>
-            Complete Your Profile
-          </h2>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', fontWeight: 300, lineHeight: 1.6 }}>
-            An ID card upload is required before you can access the dashboard.
-          </p>
+          <p style={{ fontSize: 10, fontWeight: 700, color: '#42a5f5', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>Account Setup</p>
+          <h2 style={{ fontSize: 18, fontWeight: 800, color: '#fff', margin: '0 0 6px' }}>Complete Your Profile</h2>
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', fontWeight: 300, lineHeight: 1.6 }}>An ID card upload is required before you can access the dashboard.</p>
         </div>
 
         <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {/* Profile image */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 4 }}>
             <label style={{ cursor: 'pointer', flexShrink: 0 }}>
-              <div style={{
-                width: 68, height: 68, borderRadius: '50%',
-                background: profilePreview ? 'transparent' : 'rgba(255,255,255,0.07)',
-                border: '2px dashed rgba(255,255,255,0.18)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                overflow: 'hidden',
-              }}>
-                {profilePreview
-                  ? <img src={profilePreview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  : <Upload size={18} color="rgba(255,255,255,0.3)" />}
+              <div style={{ width: 68, height: 68, borderRadius: '50%', background: profilePreview ? 'transparent' : 'rgba(255,255,255,0.07)', border: '2px dashed rgba(255,255,255,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                {profilePreview ? <img src={profilePreview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Upload size={18} color="rgba(255,255,255,0.3)" />}
               </div>
               <input type="file" accept="image/*" className="hidden" onChange={pickProfile} />
             </label>
@@ -884,57 +784,29 @@ function ProfileModal({ uid, email, onComplete }) {
               <label style={{ display: 'block', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>
                 {f.label}{f.req ? '' : ' (optional)'}
               </label>
-              <input
-                type="text" value={f.value} required={f.req} placeholder={f.placeholder}
-                onChange={e => f.set(e.target.value)}
-                style={{
-                  width: '100%', boxSizing: 'border-box',
-                  background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)',
-                  borderRadius: 12, padding: '11px 14px', color: '#fff',
-                  fontFamily: 'Sora,sans-serif', fontSize: 13, outline: 'none',
-                }}
-              />
+              <input type="text" value={f.value} required={f.req} placeholder={f.placeholder} onChange={e => f.set(e.target.value)}
+                style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: '11px 14px', color: '#fff', fontFamily: 'Sora,sans-serif', fontSize: 13, outline: 'none' }} />
             </div>
           ))}
 
-          {/* ID Card upload — required */}
           <div>
             <label style={{ display: 'block', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>
               ID Card <span style={{ color: '#ef5350' }}>*</span>
             </label>
-            <label style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              background: idFile ? 'rgba(21,101,192,0.15)' : 'rgba(255,255,255,0.05)',
-              border: `1.5px dashed ${idFile ? '#42a5f5' : 'rgba(255,255,255,0.18)'}`,
-              borderRadius: 12, padding: '12px 16px', cursor: 'pointer', transition: 'all 0.2s',
-            }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 10, background: idFile ? 'rgba(21,101,192,0.15)' : 'rgba(255,255,255,0.05)', border: `1.5px dashed ${idFile ? '#42a5f5' : 'rgba(255,255,255,0.18)'}`, borderRadius: 12, padding: '12px 16px', cursor: 'pointer', transition: 'all 0.2s' }}>
               <Upload size={16} color={idFile ? '#42a5f5' : 'rgba(255,255,255,0.3)'} />
               <span style={{ fontSize: 13, color: idFile ? '#42a5f5' : 'rgba(255,255,255,0.35)', fontWeight: idFile ? 600 : 400 }}>
-                {idFileName || 'Click to upload National ID, Passport, or Driver\'s License'}
+                {idFileName || "Click to upload National ID, Passport, or Driver's License"}
               </span>
               <input type="file" accept="image/*,.pdf" className="hidden" onChange={pickId} />
             </label>
           </div>
 
-          {err && (
-            <div style={{ background: 'rgba(198,40,40,0.15)', border: '1px solid rgba(198,40,40,0.3)', borderRadius: 10, padding: '10px 14px', fontSize: 12, color: '#ef9a9a' }}>
-              {err}
-            </div>
-          )}
+          {err && <div style={{ background: 'rgba(198,40,40,0.15)', border: '1px solid rgba(198,40,40,0.3)', borderRadius: 10, padding: '10px 14px', fontSize: 12, color: '#ef9a9a' }}>{err}</div>}
 
-          <motion.button
-            type="submit" disabled={saving}
-            whileHover={saving ? {} : { scale: 1.02 }}
-            whileTap={saving ? {} : { scale: 0.98 }}
-            style={{
-              marginTop: 4, background: 'linear-gradient(135deg,#1565c0,#0d47a1)',
-              color: '#fff', border: 'none', borderRadius: 12, padding: '14px 24px',
-              fontSize: 14, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer',
-              opacity: saving ? 0.65 : 1, fontFamily: 'Sora,sans-serif',
-              boxShadow: '0 4px 20px rgba(21,101,192,0.3)',
-            }}
-          >
-            {saving ? 'Saving…' : 'Save & Continue'}
+          <motion.button type="submit" disabled={saving} whileHover={saving ? {} : { scale: 1.02 }} whileTap={saving ? {} : { scale: 0.98 }}
+            style={{ marginTop: 4, background: 'linear-gradient(135deg,#1565c0,#0d47a1)', color: '#fff', border: 'none', borderRadius: 12, padding: '14px 24px', fontSize: 14, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.65 : 1, fontFamily: 'Sora,sans-serif', boxShadow: '0 4px 20px rgba(21,101,192,0.3)' }}>
+            {saving ? 'Uploading…' : 'Save & Continue'}
           </motion.button>
         </form>
       </motion.div>
@@ -943,9 +815,7 @@ function ProfileModal({ uid, email, onComplete }) {
 }
 
 // ── TRACKERS SECTION ───────────────────────────────────────────────────────
-const BLANK_TRACKER = {
-  name: '', short: '', accent: '#1565c0', url: '', enabled: true,
-}
+const BLANK_TRACKER = { name: '', short: '', accent: '#1565c0', url: '', enabled: true }
 
 function TrackersSection({ readOnly = false }) {
   const [trackers, setTrackers] = useState([])
@@ -956,10 +826,11 @@ function TrackersSection({ readOnly = false }) {
   const [saving, setSaving] = useState(false)
   const [saveErr, setSaveErr] = useState(null)
 
+  // ✅ No orderBy — avoids excluding docs without sortOrder
   const load = async () => {
     setLoading(true)
     try {
-      const snap = await getDocs(query(collection(db, 'trackingPortals'), orderBy('sortOrder', 'asc')))
+      const snap = await getDocs(collection(db, 'trackingPortals'))
       setTrackers(snap.docs.map(d => ({ id: d.id, ...d.data() })))
     } catch { setTrackers([]) } finally { setLoading(false) }
   }
@@ -968,11 +839,7 @@ function TrackersSection({ readOnly = false }) {
   const resetForm = () => { setForm(BLANK_TRACKER); setEditId(null); setSaveErr(null) }
 
   const startEdit = t => {
-    setForm({
-      name: t.name || '', short: t.short || '',
-      accent: t.accent || '#1565c0', url: t.url || '',
-      enabled: t.enabled !== false,
-    })
+    setForm({ name: t.name || '', short: t.short || '', accent: t.accent || '#1565c0', url: t.url || '', enabled: t.enabled !== false })
     setEditId(t.id); setSaveErr(null); setView('form')
   }
 
@@ -987,11 +854,10 @@ function TrackersSection({ readOnly = false }) {
 
   const remove = async id => {
     if (!window.confirm('Delete this tracker?')) return
-    await deleteDoc(doc(db, 'trackingPortals', id)).catch(() => {})
-    load()
+    await deleteDoc(doc(db, 'trackingPortals', id)).catch(() => {}); load()
   }
 
-  const toggleEnabled = async (t) => {
+  const toggleEnabled = async t => {
     await updateDoc(doc(db, 'trackingPortals', t.id), { enabled: !t.enabled }).catch(() => {})
     setTrackers(p => p.map(x => x.id === t.id ? { ...x, enabled: !x.enabled } : x))
   }
@@ -1010,42 +876,32 @@ function TrackersSection({ readOnly = false }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1.5 sm:col-span-2">
             <label className={lbl}>Name</label>
-            <input type="text" placeholder="Sallaum Lines" value={form.name}
-              required onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-              className={inp} />
+            <input type="text" placeholder="Sallaum Lines" value={form.name} required
+              onChange={e => setForm(p => ({ ...p, name: e.target.value }))} className={inp} />
           </div>
-
           <div className="flex flex-col gap-1.5">
             <label className={lbl}>Short (2–3 chars)</label>
-            <input type="text" placeholder="SL" value={form.short}
-              required maxLength={3} onChange={e => setForm(p => ({ ...p, short: e.target.value }))}
-              className={inp} />
+            <input type="text" placeholder="SL" value={form.short} required maxLength={3}
+              onChange={e => setForm(p => ({ ...p, short: e.target.value }))} className={inp} />
           </div>
-
           <div className="flex flex-col gap-1.5">
             <label className={lbl}>Accent Color</label>
             <div className="flex gap-2 items-center">
-              <input type="color" value={form.accent}
-                onChange={e => setForm(p => ({ ...p, accent: e.target.value }))}
+              <input type="color" value={form.accent} onChange={e => setForm(p => ({ ...p, accent: e.target.value }))}
                 className="h-[42px] w-12 rounded-lg border border-[#dce8f7] bg-white cursor-pointer p-1 shrink-0" />
-              <input type="text" value={form.accent}
-                onChange={e => setForm(p => ({ ...p, accent: e.target.value }))}
+              <input type="text" value={form.accent} onChange={e => setForm(p => ({ ...p, accent: e.target.value }))}
                 className={`${inp} flex-1`} placeholder="#1565c0" />
             </div>
           </div>
-
           <div className="flex flex-col gap-1.5 sm:col-span-2">
             <label className={lbl}>Tracking URL</label>
             <input type="url" placeholder="https://carrier.com/track" value={form.url}
-              onChange={e => setForm(p => ({ ...p, url: e.target.value }))}
-              className={inp} />
+              onChange={e => setForm(p => ({ ...p, url: e.target.value }))} className={inp} />
           </div>
         </div>
 
-        <div
-          onClick={() => setForm(p => ({ ...p, enabled: !p.enabled }))}
-          className={`flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer select-none transition ${form.enabled ? 'bg-[#e3f2fd] border-[#bbdefb]' : 'bg-[#f7faff] border-[#dce8f7]'}`}
-        >
+        <div onClick={() => setForm(p => ({ ...p, enabled: !p.enabled }))}
+          className={`flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer select-none transition ${form.enabled ? 'bg-[#e3f2fd] border-[#bbdefb]' : 'bg-[#f7faff] border-[#dce8f7]'}`}>
           <div style={{ width: 36, height: 20, borderRadius: 999, background: form.enabled ? '#1565c0' : '#dce8f7', position: 'relative', flexShrink: 0, transition: 'background 0.18s' }}>
             <div style={{ position: 'absolute', top: 2, left: form.enabled ? 18 : 2, width: 16, height: 16, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.2)', transition: 'left 0.18s' }} />
           </div>
@@ -1115,7 +971,6 @@ function TrackersSection({ readOnly = false }) {
                 <p className="text-[12px] text-[#5a7599] mt-0.5 truncate max-w-[320px]">
                   {t.internalPath ? `Internal: ${t.internalPath}` : t.url || '—'}
                 </p>
-                <p className="text-[11px] text-[#9ab2cc]">Sort: {t.sortOrder ?? '—'}</p>
               </div>
               {!readOnly && (
                 <div className="flex gap-2 shrink-0">
@@ -1166,9 +1021,7 @@ export default function AdminDashboard() {
         const data = snap.exists() ? snap.data() : {}
         setCurrentUserData(data)
         if (!data.idCard) setShowProfileModal(true)
-      } catch {
-        setShowProfileModal(true)
-      }
+      } catch { setShowProfileModal(true) }
     })
     return unsub
   }, [])
@@ -1184,62 +1037,32 @@ export default function AdminDashboard() {
 
   return (
     <div style={{ ...S, minHeight: '100dvh', background: '#f0f4fa', display: 'flex', flexDirection: 'column' }}>
-      {/* {showProfileModal && user && (
+
+      {/* ✅ Profile modal — shows when user has no idCard yet */}
+      {showProfileModal && user && (
         <ProfileModal
           uid={user.uid}
           email={user.email}
-          onComplete={updates => {
-            setCurrentUserData(p => ({ ...p, ...updates }))
-            setShowProfileModal(false)
-          }}
+          onComplete={updates => { setCurrentUserData(p => ({ ...p, ...updates })); setShowProfileModal(false) }}
         />
-      )} */}
+      )}
 
-      {/* ── Top Bar ── */}
-      <header style={{
-        background: '#0d1b2e', height: 60, display: 'flex', alignItems: 'center',
-        justifyContent: 'space-between', padding: '0 1.5rem', flexShrink: 0,
-        boxShadow: '0 2px 20px rgba(0,0,0,0.25)',
-      }}>
+      <header style={{ background: '#0d1b2e', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 1.5rem', flexShrink: 0, boxShadow: '0 2px 20px rgba(0,0,0,0.25)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <motion.button
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={() => navigate('/')}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 7,
-              background: '#1565c0', border: 'none', borderRadius: 10,
-              padding: '8px 16px', color: '#fff', fontSize: 13, fontWeight: 700,
-              cursor: 'pointer', fontFamily: 'Sora,sans-serif',
-              boxShadow: '0 2px 12px rgba(21,101,192,0.4)',
-            }}
-          >
+          <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} onClick={() => navigate('/')}
+            style={{ display: 'flex', alignItems: 'center', gap: 7, background: '#1565c0', border: 'none', borderRadius: 10, padding: '8px 16px', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'Sora,sans-serif', boxShadow: '0 2px 12px rgba(21,101,192,0.4)' }}>
             <Home size={15} /> Home
           </motion.button>
-
           <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.1)' }} />
-
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <ShieldCheck size={16} color="#42a5f5" />
             <span style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>Admin Dashboard</span>
           </div>
         </div>
-
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {user?.email}
-          </span>
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={() => signOut(auth).then(() => navigate('/shield'))}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 9, padding: '7px 12px', color: 'rgba(255,255,255,0.65)',
-              fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'Sora,sans-serif',
-            }}
-          >
+          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</span>
+          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={() => signOut(auth).then(() => navigate('/shield'))}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 9, padding: '7px 12px', color: 'rgba(255,255,255,0.65)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'Sora,sans-serif' }}>
             <LogOut size={13} /> Sign out
           </motion.button>
         </div>
@@ -1251,41 +1074,18 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* ── Tab Nav ── */}
-      <nav style={{
-        background: '#fff', borderBottom: '1px solid #dce8f7',
-        padding: '0 1.5rem', display: 'flex', gap: 0, flexShrink: 0,
-      }}>
+      <nav style={{ background: '#fff', borderBottom: '1px solid #dce8f7', padding: '0 1.5rem', display: 'flex', gap: 0, flexShrink: 0 }}>
         {TABS.map(({ id, label, Icon }) => (
-          <button
-            key={id}
-            onClick={() => setTab(id)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 7,
-              padding: '14px 20px', border: 'none',
-              borderBottom: tab === id ? '2px solid #1565c0' : '2px solid transparent',
-              background: 'transparent',
-              color: tab === id ? '#1565c0' : '#5a7599',
-              fontSize: 13, fontWeight: tab === id ? 700 : 500,
-              cursor: 'pointer', fontFamily: 'Sora,sans-serif', transition: 'all 0.15s',
-            }}
-          >
-            <Icon size={16} />
-            {label}
+          <button key={id} onClick={() => setTab(id)}
+            style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '14px 20px', border: 'none', borderBottom: tab === id ? '2px solid #1565c0' : '2px solid transparent', background: 'transparent', color: tab === id ? '#1565c0' : '#5a7599', fontSize: 13, fontWeight: tab === id ? 700 : 500, cursor: 'pointer', fontFamily: 'Sora,sans-serif', transition: 'all 0.15s' }}>
+            <Icon size={16} />{label}
           </button>
         ))}
       </nav>
 
-      {/* ── Content ── */}
       <main style={{ flex: 1, padding: '2rem 1.5rem', maxWidth: 1100, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
         <AnimatePresence mode="wait">
-          <motion.div
-            key={tab}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.16 }}
-          >
+          <motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.16 }}>
             {tab === 'cars' && <CarsSection readOnly={isReadOnly} />}
             {tab === 'shipments' && <ShipmentsSection readOnly={isReadOnly} />}
             {tab === 'users' && <UsersSection />}
