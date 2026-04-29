@@ -3474,10 +3474,7 @@ function TrackersSection({ readOnly = false, currentUser }) {
           </button>
         )}
       </div>
-      <div className="bg-[#f0f6ff] border border-[#bbdefb] rounded-xl px-4 py-3 mb-5 text-[12px] text-[#1565c0]">
-        Firestore overrides default trackers. Leave a field blank to inherit the
-        built-in default for that carrier.
-      </div>
+   
       {loading ? (
         <div className="text-center py-12 text-[#5a7599] text-[13px]">
           Loading…
