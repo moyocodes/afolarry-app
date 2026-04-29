@@ -1102,6 +1102,7 @@ function ShipmentsSection({ readOnly = false, currentUser }) {
   const [sendEmail, setSendEmail] = useState(true);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [viewingShipment, setViewingShipment] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -1507,6 +1508,14 @@ function ShipmentsSection({ readOnly = false, currentUser }) {
         </div>
       ) : (
         <div className="flex flex-col gap-3">
+          <AnimatePresence>
+            {viewingShipment && (
+              <ViewShipmentDrawer
+                shipment={viewingShipment}
+                onClose={() => setViewingShipment(null)}
+              />
+            )}
+          </AnimatePresence>
           {paged.map((s) => (
             <div
               key={s.id}
@@ -1542,22 +1551,31 @@ function ShipmentsSection({ readOnly = false, currentUser }) {
                   </span>
                 )}
               </div>
-              {!readOnly && (
-                <div className="flex gap-2 shrink-0">
-                  <button
-                    onClick={() => startEdit(s)}
-                    className="bg-[#e3f2fd] hover:bg-[#bbdefb] border-none rounded-lg p-2 cursor-pointer text-[#1565c0] flex transition"
-                  >
-                    <Pencil size={14} />
-                  </button>
-                  <button
-                    onClick={() => remove(s.id)}
-                    className="bg-[#ffebee] hover:bg-[#ffcdd2] border-none rounded-lg p-2 cursor-pointer text-[#c62828] flex transition"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              )}
+              <div className="flex gap-2 shrink-0">
+                {/* View — always visible */}
+                <button
+                  onClick={() => setViewingShipment(s)}
+                  className="bg-[#f0f6ff] border border-[#dce8f7] rounded-lg p-2 cursor-pointer text-[#1565c0] flex transition hover:bg-[#e3f2fd]"
+                >
+                  <Eye size={14} />
+                </button>
+                {!readOnly && (
+                  <>
+                    <button
+                      onClick={() => startEdit(s)}
+                      className="bg-[#e3f2fd] hover:bg-[#bbdefb] border-none rounded-lg p-2 cursor-pointer text-[#1565c0] flex transition"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      onClick={() => remove(s.id)}
+                      className="bg-[#ffebee] hover:bg-[#ffcdd2] border-none rounded-lg p-2 cursor-pointer text-[#c62828] flex transition"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -1566,10 +1584,581 @@ function ShipmentsSection({ readOnly = false, currentUser }) {
     </div>
   );
 }
+// ── View Shipment Drawer ───────────────────────────────────────────────────
+function ViewShipmentDrawer({ shipment: s, onClose }) {
+  if (!s) return null;
+  const doneMilestones = (s.milestones || []).filter((m) => m.done).length;
+  const totalMilestones = (s.milestones || []).length;
 
+  return (
+    <>
+      <div
+        onClick={onClose}
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 9998,
+          background: "rgba(6,14,26,0.6)",
+          backdropFilter: "blur(6px)",
+          cursor: "pointer",
+        }}
+      />
+      <motion.div
+        initial={{ x: "100%" }}
+        animate={{ x: 0 }}
+        exit={{ x: "100%" }}
+        transition={{ type: "spring", damping: 28, stiffness: 280 }}
+        style={{
+          position: "fixed",
+          top: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 9999,
+          width: "100%",
+          maxWidth: 480,
+          background: "#fff",
+          borderLeft: "1px solid #dce8f7",
+          display: "flex",
+          flexDirection: "column",
+          fontFamily: "'Sora',sans-serif",
+          boxShadow: "-20px 0 60px rgba(0,0,0,0.12)",
+          overflowY: "auto",
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{ background: "#0d1b2e", padding: "20px 24px", flexShrink: 0 }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              gap: 12,
+            }}
+          >
+            <div>
+              <p
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: "#42a5f5",
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  margin: "0 0 4px",
+                }}
+              >
+                Shipment Details
+              </p>
+              <h2
+                style={{
+                  fontSize: 20,
+                  fontWeight: 800,
+                  color: "#fff",
+                  margin: "0 0 8px",
+                  letterSpacing: "-0.01em",
+                }}
+              >
+                {s.shipmentId}
+              </h2>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    background: "#1565c0",
+                    color: "#fff",
+                    padding: "3px 10px",
+                    borderRadius: 999,
+                  }}
+                >
+                  {s.status}
+                </span>
+                {s.eta && (
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      background: "rgba(255,255,255,0.12)",
+                      color: "rgba(255,255,255,0.7)",
+                      padding: "3px 10px",
+                      borderRadius: 999,
+                    }}
+                  >
+                    ETA {fmtDate(s.eta)}
+                  </span>
+                )}
+                {totalMilestones > 0 && (
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      background: "rgba(66,165,245,0.2)",
+                      color: "#42a5f5",
+                      padding: "3px 10px",
+                      borderRadius: 999,
+                    }}
+                  >
+                    {doneMilestones}/{totalMilestones} milestones
+                  </span>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              style={{
+                background: "rgba(255,255,255,0.1)",
+                border: "none",
+                borderRadius: 8,
+                padding: 8,
+                cursor: "pointer",
+                color: "#fff",
+                display: "flex",
+                flexShrink: 0,
+              }}
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+
+        <div
+          style={{
+            padding: "20px 24px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 20,
+          }}
+        >
+          {/* Route */}
+          <div
+            style={{
+              background: "#f7faff",
+              border: "1px solid #dce8f7",
+              borderRadius: 14,
+              padding: "14px 16px",
+            }}
+          >
+            <p
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                color: "#9ab2cc",
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                margin: "0 0 10px",
+              }}
+            >
+              Route
+            </p>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ flex: 1 }}>
+                <p
+                  style={{
+                    fontSize: 10,
+                    color: "#9ab2cc",
+                    fontWeight: 600,
+                    margin: "0 0 2px",
+                  }}
+                >
+                  ORIGIN
+                </p>
+                <p
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: "#0d1b2e",
+                    margin: 0,
+                  }}
+                >
+                  {s.origin || "—"}
+                </p>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 2,
+                }}
+              >
+                <Ship size={16} color="#1565c0" />
+                <div style={{ width: 40, height: 1, background: "#dce8f7" }} />
+              </div>
+              <div style={{ flex: 1, textAlign: "right" }}>
+                <p
+                  style={{
+                    fontSize: 10,
+                    color: "#9ab2cc",
+                    fontWeight: 600,
+                    margin: "0 0 2px",
+                  }}
+                >
+                  DESTINATION
+                </p>
+                <p
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: "#0d1b2e",
+                    margin: 0,
+                  }}
+                >
+                  {s.destination || "—"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Customer info */}
+          {(s.customerName || s.customerEmail || s.recipientEmail) && (
+            <div>
+              <p
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: "#9ab2cc",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  margin: "0 0 10px",
+                }}
+              >
+                Customer
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {s.customerName && (
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 10 }}
+                  >
+                    <div
+                      style={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: 8,
+                        background: "#f0f6ff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Users size={12} color="#1565c0" />
+                    </div>
+                    <div>
+                      <p
+                        style={{
+                          fontSize: 10,
+                          color: "#9ab2cc",
+                          fontWeight: 600,
+                          margin: 0,
+                        }}
+                      >
+                        Name
+                      </p>
+                      <p
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: "#0d1b2e",
+                          margin: 0,
+                        }}
+                      >
+                        {s.customerName}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {s.customerEmail && (
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 10 }}
+                  >
+                    <div
+                      style={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: 8,
+                        background: "#f0f6ff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Mail size={12} color="#1565c0" />
+                    </div>
+                    <div>
+                      <p
+                        style={{
+                          fontSize: 10,
+                          color: "#9ab2cc",
+                          fontWeight: 600,
+                          margin: 0,
+                        }}
+                      >
+                        Customer Email
+                      </p>
+                      <p
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: "#1565c0",
+                          margin: 0,
+                        }}
+                      >
+                        {s.customerEmail}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {s.recipientEmail && (
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 10 }}
+                  >
+                    <div
+                      style={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: 8,
+                        background: "#f0f6ff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Mail size={12} color="#5a7599" />
+                    </div>
+                    <div>
+                      <p
+                        style={{
+                          fontSize: 10,
+                          color: "#9ab2cc",
+                          fontWeight: 600,
+                          margin: 0,
+                        }}
+                      >
+                        Recipient Email
+                      </p>
+                      <p
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: "#1565c0",
+                          margin: 0,
+                        }}
+                      >
+                        {s.recipientEmail}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Cargo & vessel */}
+          {(s.carrier || s.vessel || s.carMake || s.vin) && (
+            <div>
+              <p
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: "#9ab2cc",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  margin: "0 0 10px",
+                }}
+              >
+                Cargo & Vessel
+              </p>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 10,
+                }}
+              >
+                {[
+                  { label: "Carrier", value: s.carrier },
+                  { label: "Vessel", value: s.vessel },
+                  { label: "Car Make / Model", value: s.carMake },
+                  { label: "VIN", value: s.vin, mono: true },
+                ]
+                  .filter((r) => r.value)
+                  .map(({ label, value, mono }) => (
+                    <div
+                      key={label}
+                      style={{
+                        background: "#f7faff",
+                        border: "1px solid #dce8f7",
+                        borderRadius: 10,
+                        padding: "10px 12px",
+                      }}
+                    >
+                      <p
+                        style={{
+                          fontSize: 10,
+                          color: "#9ab2cc",
+                          fontWeight: 600,
+                          margin: "0 0 3px",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.06em",
+                        }}
+                      >
+                        {label}
+                      </p>
+                      <p
+                        style={{
+                          fontSize: 12,
+                          fontWeight: 700,
+                          color: "#0d1b2e",
+                          margin: 0,
+                          fontFamily: mono ? "monospace" : "inherit",
+                          wordBreak: "break-all",
+                        }}
+                      >
+                        {value}
+                      </p>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+
+          {/* Notes */}
+          {s.notes && (
+            <div
+              style={{
+                background: "#fffde7",
+                border: "1px solid #ffe082",
+                borderRadius: 12,
+                padding: "12px 16px",
+              }}
+            >
+              <p
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: "#9ab2cc",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  margin: "0 0 6px",
+                }}
+              >
+                Notes
+              </p>
+              <p
+                style={{
+                  fontSize: 13,
+                  color: "#0d1b2e",
+                  margin: 0,
+                  lineHeight: 1.6,
+                }}
+              >
+                {s.notes}
+              </p>
+            </div>
+          )}
+
+          {/* Milestones */}
+          {s.milestones?.length > 0 && (
+            <div>
+              <p
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: "#9ab2cc",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  margin: "0 0 10px",
+                }}
+              >
+                Timeline
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                {s.milestones.map((m, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      display: "flex",
+                      gap: 12,
+                      alignItems: "flex-start",
+                    }}
+                  >
+                    {/* Line + dot */}
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        flexShrink: 0,
+                        paddingTop: 2,
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 20,
+                          height: 20,
+                          borderRadius: "50%",
+                          background: m.done ? "#1565c0" : "#f0f6ff",
+                          border: `2px solid ${m.done ? "#1565c0" : "#dce8f7"}`,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        {m.done ? (
+                          <CheckCircle size={11} color="#fff" />
+                        ) : (
+                          <Clock size={10} color="#9ab2cc" />
+                        )}
+                      </div>
+                      {i < s.milestones.length - 1 && (
+                        <div
+                          style={{
+                            width: 2,
+                            height: 22,
+                            background: m.done ? "#bbdefb" : "#eef4ff",
+                            marginTop: 2,
+                          }}
+                        />
+                      )}
+                    </div>
+                    {/* Label */}
+                    <div style={{ paddingBottom: 16, flex: 1 }}>
+                      <p
+                        style={{
+                          fontSize: 13,
+                          fontWeight: m.done ? 700 : 400,
+                          color: m.done ? "#0d1b2e" : "#9ab2cc",
+                          margin: "0 0 2px",
+                        }}
+                      >
+                        {m.label}
+                      </p>
+                      {m.date && (
+                        <p
+                          style={{ fontSize: 10, color: "#9ab2cc", margin: 0 }}
+                        >
+                          {fmtDate(m.date)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <AuditBadge record={s} />
+        </div>
+      </motion.div>
+    </>
+  );
+}
 // ── USERS SECTION ──────────────────────────────────────────────────────────
 // ── USERS SECTION ──────────────────────────────────────────────────────────
-function UsersSection() {
+function UsersSection({ readOnly = false, currentUser }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -1602,6 +2191,10 @@ function UsersSection() {
   const setApproval = async (id, approved) => {
     await updateDoc(doc(db, "adminUsers", id), { approved }).catch(() => {});
     setUsers((p) => p.map((u) => (u.id === id ? { ...u, approved } : u)));
+    // If an admin revokes their OWN access, sign them out immediately
+    if (!approved && currentUser?.uid === id) {
+      await signOut(auth).catch(() => {});
+    }
   };
 
   const remove = async (id) => {
@@ -1753,58 +2346,6 @@ function UsersSection() {
                           gap: 10,
                         }}
                       >
-                        <button
-                          onClick={() => setViewingUser(u)}
-                          style={{
-                            background: "none",
-                            border: "none",
-                            padding: 0,
-                            cursor: "pointer",
-                            flexShrink: 0,
-                          }}
-                        >
-                          <div
-                            style={{
-                              width: 36,
-                              height: 36,
-                              borderRadius: "50%",
-                              overflow: "hidden",
-                              border: "2px solid #dce8f7",
-                              background:
-                                "linear-gradient(135deg,#1565c0,#0d47a1)",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              flexShrink: 0,
-                            }}
-                          >
-                            {u.profileImage ? (
-                              <img
-                                src={u.profileImage}
-                                alt=""
-                                style={{
-                                  width: "100%",
-                                  height: "100%",
-                                  objectFit: "cover",
-                                }}
-                              />
-                            ) : (
-                              <span
-                                style={{
-                                  fontSize: 13,
-                                  fontWeight: 800,
-                                  color: "#fff",
-                                }}
-                              >
-                                {(
-                                  u.name?.[0] ||
-                                  u.email?.[0] ||
-                                  "?"
-                                ).toUpperCase()}
-                              </span>
-                            )}
-                          </div>
-                        </button>
                         <div style={{ minWidth: 0 }}>
                           <p
                             style={{
@@ -2051,84 +2592,91 @@ function UsersSection() {
                         >
                           <Eye size={12} /> View
                         </button>
-                        {u.approved === false ? (
-                          <button
-                            onClick={() => setApproval(u.id, true)}
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 5,
-                              background: "#e8f5e9",
-                              border: "1px solid #a5d6a7",
-                              borderRadius: 8,
-                              padding: "5px 10px",
-                              cursor: "pointer",
-                              fontSize: 11,
-                              fontWeight: 700,
-                              color: "#2e7d32",
-                            }}
-                          >
-                            <UserCheck size={12} /> Approve
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => setApproval(u.id, false)}
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 5,
-                              background: "#fff3e0",
-                              border: "1px solid #ffcc80",
-                              borderRadius: 8,
-                              padding: "5px 10px",
-                              cursor: "pointer",
-                              fontSize: 11,
-                              fontWeight: 700,
-                              color: "#e65100",
-                            }}
-                          >
-                            <UserX size={12} /> Revoke
-                          </button>
+                        {!readOnly && (
+                          <>
+                            {u.approved === false ? (
+                              <button
+                                onClick={() => setApproval(u.id, true)}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 5,
+                                  background: "#e8f5e9",
+                                  border: "1px solid #a5d6a7",
+                                  borderRadius: 8,
+                                  padding: "5px 10px",
+                                  cursor: "pointer",
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  color: "#2e7d32",
+                                }}
+                              >
+                                <UserCheck size={12} /> Approve
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => setApproval(u.id, false)}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 5,
+                                  background: "#fff3e0",
+                                  border: "1px solid #ffcc80",
+                                  borderRadius: 8,
+                                  padding: "5px 10px",
+                                  cursor: "pointer",
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  color: "#e65100",
+                                }}
+                              >
+                                <UserX size={12} /> Revoke
+                              </button>
+                            )}
+                            <button
+                              onClick={() =>
+                                toggleAdmin(u.id, u.isAdmin !== false)
+                              }
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 5,
+                                background:
+                                  u.isAdmin !== false ? "#e3f2fd" : "#f5f5f5",
+                                border: `1px solid ${u.isAdmin !== false ? "#bbdefb" : "#e0e0e0"}`,
+                                borderRadius: 8,
+                                padding: "5px 10px",
+                                cursor: "pointer",
+                                fontSize: 11,
+                                fontWeight: 700,
+                                color:
+                                  u.isAdmin !== false ? "#1565c0" : "#9e9e9e",
+                              }}
+                            >
+                              {u.isAdmin !== false ? (
+                                <ToggleRight size={12} />
+                              ) : (
+                                <ToggleLeft size={12} />
+                              )}
+                              {u.isAdmin !== false ? "Full" : "View"}
+                            </button>
+                            <button
+                              onClick={() => remove(u.id)}
+                              style={{
+                                background: "#ffebee",
+                                border: "none",
+                                borderRadius: 8,
+                                padding: "6px 8px",
+                                cursor: "pointer",
+                                color: "#c62828",
+                                display: "flex",
+                                alignItems: "center",
+                              }}
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </>
                         )}
-                        <button
-                          onClick={() => toggleAdmin(u.id, u.isAdmin !== false)}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 5,
-                            background:
-                              u.isAdmin !== false ? "#e3f2fd" : "#f5f5f5",
-                            border: `1px solid ${u.isAdmin !== false ? "#bbdefb" : "#e0e0e0"}`,
-                            borderRadius: 8,
-                            padding: "5px 10px",
-                            cursor: "pointer",
-                            fontSize: 11,
-                            fontWeight: 700,
-                            color: u.isAdmin !== false ? "#1565c0" : "#9e9e9e",
-                          }}
-                        >
-                          {u.isAdmin !== false ? (
-                            <ToggleRight size={12} />
-                          ) : (
-                            <ToggleLeft size={12} />
-                          )}
-                          {u.isAdmin !== false ? "Full" : "View"}
-                        </button>
-                        <button
-                          onClick={() => remove(u.id)}
-                          style={{
-                            background: "#ffebee",
-                            border: "none",
-                            borderRadius: 8,
-                            padding: "6px 8px",
-                            cursor: "pointer",
-                            color: "#c62828",
-                            display: "flex",
-                            alignItems: "center",
-                          }}
-                        >
-                          <Trash2 size={13} />
-                        </button>
                       </div>
                     </td>
                   </tr>
@@ -3285,7 +3833,9 @@ export default function AdminDashboard() {
             {tab === "shipments" && (
               <ShipmentsSection readOnly={isReadOnly} currentUser={user} />
             )}
-            {tab === "users" && <UsersSection />}
+            {tab === "users" && (
+              <UsersSection readOnly={isReadOnly} currentUser={user} />
+            )}
             {tab === "trackers" && (
               <TrackersSection readOnly={isReadOnly} currentUser={user} />
             )}

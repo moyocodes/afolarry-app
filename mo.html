@@ -1,0 +1,2784 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MA|DESIGN — Structure Changes Everything</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400;500&family=Syne:wght@700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              azure: "#1980c2",
+              "azure-light": "#e8f4fc",
+              "azure-mid": "#5aaee0",
+              "azure-dark": "#0f5a8a",
+              ink: "#181817",
+              "ink-mid": "#3d3d3b",
+              "ink-muted": "#8a8a87",
+              cream: "#f6f6f5",
+            },
+            fontFamily: {
+              cormorant: ["Cormorant Garamond", "serif"],
+              sans: ["DM Sans", "sans-serif"],
+              syne: ["Syne", "sans-serif"],
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      /* ── canvas overlay ── */
+      #pixel-canvas {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 50;
+      }
+
+      /* ── hero pin zone ── */
+      #hero-pin {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      /* ── gradient bg ── */
+      .gradient-bg {
+        background: linear-gradient(
+          160deg,
+          #f0f7fd 0%,
+          #e8f4fc 40%,
+          #f8f0ff 80%,
+          #fdf0f8 100%
+        );
+      }
+
+      /* ── animations ── */
+      @keyframes ticker {
+        from {
+          transform: translateX(0);
+        }
+        to {
+          transform: translateX(-50%);
+        }
+      }
+      @keyframes livePulse {
+        0%,
+        100% {
+          box-shadow: 0 0 0 0 rgba(90, 174, 224, 0.7);
+        }
+        60% {
+          box-shadow: 0 0 0 8px rgba(90, 174, 224, 0);
+        }
+      }
+      @keyframes blink {
+        0%,
+        80%,
+        100% {
+          opacity: 0.2;
+        }
+        40% {
+          opacity: 1;
+        }
+      }
+      @keyframes cardFloat {
+        0%,
+        100% {
+          transform: translateY(0px) rotate(var(--r, 0deg));
+        }
+        50% {
+          transform: translateY(-10px) rotate(var(--r, 0deg));
+        }
+      }
+      @keyframes scanLine {
+        0% {
+          top: 0;
+        }
+        100% {
+          top: 100%;
+        }
+      }
+      @keyframes shimmer {
+        0% {
+          background-position: -200% center;
+        }
+        100% {
+          background-position: 200% center;
+        }
+      }
+      @keyframes gradientShift {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
+      @keyframes floatUp {
+        0% {
+          opacity: 0;
+          transform: translateY(80px) scale(0.8);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+      @keyframes pulseRing {
+        0% {
+          transform: scale(1);
+          opacity: 0.6;
+        }
+        100% {
+          transform: scale(2.2);
+          opacity: 0;
+        }
+      }
+      @keyframes ctaReveal {
+        0% {
+          opacity: 0;
+          transform: translateY(30px) scale(0.95);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+      @keyframes imageUnveil {
+        0% {
+          clip-path: inset(0 100% 0 0);
+        }
+        100% {
+          clip-path: inset(0 0% 0 0);
+        }
+      }
+
+      .ticker-track {
+        animation: ticker 32s linear infinite;
+      }
+      .live-dot {
+        animation: livePulse 2.2s infinite;
+      }
+      .shimmer-bg {
+        background: linear-gradient(
+          90deg,
+          #e8f4fc 0%,
+          #f0f9ff 45%,
+          #bde3f8 55%,
+          #e8f4fc 100%
+        );
+        background-size: 200% auto;
+        animation: shimmer 2.5s linear infinite;
+      }
+      .card-idle {
+        animation: cardFloat 6s ease-in-out infinite;
+      }
+      .card-idle-2 {
+        animation: cardFloat 7s ease-in-out infinite 0.8s;
+      }
+      .card-idle-3 {
+        animation: cardFloat 5.5s ease-in-out infinite 1.5s;
+      }
+
+      /* scroll reveal */
+      .sr {
+        opacity: 0;
+        transform: translateY(36px);
+        transition:
+          opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+          transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .sr.on {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .sr-l {
+        opacity: 0;
+        transform: translateX(-48px);
+        transition:
+          opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+          transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .sr-l.on {
+        opacity: 1;
+        transform: translateX(0);
+      }
+      .sr-r {
+        opacity: 0;
+        transform: translateX(48px);
+        transition:
+          opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+          transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .sr-r.on {
+        opacity: 1;
+        transform: translateX(0);
+      }
+      .d1 {
+        transition-delay: 0.1s;
+      }
+      .d2 {
+        transition-delay: 0.2s;
+      }
+      .d3 {
+        transition-delay: 0.3s;
+      }
+      .d4 {
+        transition-delay: 0.4s;
+      }
+      .d5 {
+        transition-delay: 0.5s;
+      }
+
+      .scan-line {
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(25, 128, 194, 0.8),
+          transparent
+        );
+        animation: scanLine 2s linear infinite;
+      }
+      .h-scroll {
+        scrollbar-width: none;
+      }
+      .h-scroll::-webkit-scrollbar {
+        display: none;
+      }
+      .faq-body {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .faq-item.open .faq-body {
+        max-height: 300px;
+      }
+      .faq-item.open .faq-icon {
+        transform: rotate(45deg);
+        background: #1980c2;
+        color: white;
+        border-color: #1980c2;
+      }
+      .faq-icon {
+        transition:
+          transform 0.3s,
+          background 0.3s,
+          color 0.3s;
+      }
+      .glass {
+        background: rgba(255, 255, 255, 0.88);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+      }
+      .service-hover {
+        transition:
+          transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+          box-shadow 0.35s;
+      }
+      .service-hover:hover {
+        transform: translateY(-8px) scale(1.02);
+      }
+
+      /* ── BIG PIXEL SPECIFIC ── */
+      .big-pixel {
+        image-rendering: pixelated;
+      }
+
+      /* ── CTA overlay that slides up during scroll ── */
+      #scroll-cta {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 25;
+        transform: translateY(100%);
+        transition:
+          transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+          opacity 0.6s;
+        opacity: 0;
+      }
+      #scroll-cta.visible {
+        transform: translateY(0);
+        opacity: 1;
+      }
+
+      /* ── cinematic image reveal after pixel collapse ── */
+      #reveal-section {
+        position: relative;
+        height: 100vh;
+        overflow: hidden;
+      }
+      #reveal-img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        clip-path: inset(0 100% 0 0);
+        transition: clip-path 1s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      #reveal-img.unveiled {
+        clip-path: inset(0 0% 0 0);
+      }
+
+      /* ── three service cards ── */
+      .svc-num {
+        font-family: "Syne", sans-serif;
+        font-weight: 800;
+        font-size: 8rem;
+        line-height: 1;
+        -webkit-text-stroke: 1px rgba(255, 255, 255, 0.12);
+        color: transparent;
+        position: absolute;
+        bottom: -1.5rem;
+        right: 1.5rem;
+        pointer-events: none;
+        letter-spacing: -0.04em;
+      }
+
+      /* ── horizontal service scroll ── */
+      #svc-track {
+        display: flex;
+        gap: 1.5rem;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        scrollbar-width: none;
+        padding: 0 2rem 2rem;
+      }
+      #svc-track::-webkit-scrollbar {
+        display: none;
+      }
+      #svc-track > * {
+        scroll-snap-align: start;
+        flex-shrink: 0;
+      }
+
+      /* ── pulse ring ── */
+      .pulse-ring::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        border: 1px solid rgba(25, 128, 194, 0.5);
+        animation: pulseRing 2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+      }
+    </style>
+  </head>
+  <body class="bg-ink font-sans text-ink overflow-x-hidden">
+    <!-- ═══ NAV ═══ -->
+    <div
+      id="main-nav"
+      class="fixed top-5 left-1/2 -translate-x-1/2 z-[999] w-[calc(100%-48px)] max-w-6xl"
+    >
+      <nav
+        class="flex items-center justify-between px-7 py-2.5 rounded-full border border-white/10 bg-ink/80 backdrop-blur-xl"
+      >
+        <a
+          href="#"
+          class="font-syne font-extrabold text-[1.05rem] tracking-tight text-white"
+          >MA<span class="text-azure">|</span>DESIGN</a
+        >
+        <div class="hidden md:flex gap-1">
+          <a
+            href="#about"
+            class="text-[.8rem] tracking-widest uppercase text-white/45 px-4 py-2 rounded-full hover:text-white transition-colors"
+            >About</a
+          >
+          <a
+            href="#services"
+            class="text-[.8rem] tracking-widest uppercase text-white/45 px-4 py-2 rounded-full hover:text-white transition-colors"
+            >Services</a
+          >
+          <a
+            href="#work"
+            class="text-[.8rem] tracking-widest uppercase text-white/45 px-4 py-2 rounded-full hover:text-white transition-colors"
+            >Work</a
+          >
+          <a
+            href="#contact"
+            class="text-[.8rem] tracking-widest uppercase text-white/45 px-4 py-2 rounded-full hover:text-white transition-colors"
+            >Contact</a
+          >
+        </div>
+        <button
+          class="bg-azure text-white text-[.8rem] tracking-widest uppercase px-6 py-2.5 rounded-full hover:bg-azure-dark transition-colors font-medium"
+        >
+          Work with us
+        </button>
+      </nav>
+    </div>
+
+    <!-- ═══════════════════════════════════════
+     HERO SCROLL ZONE — 400vh gives more room for each phase
+═══════════════════════════════════════ -->
+    <div style="height: 500vh" class="relative" id="hero-scroll-zone">
+      <div id="hero-pin" class="sticky top-0 h-screen overflow-hidden bg-ink">
+        <!-- hero bg image -->
+        <div class="absolute inset-0" id="hero-bg">
+          <img
+            id="hero-img"
+            src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=1800&q=80&auto=format&fit=crop"
+            class="w-full h-full object-cover opacity-40"
+            alt=""
+          />
+          <div
+            id="hero-overlay"
+            class="absolute inset-0"
+            style="
+              background: linear-gradient(
+                180deg,
+                rgba(24, 24, 23, 0.35) 0%,
+                rgba(24, 24, 23, 0.75) 65%,
+                rgba(24, 24, 23, 0.97) 100%
+              );
+            "
+          ></div>
+        </div>
+
+        <!-- BIG PIXEL CANVAS -->
+        <canvas
+          id="pixel-canvas"
+          class="absolute inset-0 w-full h-full big-pixel"
+          style="
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 15;
+          "
+        ></canvas>
+
+        <!-- hero text -->
+        <div
+          id="hero-content"
+          class="relative z-10 h-full flex flex-col justify-end pb-20 px-8 md:px-16 max-w-7xl mx-auto"
+        >
+          <div
+            class="mb-8 inline-flex items-center gap-2.5 border border-white/20 rounded-full px-4 py-1.5 w-fit"
+          >
+            <span
+              class="live-dot w-2 h-2 rounded-full bg-azure-mid flex-shrink-0 relative pulse-ring"
+            ></span>
+            <span class="text-white/55 text-[.72rem] tracking-[.12em] uppercase"
+              >Est. 2015 · Precision at every touchpoint</span
+            >
+          </div>
+          <h1
+            class="font-cormorant font-light text-white leading-[.9] tracking-tight mb-10"
+            style="font-size: clamp(5rem, 12vw, 11rem)"
+          >
+            Structure<br />changes<br /><em class="text-azure-mid italic"
+              >everything.</em
+            >
+          </h1>
+          <div
+            class="flex flex-col md:flex-row items-start md:items-end justify-between gap-8"
+          >
+            <p class="text-white/60 text-[1.02rem] leading-relaxed max-w-md">
+              Three services. One structure. Designed to change how you operate.
+            </p>
+            <div class="flex flex-col items-end gap-5">
+              <div class="flex gap-8">
+                <div class="text-right">
+                  <div
+                    class="font-cormorant text-white font-light"
+                    style="font-size: 2.5rem; line-height: 1"
+                  >
+                    200+
+                  </div>
+                  <div
+                    class="text-white/38 text-[.68rem] tracking-widest uppercase mt-1"
+                  >
+                    Projects
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div
+                    class="font-cormorant text-white font-light"
+                    style="font-size: 2.5rem; line-height: 1"
+                  >
+                    $2M+
+                  </div>
+                  <div
+                    class="text-white/38 text-[.68rem] tracking-widest uppercase mt-1"
+                  >
+                    Revenue
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div
+                    class="font-cormorant text-white font-light"
+                    style="font-size: 2.5rem; line-height: 1"
+                  >
+                    10yr
+                  </div>
+                  <div
+                    class="text-white/38 text-[.68rem] tracking-widest uppercase mt-1"
+                  >
+                    Est.
+                  </div>
+                </div>
+              </div>
+              <div class="flex gap-3">
+                <a
+                  href="#services"
+                  class="bg-azure text-white text-[.82rem] tracking-widest uppercase px-7 py-3 rounded-full hover:bg-azure-dark transition-colors font-medium"
+                  >Work with us</a
+                >
+                <a
+                  href="#work"
+                  class="border border-white/30 text-white text-[.82rem] tracking-widest uppercase px-7 py-3 rounded-full hover:border-white/60 transition-all"
+                  >Our work</a
+                >
+              </div>
+            </div>
+          </div>
+          <div
+            id="scroll-hint"
+            class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 transition-opacity duration-500"
+          >
+            <span class="text-white/30 text-[.65rem] tracking-[.15em] uppercase"
+              >Scroll</span
+            >
+            <div
+              class="w-px h-8 bg-gradient-to-b from-white/30 to-transparent"
+            ></div>
+          </div>
+        </div>
+
+        <!-- ── PIXEL PHASE: "Three services. One structure." label ── -->
+        <div
+          id="pixel-centre"
+          class="absolute inset-0 z-20 flex items-center justify-center pointer-events-none"
+          style="opacity: 0; transition: opacity 0.5s"
+        >
+          <div class="text-center px-8">
+            <div
+              class="font-cormorant text-white font-light tracking-tight leading-none"
+              style="
+                font-size: clamp(3.5rem, 7vw, 8rem);
+                text-shadow: 0 4px 60px rgba(0, 0, 0, 0.7);
+              "
+            >
+              Three services.<br /><em class="text-azure-mid"
+                >One structure.</em
+              >
+            </div>
+            <div class="flex justify-center gap-12 mt-12">
+              <div class="text-center opacity-80">
+                <div
+                  class="w-12 h-12 rounded-xl bg-azure/20 border border-azure/40 flex items-center justify-center mb-2 mx-auto"
+                >
+                  <svg
+                    class="w-5 h-5 text-azure-mid"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                  >
+                    <rect x="3" y="3" width="7" height="7" rx="1" />
+                    <rect x="14" y="3" width="7" height="7" rx="1" />
+                    <rect x="3" y="14" width="7" height="7" rx="1" />
+                    <rect x="14" y="14" width="7" height="7" rx="1" />
+                  </svg>
+                </div>
+                <div
+                  class="text-white/60 text-[.7rem] tracking-widest uppercase"
+                >
+                  Product
+                </div>
+              </div>
+              <div class="text-center opacity-80">
+                <div
+                  class="w-12 h-12 rounded-xl bg-azure/20 border border-azure/40 flex items-center justify-center mb-2 mx-auto"
+                >
+                  <svg
+                    class="w-5 h-5 text-azure-mid"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                  >
+                    <path
+                      d="M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7z"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </div>
+                <div
+                  class="text-white/60 text-[.7rem] tracking-widest uppercase"
+                >
+                  Brand
+                </div>
+              </div>
+              <div class="text-center opacity-80">
+                <div
+                  class="w-12 h-12 rounded-xl bg-azure/20 border border-azure/40 flex items-center justify-center mb-2 mx-auto"
+                >
+                  <svg
+                    class="w-5 h-5 text-azure-mid"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                  >
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M8 12l3 3 5-5" stroke-linecap="round" />
+                  </svg>
+                </div>
+                <div
+                  class="text-white/60 text-[.7rem] tracking-widest uppercase"
+                >
+                  Marketing
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── CTA SLIDE-UP: appears mid-pixel, then full image reveals ── -->
+        <div
+          id="scroll-cta"
+          class="absolute inset-0 z-30 flex flex-col items-center justify-center bg-ink/70 backdrop-blur-sm pointer-events-none"
+        >
+          <div
+            id="cta-inner"
+            style="
+              opacity: 0;
+              transform: translateY(40px);
+              transition:
+                opacity 0.7s 0.2s,
+                transform 0.7s 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+            "
+          >
+            <div class="text-center mb-8">
+              <div
+                class="text-azure text-[.72rem] tracking-[.16em] uppercase mb-4"
+              >
+                Ready to restructure?
+              </div>
+              <h2
+                class="font-cormorant font-light text-white leading-none mb-6"
+                style="font-size: clamp(3rem, 6vw, 6.5rem)"
+              >
+                Let's build<br /><em class="text-azure-mid italic"
+                  >something real.</em
+                >
+              </h2>
+              <p class="text-white/50 max-w-md mx-auto leading-relaxed">
+                A half-formed idea is enough. We've built $2M+ from
+                conversations that started with "I'm not sure where to begin."
+              </p>
+            </div>
+            <div class="flex justify-center gap-4">
+              <a
+                href="#services"
+                class="bg-azure text-white text-[.82rem] tracking-widest uppercase px-8 py-4 rounded-full hover:bg-azure-dark transition-colors font-medium pointer-events-auto"
+                >Explore services</a
+              >
+              <a
+                href="#contact"
+                class="border border-white/30 text-white text-[.82rem] tracking-widest uppercase px-8 py-4 rounded-full hover:border-white/60 transition-all pointer-events-auto"
+                >Get in touch</a
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- ── FINAL IMAGE: cinematic full-screen reveal ── -->
+        <div
+          id="final-reveal"
+          class="absolute inset-0 z-35 pointer-events-none"
+          style="opacity: 0; transition: opacity 0.5s"
+        >
+          <img
+            id="reveal-img"
+            src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1800&q=80&auto=format&fit=crop"
+            class="w-full h-full object-cover"
+            alt=""
+            style="
+              clip-path: inset(0 100% 0 0);
+              transition: clip-path 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+            "
+          />
+          <div
+            class="absolute inset-0"
+            style="
+              background: linear-gradient(
+                to top,
+                rgba(24, 24, 23, 0.9) 0%,
+                rgba(24, 24, 23, 0.2) 60%,
+                transparent 100%
+              );
+            "
+          ></div>
+          <!-- floating stat cards on the revealed image -->
+          <div
+            id="img-cards"
+            class="absolute inset-0"
+            style="opacity: 0; transition: opacity 0.8s 0.5s"
+          >
+            <div
+              class="absolute glass rounded-2xl px-6 py-4 border border-white/40 shadow-2xl card-idle"
+              style="top: 20%; left: 7%; --r: -3deg"
+            >
+              <div
+                class="text-[.65rem] text-ink/50 uppercase tracking-widest mb-1"
+              >
+                Discovery Rate
+              </div>
+              <div class="font-cormorant text-ink font-light text-3xl">
+                94<span class="text-azure text-lg">%</span>
+              </div>
+            </div>
+            <div
+              class="absolute glass rounded-2xl px-6 py-4 border border-white/40 shadow-2xl card-idle-2"
+              style="top: 15%; right: 9%; --r: 2deg"
+            >
+              <div
+                class="text-[.65rem] text-ink/50 uppercase tracking-widest mb-1"
+              >
+                Avg. Partnership
+              </div>
+              <div class="font-cormorant text-ink font-light text-3xl">
+                3.2<span class="text-azure text-lg">yr</span>
+              </div>
+            </div>
+            <div
+              class="absolute glass rounded-2xl px-6 py-4 border border-white/40 shadow-2xl card-idle-3"
+              style="bottom: 25%; left: 10%; --r: 2deg"
+            >
+              <div
+                class="text-[.65rem] text-ink/50 uppercase tracking-widest mb-1"
+              >
+                Industries
+              </div>
+              <div class="font-cormorant text-ink font-light text-3xl">
+                12<span class="text-azure text-lg">+</span>
+              </div>
+            </div>
+            <div
+              class="absolute bottom-20 left-1/2 -translate-x-1/2 text-center"
+            >
+              <div
+                class="font-cormorant font-light text-white"
+                style="font-size: clamp(1.4rem, 2.5vw, 2rem)"
+              >
+                Scroll to see how we do it
+              </div>
+              <div class="mt-3 flex justify-center">
+                <div
+                  class="w-px h-10 bg-gradient-to-b from-white/50 to-transparent"
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- /hero-pin -->
+    </div>
+    <!-- /hero-scroll-zone -->
+
+    <!-- ═══ TICKER ═══ -->
+    <div class="bg-azure py-3.5 overflow-hidden relative z-10">
+      <div class="ticker-track flex whitespace-nowrap">
+        <span
+          class="inline-flex items-center gap-2.5 text-[.72rem] tracking-[.12em] uppercase text-white/90 px-7"
+          ><span class="w-1 h-1 rounded-full bg-white/50"></span>47 Brand
+          Identities Built</span
+        >
+        <span
+          class="inline-flex items-center gap-2.5 text-[.72rem] tracking-[.12em] uppercase text-white/90 px-7"
+          ><span class="w-1 h-1 rounded-full bg-white/50"></span>200+ Projects
+          Delivered</span
+        >
+        <span
+          class="inline-flex items-center gap-2.5 text-[.72rem] tracking-[.12em] uppercase text-white/90 px-7"
+          ><span class="w-1 h-1 rounded-full bg-white/50"></span>$2M+ Revenue
+          Generated</span
+        >
+        <span
+          class="inline-flex items-center gap-2.5 text-[.72rem] tracking-[.12em] uppercase text-white/90 px-7"
+          ><span class="w-1 h-1 rounded-full bg-white/50"></span>12 Industries
+          Served</span
+        >
+        <span
+          class="inline-flex items-center gap-2.5 text-[.72rem] tracking-[.12em] uppercase text-white/90 px-7"
+          ><span class="w-1 h-1 rounded-full bg-white/50"></span>1M+ Daily
+          Transactions</span
+        >
+        <span
+          class="inline-flex items-center gap-2.5 text-[.72rem] tracking-[.12em] uppercase text-white/90 px-7"
+          ><span class="w-1 h-1 rounded-full bg-white/50"></span>47 Brand
+          Identities Built</span
+        >
+        <span
+          class="inline-flex items-center gap-2.5 text-[.72rem] tracking-[.12em] uppercase text-white/90 px-7"
+          ><span class="w-1 h-1 rounded-full bg-white/50"></span>200+ Projects
+          Delivered</span
+        >
+        <span
+          class="inline-flex items-center gap-2.5 text-[.72rem] tracking-[.12em] uppercase text-white/90 px-7"
+          ><span class="w-1 h-1 rounded-full bg-white/50"></span>$2M+ Revenue
+          Generated</span
+        >
+        <span
+          class="inline-flex items-center gap-2.5 text-[.72rem] tracking-[.12em] uppercase text-white/90 px-7"
+          ><span class="w-1 h-1 rounded-full bg-white/50"></span>12 Industries
+          Served</span
+        >
+        <span
+          class="inline-flex items-center gap-2.5 text-[.72rem] tracking-[.12em] uppercase text-white/90 px-7"
+          ><span class="w-1 h-1 rounded-full bg-white/50"></span>1M+ Daily
+          Transactions</span
+        >
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════
+     ABOUT — directly after ticker, no white space
+═══════════════════════════════════════ -->
+    <section id="about" class="gradient-bg py-36 px-8 md:px-16 relative z-10">
+      <div class="max-w-7xl mx-auto">
+        <div class="grid md:grid-cols-2 gap-24 items-start">
+          <div class="sr-l">
+            <div class="flex items-center gap-2.5 mb-5">
+              <span class="w-7 h-px bg-azure"></span>
+              <span
+                class="text-azure text-[.72rem] tracking-[.14em] uppercase font-medium"
+                >About</span
+              >
+            </div>
+            <h2
+              class="font-cormorant font-light text-ink leading-[1.0] mb-8"
+              style="font-size: clamp(2.8rem, 5vw, 5.5rem)"
+            >
+              Better than<br />yesterday.<br /><em class="text-azure italic"
+                >Is that enough?</em
+              >
+            </h2>
+            <p class="text-ink/65 leading-relaxed text-[1.02rem] mb-8">
+              We work where clarity matters most — at the intersection of what
+              your business needs, what your users expect, and what your
+              technology can actually do.
+            </p>
+            <div
+              class="border-l-[3px] border-azure bg-azure-light px-7 py-5 rounded-r-xl mb-10"
+            >
+              <p class="text-ink text-[.96rem] leading-relaxed">
+                Growth comes from balance —
+                <strong class="text-azure-dark">business</strong> (value),
+                <strong class="text-azure-dark">design</strong> (usability),
+                <strong class="text-azure-dark">technology</strong>
+                (feasibility). Most organisations are strong in one. We
+                strengthen the other two.
+              </p>
+            </div>
+            <div class="grid grid-cols-3 gap-0.5">
+              <div class="bg-azure text-white py-6 px-5 text-center">
+                <div
+                  class="text-[.65rem] text-white/50 tracking-widest uppercase mb-1.5"
+                >
+                  01
+                </div>
+                <div class="font-cormorant text-[1.4rem] font-light">
+                  Business
+                </div>
+              </div>
+              <div class="bg-ink text-white py-6 px-5 text-center">
+                <div
+                  class="text-[.65rem] text-white/50 tracking-widest uppercase mb-1.5"
+                >
+                  02
+                </div>
+                <div class="font-cormorant text-[1.4rem] font-light">
+                  Design
+                </div>
+              </div>
+              <div class="bg-azure-dark text-white py-6 px-5 text-center">
+                <div
+                  class="text-[.65rem] text-white/50 tracking-widest uppercase mb-1.5"
+                >
+                  03
+                </div>
+                <div class="font-cormorant text-[1.4rem] font-light">Tech</div>
+              </div>
+            </div>
+          </div>
+          <div class="sr-r d1">
+            <div
+              class="grid grid-cols-2 gap-2"
+              style="grid-template-rows: 300px 200px"
+            >
+              <div class="col-span-2 rounded-xl overflow-hidden">
+                <img
+                  src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1000&q=80&auto=format&fit=crop"
+                  class="w-full h-full object-cover"
+                  alt="Team"
+                />
+              </div>
+              <div class="rounded-xl overflow-hidden">
+                <img
+                  src="https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=500&q=80&auto=format&fit=crop"
+                  class="w-full h-full object-cover"
+                  alt="Design"
+                />
+              </div>
+              <div class="rounded-xl overflow-hidden">
+                <img
+                  src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=500&q=80&auto=format&fit=crop"
+                  class="w-full h-full object-cover"
+                  alt="Analytics"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════
+     SERVICES — Horizontal scroll FIRST, then vertical
+═══════════════════════════════════════ -->
+    <section id="services" class="bg-ink py-24 relative z-10 overflow-hidden">
+      <!-- ambient glow -->
+      <div
+        class="absolute top-1/3 left-1/4 w-96 h-96 rounded-full bg-azure/8 blur-3xl pointer-events-none"
+      ></div>
+      <div
+        class="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full bg-azure-dark/10 blur-3xl pointer-events-none"
+      ></div>
+
+      <!-- header -->
+      <div class="px-8 md:px-16 mb-16">
+        <div class="max-w-7xl mx-auto flex justify-between items-end sr">
+          <div>
+            <div class="flex items-center gap-2.5 mb-5">
+              <span class="w-7 h-px bg-white/25"></span>
+              <span
+                class="text-white/35 text-[.72rem] tracking-[.14em] uppercase"
+                >What we do</span
+              >
+            </div>
+            <h2
+              class="font-cormorant font-light text-white leading-[1.0]"
+              style="font-size: clamp(2.8rem, 5vw, 5rem)"
+            >
+              Three ways we<br /><em class="text-azure-mid italic"
+                >change the structure.</em
+              >
+            </h2>
+          </div>
+          <div class="text-right hidden md:block">
+            <div
+              class="text-white/20 text-[.7rem] tracking-widest uppercase mb-1"
+            >
+              Scroll →
+            </div>
+            <div class="text-white/12 text-[.65rem]">then keep going ↓</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HORIZONTAL SCROLL TRACK -->
+      <div id="svc-track">
+        <!-- Card 1 — Product & Digital -->
+        <div
+          class="service-hover sr d1 relative overflow-hidden rounded-2xl group cursor-pointer"
+          style="background: #0e1a22; width: 420px; min-height: 580px"
+        >
+          <div class="absolute inset-0 overflow-hidden">
+            <img
+              src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80&auto=format&fit=crop"
+              class="w-full h-full object-cover opacity-12 group-hover:opacity-25 transition-opacity duration-500"
+              alt=""
+            />
+            <div
+              class="absolute inset-0"
+              style="
+                background: linear-gradient(
+                  to top,
+                  rgba(14, 26, 34, 0.97) 0%,
+                  rgba(14, 26, 34, 0.4) 70%,
+                  transparent 100%
+                );
+              "
+            ></div>
+          </div>
+          <div
+            class="scan-line opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          ></div>
+          <div class="svc-num">01</div>
+          <div class="relative z-10 p-10 h-full flex flex-col">
+            <div
+              class="text-azure-mid text-[.68rem] tracking-[.14em] uppercase mb-6"
+            >
+              01 / Product
+            </div>
+            <h3
+              class="font-cormorant font-light text-white leading-tight mb-4"
+              style="font-size: 2.3rem"
+            >
+              Product &<br />Digital Solutions
+            </h3>
+            <p class="text-white/50 text-[.88rem] leading-relaxed flex-1">
+              End-to-end product design and engineering — websites, mobile apps,
+              platforms — built to scale with your users, not against them.
+            </p>
+            <!-- chip -->
+            <div
+              class="mt-8 glass rounded-xl p-4 border border-white/10 card-idle"
+            >
+              <div class="flex items-center gap-2 mb-2">
+                <div
+                  class="w-5 h-5 rounded-full bg-azure flex items-center justify-center flex-shrink-0"
+                >
+                  <svg
+                    class="w-2.5 h-2.5 text-white"
+                    fill="none"
+                    viewBox="0 0 12 12"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M2 6l3 3 5-5" stroke-linecap="round" />
+                  </svg>
+                </div>
+                <span class="text-[.68rem] font-medium text-ink/70"
+                  >AI Planner</span
+                >
+              </div>
+              <p
+                class="text-[.72rem] text-ink/80 font-mono border-r-2 border-azure overflow-hidden whitespace-nowrap"
+                style="animation: none"
+              >
+                Design a fintech dashboard UI...
+              </p>
+            </div>
+            <div class="flex gap-2 mt-5 flex-wrap">
+              <span
+                class="text-[.67rem] tracking-widest uppercase px-3.5 py-1.5 rounded-full border border-azure/40 text-azure-mid"
+                >UX Design</span
+              >
+              <span
+                class="text-[.67rem] tracking-widest uppercase px-3.5 py-1.5 rounded-full border border-azure/40 text-azure-mid"
+                >Engineering</span
+              >
+              <span
+                class="text-[.67rem] tracking-widest uppercase px-3.5 py-1.5 rounded-full border border-azure/40 text-azure-mid"
+                >Platforms</span
+              >
+            </div>
+            <a
+              class="mt-7 text-azure-mid text-[.78rem] tracking-widest uppercase inline-flex items-center gap-2 group-hover:gap-5 transition-all"
+              href="#"
+              >Explore →</a
+            >
+          </div>
+        </div>
+
+        <!-- Card 2 — Brand & Design -->
+        <div
+          class="service-hover sr d2 relative overflow-hidden rounded-2xl group cursor-pointer"
+          style="background: #0d1a14; width: 420px; min-height: 580px"
+        >
+          <div class="absolute inset-0 overflow-hidden">
+            <img
+              src="https://images.unsplash.com/photo-1559028012-481c04fa702d?w=800&q=80&auto=format&fit=crop"
+              class="w-full h-full object-cover opacity-12 group-hover:opacity-25 transition-opacity duration-500"
+              alt=""
+            />
+            <div
+              class="absolute inset-0"
+              style="
+                background: linear-gradient(
+                  to top,
+                  rgba(13, 26, 20, 0.97) 0%,
+                  rgba(13, 26, 20, 0.4) 70%,
+                  transparent 100%
+                );
+              "
+            ></div>
+          </div>
+          <div
+            class="scan-line opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          ></div>
+          <div class="svc-num">02</div>
+          <div class="relative z-10 p-10 h-full flex flex-col">
+            <div
+              class="text-azure-mid text-[.68rem] tracking-[.14em] uppercase mb-6"
+            >
+              02 / Brand
+            </div>
+            <h3
+              class="font-cormorant font-light text-white leading-tight mb-4"
+              style="font-size: 2.3rem"
+            >
+              Brand &<br />Design Systems
+            </h3>
+            <p class="text-white/50 text-[.88rem] leading-relaxed flex-1">
+              Scalable identity, component libraries, and print production — so
+              your brand holds together at every touchpoint, online and off.
+            </p>
+            <div
+              class="mt-8 glass rounded-xl p-4 border border-white/10 card-idle-2"
+            >
+              <div
+                class="text-[.65rem] text-ink/50 uppercase tracking-widest mb-3"
+              >
+                Brand Palette
+              </div>
+              <div class="flex gap-1.5">
+                <div class="w-8 h-8 rounded-lg bg-azure shadow-md"></div>
+                <div
+                  class="w-8 h-8 rounded-lg shadow-md"
+                  style="background: #181817"
+                ></div>
+                <div
+                  class="w-8 h-8 rounded-lg shadow-md"
+                  style="background: #0f5a8a"
+                ></div>
+                <div
+                  class="w-8 h-8 rounded-lg shadow-md"
+                  style="background: #e8f4fc"
+                ></div>
+                <div
+                  class="w-8 h-8 rounded-lg shadow-md"
+                  style="background: #5aaee0"
+                ></div>
+              </div>
+              <div class="text-[.65rem] text-ink/40 mt-2">
+                847 components · production ready
+              </div>
+            </div>
+            <div class="flex gap-2 mt-5 flex-wrap">
+              <span
+                class="text-[.67rem] tracking-widest uppercase px-3.5 py-1.5 rounded-full border border-azure/40 text-azure-mid"
+                >Identity</span
+              >
+              <span
+                class="text-[.67rem] tracking-widest uppercase px-3.5 py-1.5 rounded-full border border-azure/40 text-azure-mid"
+                >Systems</span
+              >
+              <span
+                class="text-[.67rem] tracking-widest uppercase px-3.5 py-1.5 rounded-full border border-azure/40 text-azure-mid"
+                >Print</span
+              >
+            </div>
+            <a
+              class="mt-7 text-azure-mid text-[.78rem] tracking-widest uppercase inline-flex items-center gap-2 group-hover:gap-5 transition-all"
+              href="#"
+              >Explore →</a
+            >
+          </div>
+        </div>
+
+        <!-- Card 3 — Marketing -->
+        <div
+          class="service-hover sr d3 relative overflow-hidden rounded-2xl group cursor-pointer"
+          style="background: #131318; width: 420px; min-height: 580px"
+        >
+          <div class="absolute inset-0 overflow-hidden">
+            <img
+              src="https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=800&q=80&auto=format&fit=crop"
+              class="w-full h-full object-cover opacity-12 group-hover:opacity-25 transition-opacity duration-500"
+              alt=""
+            />
+            <div
+              class="absolute inset-0"
+              style="
+                background: linear-gradient(
+                  to top,
+                  rgba(19, 19, 24, 0.97) 0%,
+                  rgba(19, 19, 24, 0.4) 70%,
+                  transparent 100%
+                );
+              "
+            ></div>
+          </div>
+          <div
+            class="scan-line opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          ></div>
+          <div class="svc-num">03</div>
+          <div class="relative z-10 p-10 h-full flex flex-col">
+            <div
+              class="text-azure-mid text-[.68rem] tracking-[.14em] uppercase mb-6"
+            >
+              03 / Marketing
+            </div>
+            <h3
+              class="font-cormorant font-light text-white leading-tight mb-4"
+              style="font-size: 2.3rem"
+            >
+              Marketing &<br />Communication
+            </h3>
+            <p class="text-white/50 text-[.88rem] leading-relaxed flex-1">
+              Messaging, content strategy, social management, and paid campaigns
+              — connecting your brand to the people it was built for.
+            </p>
+            <div
+              class="mt-8 glass rounded-xl p-4 border border-white/10 card-idle-3"
+            >
+              <div
+                class="text-[.65rem] text-ink/50 uppercase tracking-widest mb-3"
+              >
+                Campaign Status
+              </div>
+              <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-[.72rem] text-ink/70">Paid Social</span>
+                  <div class="w-8 h-4 bg-azure rounded-full relative">
+                    <div
+                      class="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full"
+                    ></div>
+                  </div>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[.72rem] text-ink/70">Email Drip</span>
+                  <div class="w-8 h-4 bg-azure rounded-full relative">
+                    <div
+                      class="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full"
+                    ></div>
+                  </div>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[.72rem] text-ink/50">SEO</span>
+                  <div class="w-8 h-4 bg-white/20 rounded-full relative">
+                    <div
+                      class="absolute left-0.5 top-0.5 w-3 h-3 bg-white/60 rounded-full"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="flex gap-2 mt-5 flex-wrap">
+              <span
+                class="text-[.67rem] tracking-widest uppercase px-3.5 py-1.5 rounded-full border border-azure/40 text-azure-mid"
+                >Content</span
+              >
+              <span
+                class="text-[.67rem] tracking-widest uppercase px-3.5 py-1.5 rounded-full border border-azure/40 text-azure-mid"
+                >Social</span
+              >
+              <span
+                class="text-[.67rem] tracking-widest uppercase px-3.5 py-1.5 rounded-full border border-azure/40 text-azure-mid"
+                >PR</span
+              >
+            </div>
+            <a
+              class="mt-7 text-azure-mid text-[.78rem] tracking-widest uppercase inline-flex items-center gap-2 group-hover:gap-5 transition-all"
+              href="#"
+              >Explore →</a
+            >
+          </div>
+        </div>
+
+        <!-- spacer card with CTA -->
+        <div
+          class="flex-none flex flex-col items-start justify-center"
+          style="width: 320px; padding: 2rem"
+        >
+          <div
+            class="text-white/20 text-[.7rem] tracking-widest uppercase mb-6"
+          >
+            That's the full picture
+          </div>
+          <h3
+            class="font-cormorant font-light text-white mb-6"
+            style="font-size: 2.5rem; line-height: 1.1"
+          >
+            Ready to<br /><em class="text-azure-mid italic">start?</em>
+          </h3>
+          <a
+            href="#contact"
+            class="bg-azure text-white text-[.8rem] tracking-widest uppercase px-7 py-3.5 rounded-full hover:bg-azure-dark transition-colors font-medium inline-block"
+            >Work with us →</a
+          >
+        </div>
+      </div>
+      <!-- /svc-track -->
+
+      <!-- scroll dots -->
+      <div class="flex gap-2 mt-6 justify-center px-8" id="svc-dots">
+        <div class="w-6 h-1.5 rounded-full bg-azure transition-all"></div>
+        <div class="w-1.5 h-1.5 rounded-full bg-white/20 transition-all"></div>
+        <div class="w-1.5 h-1.5 rounded-full bg-white/20 transition-all"></div>
+      </div>
+    </section>
+
+    <!-- ═══ STATS STRIP ═══ -->
+    <div class="gradient-bg py-24 px-8 md:px-16 relative z-10">
+      <div class="max-w-7xl mx-auto">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-1">
+          <div class="shimmer-bg rounded-xl p-8 text-center sr d1">
+            <div
+              class="font-cormorant font-light text-ink stat-num"
+              style="font-size: 3.5rem; line-height: 1"
+              data-target="200"
+            >
+              0
+            </div>
+            <div
+              class="text-ink/40 text-[.7rem] tracking-widest uppercase mt-2"
+            >
+              Projects Delivered
+            </div>
+          </div>
+          <div class="bg-azure rounded-xl p-8 text-center sr d2">
+            <div
+              class="font-cormorant font-light text-white"
+              style="font-size: 3.5rem; line-height: 1"
+            >
+              $2M+
+            </div>
+            <div
+              class="text-white/50 text-[.7rem] tracking-widest uppercase mt-2"
+            >
+              Revenue Generated
+            </div>
+          </div>
+          <div class="shimmer-bg rounded-xl p-8 text-center sr d3">
+            <div
+              class="font-cormorant font-light text-ink stat-num"
+              style="font-size: 3.5rem; line-height: 1"
+              data-target="47"
+            >
+              0
+            </div>
+            <div
+              class="text-ink/40 text-[.7rem] tracking-widest uppercase mt-2"
+            >
+              Brand Identities
+            </div>
+          </div>
+          <div class="shimmer-bg rounded-xl p-8 text-center sr d4">
+            <div
+              class="font-cormorant font-light text-ink stat-num"
+              style="font-size: 3.5rem; line-height: 1"
+              data-target="12"
+            >
+              0
+            </div>
+            <div
+              class="text-ink/40 text-[.7rem] tracking-widest uppercase mt-2"
+            >
+              Industries Served
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ WHY US — horizontal scroll feature cards ═══ -->
+    <section id="work" class="bg-white py-36 px-8 md:px-16 relative z-10">
+      <div class="max-w-7xl mx-auto">
+        <div class="sr mb-16">
+          <div class="flex items-center gap-2.5 mb-5">
+            <span class="w-7 h-px bg-azure"></span>
+            <span
+              class="text-azure text-[.72rem] tracking-[.14em] uppercase font-medium"
+              >Why MA|DESIGN</span
+            >
+          </div>
+          <h2
+            class="font-cormorant font-light text-ink leading-tight"
+            style="font-size: clamp(2.4rem, 5vw, 5rem)"
+          >
+            Built different.<br /><em class="text-azure italic">By design.</em>
+          </h2>
+        </div>
+
+        <div
+          class="flex gap-5 overflow-x-auto h-scroll snap-x snap-mandatory pb-4"
+          id="feature-cards"
+        >
+          <!-- Feature 1 -->
+          <div class="flex-none w-[380px] snap-start sr d1">
+            <div
+              class="relative rounded-2xl overflow-hidden shadow-xl mb-6 bg-cream"
+              style="height: 280px"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=800&q=80&auto=format&fit=crop"
+                class="w-full h-full object-cover"
+                alt=""
+              />
+              <div
+                class="absolute bottom-4 left-4 glass rounded-xl px-4 py-3 shadow-lg border border-white/60 card-idle flex items-center gap-2.5"
+              >
+                <div class="w-2 h-2 rounded-full bg-azure live-dot"></div>
+                <div>
+                  <div class="text-[.7rem] font-medium text-ink">
+                    Discovery Complete
+                  </div>
+                  <div class="text-[.65rem] text-ink/50">
+                    12 structural gaps found
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div
+              class="text-azure text-[.68rem] tracking-[.14em] uppercase mb-2"
+            >
+              01 / Strategy
+            </div>
+            <h3
+              class="font-cormorant font-light text-ink mb-3"
+              style="font-size: 1.9rem; line-height: 1.15"
+            >
+              We find what<br />others <em>miss.</em>
+            </h3>
+            <p class="text-ink/60 text-[.9rem] leading-relaxed">
+              Most agencies execute. We diagnose first — mapping structural gaps
+              before a single pixel is placed.
+            </p>
+          </div>
+          <!-- Feature 2 -->
+          <div class="flex-none w-[380px] snap-start sr d2">
+            <div
+              class="relative rounded-2xl overflow-hidden shadow-xl mb-6"
+              style="height: 280px; background: #0e1a22"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?w=800&q=80&auto=format&fit=crop"
+                class="w-full h-full object-cover opacity-60"
+                alt=""
+              />
+              <div class="scan-line opacity-50"></div>
+              <div
+                class="absolute bottom-4 left-4 glass rounded-xl px-4 py-3 shadow-lg border border-white/60 card-idle-2"
+              >
+                <div class="text-[.65rem] text-ink/50 mb-1">Design System</div>
+                <div class="flex items-baseline gap-1">
+                  <span class="font-syne text-azure font-bold text-lg">847</span
+                  ><span class="text-[.7rem] text-ink/60">components</span>
+                </div>
+              </div>
+            </div>
+            <div
+              class="text-azure text-[.68rem] tracking-[.14em] uppercase mb-2"
+            >
+              02 / Execution
+            </div>
+            <h3
+              class="font-cormorant font-light text-ink mb-3"
+              style="font-size: 1.9rem; line-height: 1.15"
+            >
+              Precision at<br /><em>every touchpoint.</em>
+            </h3>
+            <p class="text-ink/60 text-[.9rem] leading-relaxed">
+              Every deliverable built to the same standard — design system to
+              the last line of code to the final brand guideline.
+            </p>
+          </div>
+          <!-- Feature 3 -->
+          <div class="flex-none w-[380px] snap-start sr d3">
+            <div
+              class="relative rounded-2xl overflow-hidden shadow-xl mb-6 bg-cream"
+              style="height: 280px"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1553877522-43269d4ea984?w=800&q=80&auto=format&fit=crop"
+                class="w-full h-full object-cover"
+                alt=""
+              />
+              <div
+                class="absolute bottom-4 left-4 glass rounded-xl px-4 py-3 shadow-lg border border-white/60 card-idle-3"
+              >
+                <div class="text-[.65rem] text-ink/50 mb-1">
+                  Avg. engagement
+                </div>
+                <div class="flex items-baseline gap-1">
+                  <span class="font-syne text-azure font-bold text-lg">3.2</span
+                  ><span class="text-[.7rem] text-ink/60">years</span>
+                </div>
+              </div>
+            </div>
+            <div
+              class="text-azure text-[.68rem] tracking-[.14em] uppercase mb-2"
+            >
+              03 / Partnership
+            </div>
+            <h3
+              class="font-cormorant font-light text-ink mb-3"
+              style="font-size: 1.9rem; line-height: 1.15"
+            >
+              Projects end.<br /><em>We don't.</em>
+            </h3>
+            <p class="text-ink/60 text-[.9rem] leading-relaxed">
+              We integrate deeply with your team — not to hand off a
+              deliverable, but to keep improving the organisation indefinitely.
+            </p>
+          </div>
+          <!-- Feature 4 -->
+          <div class="flex-none w-[380px] snap-start sr d4">
+            <div
+              class="relative rounded-2xl overflow-hidden shadow-xl mb-6"
+              style="height: 280px; background: #181817"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80&auto=format&fit=crop"
+                class="w-full h-full object-cover opacity-55"
+                alt=""
+              />
+              <div class="scan-line opacity-50"></div>
+              <div
+                class="absolute bottom-4 left-4 glass rounded-xl px-4 py-3 shadow-lg border border-white/60 card-idle"
+              >
+                <div class="text-[.65rem] text-ink/50 mb-1">
+                  TruBilling · Live
+                </div>
+                <div class="flex items-baseline gap-1">
+                  <span class="font-syne text-azure font-bold text-lg">1M+</span
+                  ><span class="text-[.7rem] text-ink/60"
+                    >daily transactions</span
+                  >
+                </div>
+              </div>
+            </div>
+            <div
+              class="text-azure text-[.68rem] tracking-[.14em] uppercase mb-2"
+            >
+              04 / Scale
+            </div>
+            <h3
+              class="font-cormorant font-light text-ink mb-3"
+              style="font-size: 1.9rem; line-height: 1.15"
+            >
+              Engineering<br /><em>that scales.</em>
+            </h3>
+            <p class="text-ink/60 text-[.9rem] leading-relaxed">
+              Zero-downtime deployments. 3× faster release cycles.
+              Infrastructure built to grow with your ambition — not against it.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex gap-2 mt-6 justify-center" id="card-dots">
+          <div class="w-6 h-1.5 rounded-full bg-azure transition-all"></div>
+          <div class="w-1.5 h-1.5 rounded-full bg-ink/20 transition-all"></div>
+          <div class="w-1.5 h-1.5 rounded-full bg-ink/20 transition-all"></div>
+          <div class="w-1.5 h-1.5 rounded-full bg-ink/20 transition-all"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ CASE STUDY ═══ -->
+    <section class="bg-cream py-36 px-8 md:px-16 relative z-10">
+      <div class="max-w-7xl mx-auto">
+        <div class="grid md:grid-cols-2 gap-20 items-end mb-16">
+          <div class="sr-l">
+            <div class="flex items-center gap-2.5 mb-5">
+              <span class="w-7 h-px bg-azure"></span
+              ><span class="text-azure text-[.72rem] tracking-[.14em] uppercase"
+                >Our experience</span
+              >
+            </div>
+            <h2
+              class="font-cormorant font-light text-ink leading-tight"
+              style="font-size: clamp(2.4rem, 4.5vw, 4.5rem)"
+            >
+              TruBilling:<br /><em class="text-azure italic">Product</em
+              ><br />Development
+            </h2>
+          </div>
+          <div class="sr-r d1">
+            <p class="text-ink/65 leading-relaxed mb-8 text-[1.02rem]">
+              A financial management platform for small and growing businesses —
+              built to replace chaos with clarity. One system to replace five
+              tools, from the ground up.
+            </p>
+            <div class="flex gap-0 border-t border-b border-ink/10 py-5">
+              <div class="flex-1">
+                <div
+                  class="text-[.65rem] tracking-widest uppercase text-ink-muted mb-1"
+                >
+                  Client
+                </div>
+                <div class="font-syne font-bold text-[.88rem]">
+                  TruBilling Inc.
+                </div>
+              </div>
+              <div class="flex-1 border-l border-ink/10 pl-5">
+                <div
+                  class="text-[.65rem] tracking-widest uppercase text-ink-muted mb-1"
+                >
+                  Year
+                </div>
+                <div class="font-syne font-bold text-[.88rem]">2023–2024</div>
+              </div>
+              <div class="flex-1 border-l border-ink/10 pl-5">
+                <div
+                  class="text-[.65rem] tracking-widest uppercase text-ink-muted mb-1"
+                >
+                  Industry
+                </div>
+                <div class="font-syne font-bold text-[.88rem]">
+                  FinTech / SaaS
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="grid md:grid-cols-2 gap-12 items-start">
+          <div class="sr-l">
+            <div class="rounded-xl overflow-hidden shadow-2xl bg-ink">
+              <div class="flex items-center gap-3 px-4 py-3 bg-[#1d1d1b]">
+                <div class="flex gap-1.5">
+                  <span class="w-2.5 h-2.5 rounded-full bg-[#ff5f57]"></span
+                  ><span class="w-2.5 h-2.5 rounded-full bg-[#febc2e]"></span
+                  ><span class="w-2.5 h-2.5 rounded-full bg-[#28c840]"></span>
+                </div>
+                <div class="flex-1 bg-white/8 rounded px-3 py-1">
+                  <span class="text-[.65rem] text-white/30"
+                    >trubilling.com · v2.4 · Live</span
+                  >
+                </div>
+              </div>
+              <div class="relative">
+                <div class="scan-line"></div>
+                <img
+                  src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=900&q=80&auto=format&fit=crop"
+                  class="w-full"
+                  alt="TruBilling dashboard"
+                />
+              </div>
+            </div>
+            <div class="grid grid-cols-3 gap-0.5 mt-2">
+              <div class="bg-white text-center py-6">
+                <div
+                  class="font-cormorant font-light text-ink"
+                  style="font-size: 2.4rem; line-height: 1"
+                >
+                  1M+
+                </div>
+                <div
+                  class="text-[.65rem] tracking-widest uppercase text-ink/40 mt-1"
+                >
+                  Daily transactions
+                </div>
+              </div>
+              <div class="bg-azure text-center py-6">
+                <div
+                  class="font-cormorant font-light text-white"
+                  style="font-size: 2.4rem; line-height: 1"
+                >
+                  3×
+                </div>
+                <div
+                  class="text-[.65rem] tracking-widest uppercase text-white/60 mt-1"
+                >
+                  Faster releases
+                </div>
+              </div>
+              <div class="bg-white text-center py-6">
+                <div
+                  class="font-cormorant font-light text-ink"
+                  style="font-size: 2.4rem; line-height: 1"
+                >
+                  0
+                </div>
+                <div
+                  class="text-[.65rem] tracking-widest uppercase text-ink/40 mt-1"
+                >
+                  Downtime events
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="sr-r d2">
+            <div class="grid grid-cols-2 gap-6 mb-10">
+              <div>
+                <div class="flex items-center gap-2 mb-3">
+                  <span class="w-4 h-px bg-azure"></span
+                  ><span
+                    class="text-azure text-[.65rem] tracking-widest uppercase"
+                    >The need</span
+                  >
+                </div>
+                <ul class="space-y-0 divide-y divide-ink/8">
+                  <li
+                    class="text-[.86rem] text-ink/65 py-2.5 pl-4 relative before:content-['—'] before:absolute before:left-0 before:opacity-30"
+                  >
+                    No single source of truth
+                  </li>
+                  <li
+                    class="text-[.86rem] text-ink/65 py-2.5 pl-4 relative before:content-['—'] before:absolute before:left-0 before:opacity-30"
+                  >
+                    5 separate billing tools
+                  </li>
+                  <li
+                    class="text-[.86rem] text-ink/65 py-2.5 pl-4 relative before:content-['—'] before:absolute before:left-0 before:opacity-30"
+                  >
+                    Zero real-time visibility
+                  </li>
+                  <li
+                    class="text-[.86rem] text-ink/65 py-2.5 pl-4 relative before:content-['—'] before:absolute before:left-0 before:opacity-30"
+                  >
+                    Manual workarounds daily
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <div class="flex items-center gap-2 mb-3">
+                  <span class="w-4 h-px bg-azure"></span
+                  ><span
+                    class="text-azure text-[.65rem] tracking-widest uppercase"
+                    >Our approach</span
+                  >
+                </div>
+                <ul class="space-y-0 divide-y divide-ink/8">
+                  <li
+                    class="text-[.86rem] text-ink/65 py-2.5 pl-4 relative before:content-['—'] before:absolute before:left-0 before:opacity-30"
+                  >
+                    One coherent system
+                  </li>
+                  <li
+                    class="text-[.86rem] text-ink/65 py-2.5 pl-4 relative before:content-['—'] before:absolute before:left-0 before:opacity-30"
+                  >
+                    Design for clarity first
+                  </li>
+                  <li
+                    class="text-[.86rem] text-ink/65 py-2.5 pl-4 relative before:content-['—'] before:absolute before:left-0 before:opacity-30"
+                  >
+                    Unified design system
+                  </li>
+                  <li
+                    class="text-[.86rem] text-ink/65 py-2.5 pl-4 relative before:content-['—'] before:absolute before:left-0 before:opacity-30"
+                  >
+                    Depth with ease of use
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 mb-3">
+              <span class="w-4 h-px bg-green-600"></span
+              ><span
+                class="text-green-700 text-[.65rem] tracking-widest uppercase"
+                >The solution</span
+              >
+            </div>
+            <p
+              class="font-cormorant font-light text-ink mb-8"
+              style="font-size: 1.7rem; line-height: 1.4"
+            >
+              A structured billing platform. Invoices, payments, records — one
+              place. Zero downtime. 3× faster releases.
+            </p>
+            <div class="bg-white border-l-[3px] border-azure p-7 rounded-r-xl">
+              <blockquote
+                class="font-cormorant italic font-light text-ink mb-3"
+                style="font-size: 1.15rem; line-height: 1.65"
+              >
+                "A more structured, efficient, and scalable approach to business
+                billing and financial management."
+              </blockquote>
+              <p class="text-[.73rem] tracking-wider text-ink/50">
+                — CEO, <span class="text-azure">TruBilling Inc.</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ PROCESS ═══ -->
+    <section class="bg-white py-24 px-8 md:px-16 relative z-10">
+      <div class="max-w-7xl mx-auto">
+        <div class="flex justify-between items-end mb-16 sr">
+          <div>
+            <div class="flex items-center gap-2.5 mb-4">
+              <span class="w-7 h-px bg-azure"></span
+              ><span class="text-azure text-[.72rem] tracking-[.14em] uppercase"
+                >How we work</span
+              >
+            </div>
+            <h2
+              class="font-cormorant font-light text-ink"
+              style="font-size: clamp(2rem, 3.5vw, 3.2rem)"
+            >
+              Five steps. Zero ambiguity.
+            </h2>
+          </div>
+          <span
+            class="text-ink-muted text-[.7rem] tracking-widest uppercase border border-ink/10 px-4 py-2 rounded-full hidden md:block"
+            >Protocol v2.5 · Active</span
+          >
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-6 relative">
+          <div
+            class="absolute top-7 left-[10%] right-[10%] h-px hidden md:block"
+            style="
+              background: linear-gradient(
+                90deg,
+                #1980c2,
+                rgba(25, 128, 194, 0.1)
+              );
+            "
+          ></div>
+          <div class="flex flex-col items-center text-center sr d1">
+            <div
+              class="w-14 h-14 rounded-full bg-azure text-white flex items-center justify-center text-[.8rem] font-medium mb-5 relative z-10 shadow-lg shadow-azure/25"
+            >
+              01
+            </div>
+            <div class="font-syne font-bold text-[.88rem] mb-2">Discover</div>
+            <div class="text-[.78rem] text-ink-muted leading-snug">
+              Map structure & gaps
+            </div>
+          </div>
+          <div class="flex flex-col items-center text-center sr d2">
+            <div
+              class="w-14 h-14 rounded-full bg-azure/20 text-azure flex items-center justify-center text-[.8rem] font-medium mb-5 relative z-10 hover:bg-azure hover:text-white transition-all"
+            >
+              02
+            </div>
+            <div class="font-syne font-bold text-[.88rem] mb-2">Strategise</div>
+            <div class="text-[.78rem] text-ink-muted leading-snug">
+              Define what moves you
+            </div>
+          </div>
+          <div class="flex flex-col items-center text-center sr d3">
+            <div
+              class="w-14 h-14 rounded-full bg-azure/20 text-azure flex items-center justify-center text-[.8rem] font-medium mb-5 relative z-10 hover:bg-azure hover:text-white transition-all"
+            >
+              03
+            </div>
+            <div class="font-syne font-bold text-[.88rem] mb-2">Design</div>
+            <div class="text-[.78rem] text-ink-muted leading-snug">
+              Precision at every touchpoint
+            </div>
+          </div>
+          <div class="flex flex-col items-center text-center sr d4">
+            <div
+              class="w-14 h-14 rounded-full bg-azure text-white flex items-center justify-center text-[.8rem] font-medium mb-5 relative z-10 shadow-lg shadow-azure/25"
+            >
+              04
+            </div>
+            <div class="font-syne font-bold text-[.88rem] mb-2">Build</div>
+            <div class="text-[.78rem] text-ink-muted leading-snug">
+              Engineering that scales
+            </div>
+          </div>
+          <div class="flex flex-col items-center text-center sr d5">
+            <div
+              class="w-14 h-14 rounded-full bg-azure/20 text-azure flex items-center justify-center text-[.8rem] font-medium mb-5 relative z-10 hover:bg-azure hover:text-white transition-all"
+            >
+              05
+            </div>
+            <div class="font-syne font-bold text-[.88rem] mb-2">Partner</div>
+            <div class="text-[.78rem] text-ink-muted leading-snug">
+              Ongoing — not a hand-off
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ TESTIMONIALS ═══ -->
+    <section class="bg-azure py-24 px-8 md:px-16 relative z-10 overflow-hidden">
+      <div class="max-w-7xl mx-auto">
+        <div class="flex items-center gap-2.5 mb-4 sr">
+          <span class="w-7 h-px bg-white/30"></span
+          ><span class="text-white/40 text-[.72rem] tracking-[.14em] uppercase"
+            >Trusted by leaders</span
+          >
+        </div>
+        <h2
+          class="font-cormorant font-light text-white mb-12 sr d1"
+          style="font-size: clamp(2.2rem, 4vw, 4rem); line-height: 1.1"
+        >
+          What our partners say.
+        </h2>
+        <div
+          class="flex gap-5 overflow-x-auto h-scroll snap-x snap-mandatory pb-2"
+        >
+          <div
+            class="flex-none w-80 snap-start glass rounded-2xl p-8 border border-white/20 sr d1"
+          >
+            <p
+              class="font-cormorant italic font-light text-white mb-6"
+              style="font-size: 1.18rem; line-height: 1.65"
+            >
+              "MA|DESIGN didn't just build our platform — they rebuilt how we
+              think about our product. The clarity changed everything."
+            </p>
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                <img
+                  src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&h=100&q=80&auto=format&fit=crop&crop=face"
+                  class="w-full h-full object-cover"
+                  alt=""
+                />
+              </div>
+              <div>
+                <div class="text-[.88rem] font-medium text-white">
+                  James Kowalski
+                </div>
+                <div class="text-[.74rem] text-white/55">
+                  CEO, TruBilling Inc.
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            class="flex-none w-80 snap-start glass rounded-2xl p-8 border border-white/20 sr d2"
+          >
+            <p
+              class="font-cormorant italic font-light text-white mb-6"
+              style="font-size: 1.18rem; line-height: 1.65"
+            >
+              "We'd worked with three agencies before. None started by asking
+              what was structurally broken. MA|DESIGN did — and that changed the
+              entire outcome."
+            </p>
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                <img
+                  src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=100&h=100&q=80&auto=format&fit=crop&crop=face"
+                  class="w-full h-full object-cover"
+                  alt=""
+                />
+              </div>
+              <div>
+                <div class="text-[.88rem] font-medium text-white">
+                  Adaeze Nwachukwu
+                </div>
+                <div class="text-[.74rem] text-white/55">
+                  Founder, Meridian Health
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            class="flex-none w-80 snap-start glass rounded-2xl p-8 border border-white/20 sr d3"
+          >
+            <p
+              class="font-cormorant italic font-light text-white mb-6"
+              style="font-size: 1.18rem; line-height: 1.65"
+            >
+              "The brand system they built is the first that has held up across
+              every medium — digital, print, product. Genuinely scalable work."
+            </p>
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                <img
+                  src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&q=80&auto=format&fit=crop&crop=face"
+                  class="w-full h-full object-cover"
+                  alt=""
+                />
+              </div>
+              <div>
+                <div class="text-[.88rem] font-medium text-white">
+                  Marcus Reid
+                </div>
+                <div class="text-[.74rem] text-white/55">
+                  CMO, Vaultline Technologies
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ FAQ ═══ -->
+    <section class="bg-white py-36 px-8 md:px-16 relative z-10">
+      <div class="max-w-3xl mx-auto">
+        <div class="mb-16 sr">
+          <div class="flex items-center gap-2.5 mb-5">
+            <span class="w-7 h-px bg-azure"></span
+            ><span class="text-azure text-[.72rem] tracking-[.14em] uppercase"
+              >Common questions</span
+            >
+          </div>
+          <h2
+            class="font-cormorant font-light text-ink"
+            style="font-size: clamp(2.2rem, 3.5vw, 3.5rem)"
+          >
+            What you need<br />to know.
+          </h2>
+        </div>
+        <div class="divide-y divide-ink/8">
+          <div class="faq-item py-0 sr d1">
+            <button
+              class="faq-q w-full flex justify-between items-center py-6 text-left gap-5"
+              onclick="toggleFaq(this)"
+            >
+              <span
+                class="font-cormorant text-ink font-light"
+                style="font-size: 1.3rem"
+                >How do you approach a new project?</span
+              ><span
+                class="faq-icon w-8 h-8 rounded-full border border-ink/15 flex items-center justify-center flex-shrink-0 text-ink-mid"
+                ><svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path
+                    d="M6 1v10M1 6h10"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                    stroke-linecap="round"
+                  /></svg
+              ></span>
+            </button>
+            <div class="faq-body">
+              <p
+                class="text-ink/65 text-[.97rem] leading-relaxed pb-6 max-w-xl"
+              >
+                Every project begins with a structured discovery phase — we map
+                the gaps between where your business is and where it needs to be
+                across business value, design usability, and technology
+                feasibility. Only then do we design and build.
+              </p>
+            </div>
+          </div>
+          <div class="faq-item py-0 sr d2">
+            <button
+              class="faq-q w-full flex justify-between items-center py-6 text-left gap-5"
+              onclick="toggleFaq(this)"
+            >
+              <span
+                class="font-cormorant text-ink font-light"
+                style="font-size: 1.3rem"
+                >What makes MA|DESIGN different?</span
+              ><span
+                class="faq-icon w-8 h-8 rounded-full border border-ink/15 flex items-center justify-center flex-shrink-0 text-ink-mid"
+                ><svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path
+                    d="M6 1v10M1 6h10"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                    stroke-linecap="round"
+                  /></svg
+              ></span>
+            </button>
+            <div class="faq-body">
+              <p
+                class="text-ink/65 text-[.97rem] leading-relaxed pb-6 max-w-xl"
+              >
+                Most agencies are strong in one of three things: business
+                strategy, design quality, or technical execution. We operate at
+                the intersection of all three — and we start by identifying
+                which your organisation is weakest in.
+              </p>
+            </div>
+          </div>
+          <div class="faq-item py-0 sr d3">
+            <button
+              class="faq-q w-full flex justify-between items-center py-6 text-left gap-5"
+              onclick="toggleFaq(this)"
+            >
+              <span
+                class="font-cormorant text-ink font-light"
+                style="font-size: 1.3rem"
+                >How is your work priced?</span
+              ><span
+                class="faq-icon w-8 h-8 rounded-full border border-ink/15 flex items-center justify-center flex-shrink-0 text-ink-mid"
+                ><svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path
+                    d="M6 1v10M1 6h10"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                    stroke-linecap="round"
+                  /></svg
+              ></span>
+            </button>
+            <div class="faq-body">
+              <p
+                class="text-ink/65 text-[.97rem] leading-relaxed pb-6 max-w-xl"
+              >
+                Pricing is scoped to each project's requirements. The best
+                starting point is a short conversation. Reach us at
+                hello@madesign.agency — we respond within 24 hours.
+              </p>
+            </div>
+          </div>
+          <div class="faq-item py-0 sr d4">
+            <button
+              class="faq-q w-full flex justify-between items-center py-6 text-left gap-5"
+              onclick="toggleFaq(this)"
+            >
+              <span
+                class="font-cormorant text-ink font-light"
+                style="font-size: 1.3rem"
+                >Project or retainer?</span
+              ><span
+                class="faq-icon w-8 h-8 rounded-full border border-ink/15 flex items-center justify-center flex-shrink-0 text-ink-mid"
+                ><svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path
+                    d="M6 1v10M1 6h10"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                    stroke-linecap="round"
+                  /></svg
+              ></span>
+            </button>
+            <div class="faq-body">
+              <p
+                class="text-ink/65 text-[.97rem] leading-relaxed pb-6 max-w-xl"
+              >
+                Both. Many clients begin with a defined project and transition
+                to a long-term partnership. Our average engagement is over three
+                years.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ PARTNERSHIP CTA ═══ -->
+    <section class="bg-ink py-36 px-8 md:px-16 relative z-10 overflow-hidden">
+      <div
+        class="absolute top-1/3 left-1/3 w-96 h-96 rounded-full bg-azure/10 blur-3xl pointer-events-none"
+      ></div>
+      <div class="max-w-7xl mx-auto grid md:grid-cols-2 gap-20 items-center">
+        <div class="sr-l">
+          <h2
+            class="font-cormorant font-light text-white leading-[.98]"
+            style="font-size: clamp(3rem, 6vw, 6rem)"
+          >
+            Projects end.<br /><em class="text-azure-mid italic"
+              >Partnerships</em
+            ><br />don't.
+          </h2>
+        </div>
+        <div class="sr-r d1">
+          <p class="text-white/55 leading-relaxed mb-5 text-[1rem]">
+            We integrate deeply with your team — not to hand off a deliverable,
+            but to understand the mechanics of your organisation well enough to
+            keep improving it.
+          </p>
+          <p class="text-white/55 leading-relaxed mb-10 text-[1rem]">
+            A half-formed idea is a good enough reason to reach out.
+          </p>
+          <a
+            href="#contact"
+            class="bg-azure text-white text-[.82rem] tracking-widest uppercase px-8 py-3.5 rounded-full hover:bg-azure-dark transition-colors font-medium inline-block"
+            >Start a project</a
+          >
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ FOOTER / CONTACT ═══ -->
+    <footer id="contact" class="bg-[#111110] py-24 px-8 md:px-16">
+      <div class="max-w-7xl mx-auto">
+        <div class="grid md:grid-cols-2 gap-20 pb-20 border-b border-white/8">
+          <div>
+            <h2
+              class="font-cormorant font-light text-white mb-4"
+              style="font-size: clamp(2.2rem, 3.5vw, 3.5rem); line-height: 1.1"
+            >
+              Not sure where<br />to start?<br /><em
+                class="text-azure-mid italic"
+                >Talk to us.</em
+              >
+            </h2>
+            <p class="text-white/38 text-[.9rem] leading-relaxed mb-7">
+              A half-formed idea is a good enough reason to reach out. We
+              respond within 24 hours.
+            </p>
+            <div class="space-y-2">
+              <a
+                href="mailto:hello@madesign.agency"
+                class="block text-[.9rem] text-white/50 hover:text-white transition-colors"
+                >hello@madesign.agency</a
+              >
+              <a
+                href="tel:+18889932341"
+                class="block text-[.9rem] text-white/50 hover:text-white transition-colors"
+                >+1 (888) 993 2341</a
+              >
+            </div>
+          </div>
+          <div>
+            <div class="space-y-3">
+              <input
+                type="text"
+                placeholder="Full name"
+                class="w-full bg-white/6 border border-white/10 text-white text-[.86rem] px-4 py-3.5 rounded-lg outline-none focus:border-azure placeholder-white/25 transition-colors"
+              />
+              <input
+                type="email"
+                placeholder="Email address"
+                class="w-full bg-white/6 border border-white/10 text-white text-[.86rem] px-4 py-3.5 rounded-lg outline-none focus:border-azure placeholder-white/25 transition-colors"
+              />
+              <input
+                type="text"
+                placeholder="Organisation"
+                class="w-full bg-white/6 border border-white/10 text-white text-[.86rem] px-4 py-3.5 rounded-lg outline-none focus:border-azure placeholder-white/25 transition-colors"
+              />
+              <textarea
+                placeholder="What are you working on?"
+                rows="4"
+                class="w-full bg-white/6 border border-white/10 text-white text-[.86rem] px-4 py-3.5 rounded-lg outline-none focus:border-azure placeholder-white/25 transition-colors resize-none"
+              ></textarea>
+              <button
+                class="bg-azure text-white text-[.8rem] tracking-widest uppercase px-7 py-3 rounded-full hover:bg-azure-dark transition-colors font-medium"
+              >
+                Send message
+              </button>
+            </div>
+          </div>
+        </div>
+        <div
+          class="flex flex-col md:flex-row justify-between items-center gap-5 pt-8"
+        >
+          <a href="#" class="font-syne font-extrabold text-white tracking-tight"
+            >MA<span class="text-azure">|</span>DESIGN</a
+          >
+          <p class="text-white/28 text-[.73rem]">
+            © 2025 MA|DESIGN. All rights reserved.
+          </p>
+          <div class="flex gap-5">
+            <a
+              href="#"
+              class="text-white/28 text-[.73rem] tracking-widest uppercase hover:text-white transition-colors"
+              >Privacy</a
+            >
+            <a
+              href="#"
+              class="text-white/28 text-[.73rem] tracking-widest uppercase hover:text-white transition-colors"
+              >Services</a
+            >
+            <a
+              href="#"
+              class="text-white/28 text-[.73rem] tracking-widest uppercase hover:text-white transition-colors"
+              >Work</a
+            >
+            <a
+              href="#"
+              class="text-white/28 text-[.73rem] tracking-widest uppercase hover:text-white transition-colors"
+              >Contact</a
+            >
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- ═══ CHAT WIDGET ═══ -->
+    <div
+      id="chatPanel"
+      class="fixed bottom-24 right-7 z-[1000] w-80 max-h-[480px] rounded-2xl bg-white shadow-2xl border border-ink/8 overflow-hidden flex flex-col hidden"
+    >
+      <div class="bg-ink px-4 py-3.5 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div
+            class="w-8 h-8 rounded-full bg-azure flex items-center justify-center font-syne font-bold text-[.68rem] text-white"
+          >
+            MA
+          </div>
+          <div>
+            <div class="font-syne font-bold text-[.82rem] text-white">
+              MAD Assistant
+            </div>
+            <div class="text-[.67rem] text-white/40">Always online</div>
+          </div>
+        </div>
+        <button
+          onclick="toggleChat()"
+          class="text-white/40 hover:text-white p-1"
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path
+              d="M1 1l12 12M13 1L1 13"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+            />
+          </svg>
+        </button>
+      </div>
+      <div
+        id="chatMsgs"
+        class="flex-1 overflow-y-auto p-4 flex flex-col gap-2.5"
+      >
+        <div
+          class="self-start max-w-[90%] bg-cream text-ink text-[.83rem] leading-relaxed p-3.5 rounded-xl whitespace-pre-wrap"
+        >
+          Hi, I'm the MAD Assistant. Ask me anything about our services,
+          process, or how we can help.
+        </div>
+      </div>
+      <div id="chatQuick" class="flex gap-1.5 flex-wrap px-3.5 pb-2.5">
+        <button
+          onclick="qSend('Our services')"
+          class="text-[.7rem] px-3 py-1.5 rounded-full border border-ink/12 text-ink hover:bg-azure hover:text-white hover:border-azure transition-all"
+        >
+          Services
+        </button>
+        <button
+          onclick="qSend('The process')"
+          class="text-[.7rem] px-3 py-1.5 rounded-full border border-ink/12 text-ink hover:bg-azure hover:text-white hover:border-azure transition-all"
+        >
+          Process
+        </button>
+        <button
+          onclick="qSend('Pricing')"
+          class="text-[.7rem] px-3 py-1.5 rounded-full border border-ink/12 text-ink hover:bg-azure hover:text-white hover:border-azure transition-all"
+        >
+          Pricing
+        </button>
+        <button
+          onclick="qSend('Contact')"
+          class="text-[.7rem] px-3 py-1.5 rounded-full border border-ink/12 text-ink hover:bg-azure hover:text-white hover:border-azure transition-all"
+        >
+          Contact
+        </button>
+      </div>
+      <div class="flex border-t border-ink/8">
+        <input
+          id="chatInput"
+          class="flex-1 px-4 py-3 text-[.83rem] outline-none text-ink bg-white placeholder-ink/30"
+          placeholder="Ask anything…"
+          onkeydown="if (event.key === 'Enter') doSend();"
+          oninput="
+            document.getElementById('chatSend').disabled = !this.value.trim()
+          "
+        />
+        <button
+          id="chatSend"
+          onclick="doSend()"
+          disabled
+          class="w-11 bg-azure text-white flex items-center justify-center hover:bg-azure-dark transition-colors disabled:opacity-35"
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path
+              d="M1 7h12M7 1l6 6-6 6"
+              stroke="white"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+    <button
+      onclick="toggleChat()"
+      class="fixed bottom-7 right-7 z-[1000] flex items-center justify-center shadow-lg shadow-azure/40 hover:scale-110 hover:bg-azure-dark transition-all bg-azure text-white rounded-full"
+      style="width: 52px; height: 52px"
+    >
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+        <path
+          d="M3 5a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H7l-4 3V5z"
+          stroke="white"
+          stroke-width="1.6"
+          stroke-linejoin="round"
+        />
+        <circle cx="8" cy="9" r="1" fill="white" />
+        <circle cx="11" cy="9" r="1" fill="white" />
+        <circle cx="14" cy="9" r="1" fill="white" />
+      </svg>
+    </button>
+
+    <script>
+      /* ═══════════════════════════════════════
+   BIG PIXEL COLLAPSE — 5 PHASES
+   Phase 0→0.18: hero text fades
+   Phase 0.15→0.50: BIG pixels assemble (GRID=52px)
+   Phase 0.45→0.65: "Three services. One structure." appears
+   Phase 0.60→0.78: CTA slides up, pixels dissolve
+   Phase 0.75→1.0: cinematic image unveil, stat cards appear
+═══════════════════════════════════════ */
+      const heroZone = document.getElementById("hero-scroll-zone");
+      const heroContent = document.getElementById("hero-content");
+      const pixelCanvas = document.getElementById("pixel-canvas");
+      const pixelCentre = document.getElementById("pixel-centre");
+      const scrollCtaEl = document.getElementById("scroll-cta");
+      const ctaInner = document.getElementById("cta-inner");
+      const finalReveal = document.getElementById("final-reveal");
+      const revealImg = document.getElementById("reveal-img");
+      const imgCards = document.getElementById("img-cards");
+      const scrollHint = document.getElementById("scroll-hint");
+      const ctx = pixelCanvas.getContext("2d");
+
+      const BIG_PIXEL = 52; // BIG pixels!
+
+      let ps = { particles: [], built: false, img: null };
+
+      function resizeCanvas() {
+        pixelCanvas.width = window.innerWidth;
+        pixelCanvas.height = window.innerHeight;
+      }
+      resizeCanvas();
+      window.addEventListener("resize", () => {
+        resizeCanvas();
+        ps.built = false;
+      });
+
+      /* load image */
+      const offImg = new Image();
+      offImg.crossOrigin = "anonymous";
+      offImg.src =
+        "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&q=60&auto=format&fit=crop";
+      offImg.onload = () => (ps.img = offImg);
+
+      function buildParticles() {
+        if (!ps.img) return;
+        const W = pixelCanvas.width,
+          H = pixelCanvas.height;
+        const cols = Math.ceil(W / BIG_PIXEL),
+          rows = Math.ceil(H / BIG_PIXEL);
+        const off = document.createElement("canvas");
+        off.width = W;
+        off.height = H;
+        const oc = off.getContext("2d");
+        oc.drawImage(ps.img, 0, 0, W, H);
+        ps.particles = [];
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            const tx = c * BIG_PIXEL,
+              ty = r * BIG_PIXEL;
+            // Scatter origin: explode from edges and random far positions
+            const angle = Math.random() * Math.PI * 2;
+            const dist = W * 0.6 + Math.random() * W * 0.8;
+            ps.particles.push({
+              tx,
+              ty,
+              cx: W / 2 + Math.cos(angle) * dist,
+              cy: H / 2 + Math.sin(angle) * dist,
+              r: 0,
+              g: 0,
+              b: 0,
+              alpha: 1,
+              // slightly randomised delay per particle for stagger
+              delay: Math.random() * 0.3,
+            });
+            // Sample colour after array push
+            const d = oc.getImageData(
+              tx + BIG_PIXEL / 2,
+              ty + BIG_PIXEL / 2,
+              1,
+              1,
+            ).data;
+            ps.particles[ps.particles.length - 1].r = d[0];
+            ps.particles[ps.particles.length - 1].g = d[1];
+            ps.particles[ps.particles.length - 1].b = d[2];
+            ps.particles[ps.particles.length - 1].alpha = d[3] / 255;
+          }
+        }
+        ps.built = true;
+      }
+
+      function easeOut(t) {
+        return 1 - Math.pow(1 - t, 3);
+      }
+      function easeInOut(t) {
+        return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+      }
+      function clamp01(t) {
+        return Math.max(0, Math.min(1, t));
+      }
+      function remap(t, a, b) {
+        return clamp01((t - a) / (b - a));
+      }
+
+      function drawPixels(assembleProgress, overallAlpha) {
+        const W = pixelCanvas.width,
+          H = pixelCanvas.height;
+        ctx.clearRect(0, 0, W, H);
+        if (overallAlpha <= 0) return;
+        ctx.save();
+        ctx.globalAlpha = overallAlpha;
+        for (const p of ps.particles) {
+          const localP = clamp01((assembleProgress - p.delay) / (1 - p.delay));
+          const e = easeOut(localP);
+          const x = p.cx + (p.tx - p.cx) * e;
+          const y = p.cy + (p.ty - p.cy) * e;
+          ctx.fillStyle = `rgba(${p.r},${p.g},${p.b},${p.alpha * 0.92})`;
+          ctx.fillRect(
+            Math.round(x),
+            Math.round(y),
+            BIG_PIXEL - 1,
+            BIG_PIXEL - 1,
+          );
+        }
+        ctx.restore();
+      }
+
+      let ticking = false;
+      function onScroll() {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(() => {
+          updateHero();
+          ticking = false;
+        });
+      }
+
+      function updateHero() {
+        const zoneTop = heroZone.getBoundingClientRect().top;
+        const zoneH = heroZone.offsetHeight - window.innerHeight;
+        const p = clamp01(-zoneTop / zoneH); // 0→1
+
+        /* ── PHASE 0: hero text fades ── */
+        const p0 = remap(p, 0, 0.18);
+        heroContent.style.opacity = String(1 - easeOut(p0));
+        heroContent.style.transform = `translateY(${-easeOut(p0) * 50}px)`;
+        scrollHint.style.opacity = String(1 - p0 * 4);
+
+        /* ── PHASE 1: BIG pixels assemble ── */
+        if (p > 0.12) {
+          if (!ps.built) buildParticles();
+          const canvasAlpha = remap(p, 0.12, 0.22);
+          pixelCanvas.style.opacity = String(easeOut(canvasAlpha));
+          // assemble 0→1 from p=0.12→0.52, then hold
+          const asm = remap(p, 0.15, 0.52);
+          // fade canvas out as CTA comes in
+          const fadeOut = remap(p, 0.65, 0.78);
+          const netAlpha = easeOut(canvasAlpha) * (1 - easeOut(fadeOut));
+          drawPixels(asm, netAlpha > 0 ? 1 : 0);
+          if (netAlpha <= 0.01)
+            ctx.clearRect(0, 0, pixelCanvas.width, pixelCanvas.height);
+          pixelCanvas.style.opacity = String(Math.max(0, netAlpha));
+        } else {
+          pixelCanvas.style.opacity = "0";
+          ctx.clearRect(0, 0, pixelCanvas.width, pixelCanvas.height);
+        }
+
+        /* ── PHASE 2: "Three services." label ── */
+        const centreIn = remap(p, 0.44, 0.58);
+        const centreOut = remap(p, 0.62, 0.72);
+        pixelCentre.style.opacity = String(
+          easeOut(centreIn) * (1 - easeOut(centreOut)),
+        );
+
+        /* ── PHASE 3: CTA slides up ── */
+        const ctaProgress = remap(p, 0.62, 0.76);
+        if (ctaProgress > 0) {
+          scrollCtaEl.classList.add("visible");
+          scrollCtaEl.style.opacity = String(easeOut(ctaProgress));
+          ctaInner.style.opacity = String(easeOut(remap(p, 0.64, 0.78)));
+          ctaInner.style.transform = `translateY(${(1 - easeOut(remap(p, 0.64, 0.78))) * 40}px)`;
+        } else {
+          scrollCtaEl.classList.remove("visible");
+          scrollCtaEl.style.opacity = "0";
+        }
+
+        /* ── PHASE 4: Cinematic image unveil ── */
+        if (p > 0.76) {
+          finalReveal.style.opacity = "1";
+          const unveilP = remap(p, 0.76, 0.92);
+          const e = easeOut(unveilP);
+          // wipe from left: clip-path inset(0 X% 0 0) where X goes 100→0
+          const clipRight = Math.round((1 - e) * 100);
+          revealImg.style.clipPath = `inset(0 ${clipRight}% 0 0)`;
+          // hide CTA as image takes over
+          const ctaFadeOut = remap(p, 0.78, 0.88);
+          scrollCtaEl.style.opacity = String(
+            Math.max(
+              0,
+              easeOut(remap(p, 0.62, 0.76)) * (1 - easeOut(ctaFadeOut)),
+            ),
+          );
+          // stat cards float in after image unveils
+          const cardsP = remap(p, 0.88, 1.0);
+          imgCards.style.opacity = String(easeOut(cardsP));
+        } else {
+          finalReveal.style.opacity = "0";
+          revealImg.style.clipPath = "inset(0 100% 0 0)";
+          imgCards.style.opacity = "0";
+        }
+
+        /* ── hero-pin opacity at very end ── */
+        if (p > 0.97) {
+          document.getElementById("hero-pin").style.opacity = String(
+            1 - remap(p, 0.97, 1.0) * 1,
+          );
+        } else {
+          document.getElementById("hero-pin").style.opacity = "1";
+        }
+      }
+
+      window.addEventListener("scroll", onScroll, { passive: true });
+      onScroll();
+
+      /* ═══ SCROLL REVEAL ═══ */
+      const srEls = document.querySelectorAll(".sr, .sr-l, .sr-r");
+      const srObs = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((e) => {
+            if (e.isIntersecting) {
+              e.target.classList.add("on");
+              srObs.unobserve(e.target);
+            }
+          });
+        },
+        { threshold: 0.08, rootMargin: "0px 0px -50px 0px" },
+      );
+      srEls.forEach((el) => srObs.observe(el));
+
+      /* ═══ STAT COUNTERS ═══ */
+      const statEls = document.querySelectorAll(".stat-num");
+      const statObs = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((e) => {
+            if (!e.isIntersecting) return;
+            const el = e.target,
+              target = parseInt(el.dataset.target);
+            let start = 0;
+            const dur = 1600;
+            const step = (ts) => {
+              if (!start) start = ts;
+              const p = Math.min(1, (ts - start) / dur);
+              const ease = (t) => 1 - Math.pow(1 - t, 3);
+              el.textContent =
+                Math.round(ease(p) * target) + (target >= 100 ? "+" : "");
+              if (p < 1) requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+            statObs.unobserve(el);
+          });
+        },
+        { threshold: 0.5 },
+      );
+      statEls.forEach((el) => statObs.observe(el));
+
+      /* ═══ SERVICE CARD DOTS ═══ */
+      const svcTrack = document.getElementById("svc-track");
+      const svcDots = document.querySelectorAll("#svc-dots > div");
+      svcTrack &&
+        svcTrack.addEventListener("scroll", () => {
+          const idx = Math.round(svcTrack.scrollLeft / 435);
+          svcDots.forEach((d, i) => {
+            d.className =
+              i === idx
+                ? "w-6 h-1.5 rounded-full bg-azure transition-all"
+                : "w-1.5 h-1.5 rounded-full bg-white/20 transition-all";
+          });
+        });
+
+      /* ═══ FEATURE CARD DOTS ═══ */
+      const fcTrack = document.getElementById("feature-cards");
+      const fcDots = document.querySelectorAll("#card-dots > div");
+      fcTrack &&
+        fcTrack.addEventListener("scroll", () => {
+          const idx = Math.round(fcTrack.scrollLeft / 385);
+          fcDots.forEach((d, i) => {
+            d.className =
+              i === idx
+                ? "w-6 h-1.5 rounded-full bg-azure transition-all"
+                : "w-1.5 h-1.5 rounded-full bg-ink/20 transition-all";
+          });
+        });
+
+      /* ═══ FAQ ═══ */
+      function toggleFaq(btn) {
+        const item = btn.closest(".faq-item");
+        const isOpen = item.classList.contains("open");
+        document
+          .querySelectorAll(".faq-item.open")
+          .forEach((i) => i.classList.remove("open"));
+        if (!isOpen) item.classList.add("open");
+      }
+
+      /* ═══ CHAT ═══ */
+      const KB = [
+        {
+          k: ["hello", "hi", "hey", "help"],
+          r: "Hi! I'm the MAD Assistant.\n\nAsk me anything about our services, process, or how to get started.",
+        },
+        {
+          k: ["service", "offer", "do"],
+          r: "MA|DESIGN works across three core services:\n\n• Product & Digital Solutions\n• Brand & Design Systems\n• Marketing & Communication\n\nWhich would you like to know more about?",
+        },
+        {
+          k: ["price", "cost", "pricing", "budget", "how much"],
+          r: "Pricing is scoped to each project's requirements. Reach out at hello@madesign.agency — we'll respond within 24 hours.",
+        },
+        {
+          k: ["contact", "email", "phone", "reach"],
+          r: "📧 hello@madesign.agency\n📞 +1 (888) 993 2341\n\nOr use the contact form at the bottom of the page.",
+        },
+        {
+          k: ["process", "how", "step", "timeline"],
+          r: "Our 5-step process:\n\n1. Discover\n2. Strategise\n3. Design\n4. Build\n5. Partner\n\nWant more detail on any stage?",
+        },
+        {
+          k: ["trubilling", "case", "example", "work"],
+          r: "TruBilling: a FinTech platform for SMBs.\n\nBefore: 5 tools, zero visibility.\nAfter: 1M+ daily transactions, 3× faster releases, zero downtime.",
+        },
+        {
+          k: ["about", "who", "founded", "company"],
+          r: "MA|DESIGN was established in 2015. We work at the intersection of business value, design usability, and technology feasibility.",
+        },
+      ];
+      function getBotReply(msg) {
+        const l = msg.toLowerCase();
+        for (const item of KB)
+          if (item.k.some((k) => l.includes(k))) return item.r;
+        return "Great question — reach out directly at hello@madesign.agency and we'll get back within 24 hours.";
+      }
+      let chatOpen = false;
+      function toggleChat() {
+        chatOpen = !chatOpen;
+        document
+          .getElementById("chatPanel")
+          .classList.toggle("hidden", !chatOpen);
+      }
+      function appendMsg(role, text) {
+        const d = document.createElement("div");
+        d.className =
+          role === "bot"
+            ? "self-start max-w-[90%] bg-cream text-ink text-[.83rem] leading-relaxed p-3.5 rounded-xl whitespace-pre-wrap"
+            : "self-end max-w-[90%] bg-azure text-white text-[.83rem] leading-relaxed p-3.5 rounded-xl whitespace-pre-wrap";
+        d.textContent = text;
+        const msgs = document.getElementById("chatMsgs");
+        msgs.appendChild(d);
+        msgs.scrollTop = msgs.scrollHeight;
+      }
+      function showTyping() {
+        const d = document.createElement("div");
+        d.id = "typing-ind";
+        d.className = "self-start flex gap-1 p-3.5 bg-cream rounded-xl";
+        d.innerHTML =
+          '<span class="w-1.5 h-1.5 rounded-full bg-ink/30" style="animation:blink 1.2s infinite"></span><span class="w-1.5 h-1.5 rounded-full bg-ink/30" style="animation:blink 1.2s infinite .18s"></span><span class="w-1.5 h-1.5 rounded-full bg-ink/30" style="animation:blink 1.2s infinite .36s"></span>';
+        document.getElementById("chatMsgs").appendChild(d);
+        document.getElementById("chatMsgs").scrollTop = 9999;
+        return d;
+      }
+      function doSend() {
+        const inp = document.getElementById("chatInput");
+        const val = inp.value.trim();
+        if (!val) return;
+        inp.value = "";
+        document.getElementById("chatSend").disabled = true;
+        document.getElementById("chatQuick").style.display = "none";
+        appendMsg("user", val);
+        const t = showTyping();
+        setTimeout(
+          () => {
+            t.remove();
+            appendMsg("bot", getBotReply(val));
+          },
+          800 + Math.random() * 400,
+        );
+      }
+      function qSend(text) {
+        document.getElementById("chatQuick").style.display = "none";
+        appendMsg("user", text);
+        const t = showTyping();
+        setTimeout(
+          () => {
+            t.remove();
+            appendMsg("bot", getBotReply(text));
+          },
+          700 + Math.random() * 300,
+        );
+      }
+    </script>
+  </body>
+</html>
