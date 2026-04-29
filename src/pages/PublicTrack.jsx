@@ -13,6 +13,7 @@ import {
   Search,
   ArrowRight,
 } from "lucide-react";
+import Navbar from "@/components/Navbar";
 
 const S = { fontFamily: "'Sora',sans-serif" };
 
@@ -124,71 +125,7 @@ export default function PublicTrack() {
       }}
     >
       {/* Top bar */}
-      <header
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "0 1.5rem",
-          height: 60,
-          background: "#fff",
-          borderBottom: "1px solid #e9f0f9",
-          flexShrink: 0,
-          boxShadow: "0 1px 8px rgba(21,101,192,0.06)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <img
-            src="/logo.png"
-            style={{ height: 56, width: "auto" }}
-            alt="Afolaray"
-          />
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <motion.button
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={() => navigate("/track")}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              background: "#f0f6ff",
-              border: "1px solid #dce8f7",
-              borderRadius: 9,
-              padding: "7px 14px",
-              color: "#1565c0",
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: "pointer",
-              fontFamily: "Sora,sans-serif",
-            }}
-          >
-            <ArrowRight size={13} /> All Trackers
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={() => navigate("/")}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              background: "#0d1b2e",
-              border: "none",
-              borderRadius: 9,
-              padding: "7px 14px",
-              color: "#fff",
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: "pointer",
-              fontFamily: "Sora,sans-serif",
-            }}
-          >
-            <Home size={13} /> Home
-          </motion.button>
-        </div>
-      </header>
+      <Navbar />
 
       {/* Main */}
       <main
