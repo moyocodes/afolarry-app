@@ -748,9 +748,21 @@ function CarsSection({ readOnly = false, currentUser, isHardRestricted }) {
           >
             <ChevronLeft size={14} /> Back to Cars
           </button>
-          <h2 className="text-[18px] font-bold text-[#0d1b2e]">
+          <h2 className="text-[18px] font-bold text-[#0d1b2e] flex-1">
             {editId ? "Edit Car" : "Add New Car"}
           </h2>
+          {editId && (
+            <button
+              onClick={() => {
+                resetForm();
+                setView("list");
+              }}
+              className="flex items-center justify-center bg-[#ffebee] hover:bg-[#ffcdd2] border-none rounded-lg p-2 cursor-pointer text-[#c62828] transition"
+              title="Discard changes"
+            >
+              <X size={15} />
+            </button>
+          )}
         </div>
         <form
           onSubmit={save}
@@ -1558,7 +1570,6 @@ function ShipmentsSection({ readOnly = false, currentUser, isHardRestricted }) {
                 )}
               </div>
               <div className="flex gap-2 shrink-0">
-               
                 {!readOnly && (
                   <>
                     <button
@@ -2161,7 +2172,13 @@ function ViewShipmentDrawer({ shipment: s, onClose }) {
 }
 // ── USERS SECTION ──────────────────────────────────────────────────────────
 // ── USERS SECTION ──────────────────────────────────────────────────────────
-function UsersSection({ readOnly = false, currentUser, isHardRestricted }) {
+function UsersSection({
+  readOnly = false,
+  currentUser,
+  isHardRestricted,
+  hiddenEmails = [],
+  protectedEmails = [],
+}) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -2206,12 +2223,14 @@ function UsersSection({ readOnly = false, currentUser, isHardRestricted }) {
     load();
   };
 
-  const filtered = users.filter(
-    (u) =>
-      !search ||
+  const filtered = users.filter((u) => {
+    if (hiddenEmails.includes(u.email?.toLowerCase())) return false;
+    if (!search) return true;
+    return (
       u.email?.toLowerCase().includes(search.toLowerCase()) ||
-      u.name?.toLowerCase().includes(search.toLowerCase()),
-  );
+      u.name?.toLowerCase().includes(search.toLowerCase())
+    );
+  });
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER));
   const paged = filtered.slice((page - 1) * PER, page * PER);
   const pendingCount = users.filter((u) => u.approved === false).length;
@@ -2595,91 +2614,156 @@ function UsersSection({ readOnly = false, currentUser, isHardRestricted }) {
                         >
                           <Eye size={12} /> View User
                         </button>
-                        {!readOnly && (
-                          <>
-                            {u.approved === false ? (
-                              <button
-                                onClick={() => setApproval(u.id, true)}
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: 5,
-                                  background: "#e8f5e9",
-                                  border: "1px solid #a5d6a7",
-                                  borderRadius: 8,
-                                  padding: "5px 10px",
-                                  cursor: "pointer",
-                                  fontSize: 11,
-                                  fontWeight: 700,
-                                  color: "#2e7d32",
-                                }}
-                              >
-                                <UserCheck size={12} /> Approve
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => setApproval(u.id, false)}
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: 5,
-                                  background: "#fff3e0",
-                                  border: "1px solid #ffcc80",
-                                  borderRadius: 8,
-                                  padding: "5px 10px",
-                                  cursor: "pointer",
-                                  fontSize: 11,
-                                  fontWeight: 700,
-                                  color: "#e65100",
-                                }}
-                              >
-                                <UserX size={12} /> Revoke
-                              </button>
-                            )}
-                            <button
-                              onClick={() =>
-                                toggleAdmin(u.id, u.isAdmin !== false)
-                              }
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 5,
-                                background:
-                                  u.isAdmin !== false ? "#f5f5f5" : "#e3f2fd",
-                                border: `1px solid ${u.isAdmin !== false ? "#e0e0e0" : "#bbdefb"}`,
-                                borderRadius: 8,
-                                padding: "5px 10px",
-                                cursor: "pointer",
-                                fontSize: 11,
-                                fontWeight: 700,
-                                color:
-                                  u.isAdmin !== false ? "#9e9e9e" : "#1565c0",
-                              }}
-                            >
-                              {u.isAdmin !== false ? (
-                                <ToggleRight size={12} />
-                              ) : (
-                                <ToggleLeft size={12} />
-                              )}
-                              {u.isAdmin !== false ? "View Only" : "Full Access"}
-                            </button>
-                            <button
-                              onClick={() => remove(u.id)}
-                              style={{
-                                background: "#ffebee",
-                                border: "none",
-                                borderRadius: 8,
-                                padding: "6px 8px",
-                                cursor: "pointer",
-                                color: "#c62828",
-                                display: "flex",
-                                alignItems: "center",
-                              }}
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          </>
-                        )}
+                        {!readOnly &&
+                          (() => {
+                            const isProtected = protectedEmails.includes(
+                              u.email?.toLowerCase(),
+                            );
+                            return (
+                              <>
+                                {u.approved === false ? (
+                                  <button
+                                    onClick={() =>
+                                      !isProtected && setApproval(u.id, true)
+                                    }
+                                    disabled={isProtected}
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 5,
+                                      background: isProtected
+                                        ? "#f5f5f5"
+                                        : "#e8f5e9",
+                                      border: `1px solid ${isProtected ? "#e0e0e0" : "#a5d6a7"}`,
+                                      borderRadius: 8,
+                                      padding: "5px 10px",
+                                      cursor: isProtected
+                                        ? "not-allowed"
+                                        : "pointer",
+                                      fontSize: 11,
+                                      fontWeight: 700,
+                                      color: isProtected
+                                        ? "#bdbdbd"
+                                        : "#2e7d32",
+                                      opacity: isProtected ? 0.6 : 1,
+                                    }}
+                                    title={
+                                      isProtected
+                                        ? "Cannot modify a super-admin"
+                                        : undefined
+                                    }
+                                  >
+                                    <UserCheck size={12} /> Approve
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() =>
+                                      !isProtected && setApproval(u.id, false)
+                                    }
+                                    disabled={isProtected}
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 5,
+                                      background: isProtected
+                                        ? "#f5f5f5"
+                                        : "#fff3e0",
+                                      border: `1px solid ${isProtected ? "#e0e0e0" : "#ffcc80"}`,
+                                      borderRadius: 8,
+                                      padding: "5px 10px",
+                                      cursor: isProtected
+                                        ? "not-allowed"
+                                        : "pointer",
+                                      fontSize: 11,
+                                      fontWeight: 700,
+                                      color: isProtected
+                                        ? "#bdbdbd"
+                                        : "#e65100",
+                                      opacity: isProtected ? 0.6 : 1,
+                                    }}
+                                    title={
+                                      isProtected
+                                        ? "Cannot modify a super-admin"
+                                        : undefined
+                                    }
+                                  >
+                                    <UserX size={12} /> Revoke
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() =>
+                                    !isProtected &&
+                                    toggleAdmin(u.id, u.isAdmin !== false)
+                                  }
+                                  disabled={isProtected}
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 5,
+                                    background: isProtected
+                                      ? "#f5f5f5"
+                                      : u.isAdmin !== false
+                                        ? "#f5f5f5"
+                                        : "#e3f2fd",
+                                    border: `1px solid ${isProtected ? "#e0e0e0" : u.isAdmin !== false ? "#e0e0e0" : "#bbdefb"}`,
+                                    borderRadius: 8,
+                                    padding: "5px 10px",
+                                    cursor: isProtected
+                                      ? "not-allowed"
+                                      : "pointer",
+                                    fontSize: 11,
+                                    fontWeight: 700,
+                                    color: isProtected
+                                      ? "#bdbdbd"
+                                      : u.isAdmin !== false
+                                        ? "#9e9e9e"
+                                        : "#1565c0",
+                                    opacity: isProtected ? 0.6 : 1,
+                                  }}
+                                  title={
+                                    isProtected
+                                      ? "Cannot modify a super-admin"
+                                      : undefined
+                                  }
+                                >
+                                  {u.isAdmin !== false ? (
+                                    <ToggleRight size={12} />
+                                  ) : (
+                                    <ToggleLeft size={12} />
+                                  )}
+                                  {u.isAdmin !== false
+                                    ? "View Only"
+                                    : "Full Access"}
+                                </button>
+                                <button
+                                  onClick={() => !isProtected && remove(u.id)}
+                                  disabled={isProtected}
+                                  style={{
+                                    background: isProtected
+                                      ? "#f5f5f5"
+                                      : "#ffebee",
+                                    border: "none",
+                                    borderRadius: 8,
+                                    padding: "6px 8px",
+                                    cursor: isProtected
+                                      ? "not-allowed"
+                                      : "pointer",
+                                    color: isProtected ? "#bdbdbd" : "#c62828",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    opacity: isProtected ? 0.6 : 1,
+                                  }}
+                                  title={
+                                    isProtected
+                                      ? "Cannot remove a super-admin"
+                                      : undefined
+                                  }
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              </>
+                            );
+                          })()}
                       </div>
                     </td>
                   </tr>
@@ -3615,9 +3699,18 @@ export default function AdminDashboard() {
   }, []);
 
   const isReadOnly = currentUserData?.isAdmin === false;
-  const allowedAdminEmail = "afolaraylimited@gmail.com";
-  const isHardRestricted =
-    user?.email?.toLowerCase() !== allowedAdminEmail && !!allowedAdminEmail;
+  const SUPER_ADMIN_EMAILS = [
+    "moyosorejames@gmail.com",
+    "afolaraylimited@gmail.com",
+    // add more super-admins here
+  ];
+  const HIDDEN_USER_EMAILS = [
+    "moyosorejames@gmail.com",
+    // add emails to hide from the users table here
+  ];
+  const isHardRestricted = !SUPER_ADMIN_EMAILS.includes(
+    user?.email?.toLowerCase() ?? "",
+  );
   const isViewOnly = isReadOnly;
   const visibleTabs = TABS.filter(
     (tabItem) => !(isHardRestricted && tabItem.id === "users"),
@@ -3853,6 +3946,8 @@ export default function AdminDashboard() {
                 readOnly={isReadOnly}
                 currentUser={user}
                 isHardRestricted={isHardRestricted}
+                hiddenEmails={HIDDEN_USER_EMAILS}
+                protectedEmails={SUPER_ADMIN_EMAILS}
               />
             )}
             {tab === "trackers" && (
