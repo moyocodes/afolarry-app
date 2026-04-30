@@ -19,8 +19,20 @@ const S = { fontFamily: "'Sora',sans-serif" }
 
 const inp = 'border border-white/12 px-4 py-3 rounded-xl font-[Sora,sans-serif] text-[14px] outline-none w-full focus:border-[#42a5f5] transition'
 const inpStyle = { background: 'rgba(255,255,255,0.08)', color: '#fff', WebkitTextFillColor: '#fff' }
-// const placeholderStyle = `.shield-inp::placeholder { color: rgba(255,255,255,0.3); opacity: 1; }`
-
+const placeholderStyle = `.shield-inp::placeholder { color: rgba(255,255,255,0.3); opacity: 1; }`
+const autofillFix = `
+.shield-inp:-webkit-autofill,
+.shield-inp:-webkit-autofill:hover,
+.shield-inp:-webkit-autofill:focus,
+.shield-inp:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px rgba(255,255,255,0.08) inset !important;
+  box-shadow: 0 0 0 1000px rgba(255,255,255,0.08) inset !important;
+  -webkit-text-fill-color: #fff !important;
+  caret-color: #fff !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  transition: background-color 9999s ease-in-out 0s;
+}
+`
 export default function AdminShield() {
   const [loading, setLoading]         = useState(true)
   const [mode, setMode]               = useState('login')
@@ -149,7 +161,7 @@ export default function AdminShield() {
 
   return (
     <div style={{ ...S, minHeight: '100dvh', background: 'radial-gradient(ellipse at 50% 30%, #0d2a50 0%, #060e1a 70%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
-      <style>{placeholderStyle}</style>
+      <style>{placeholderStyle + autofillFix}</style>
 
       <motion.button
         whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
