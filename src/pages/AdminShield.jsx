@@ -17,6 +17,23 @@ import { useNavigate } from 'react-router-dom'
 
 const S = { fontFamily: "'Sora',sans-serif" }
 
+const authError = (err) => {
+  switch (err?.code) {
+    case 'auth/invalid-credential':
+    case 'auth/wrong-password':
+    case 'auth/user-not-found':      return 'Incorrect email or password.'
+    case 'auth/invalid-email':       return 'Enter a valid email address.'
+    case 'auth/email-already-in-use':return 'An account with this email already exists.'
+    case 'auth/weak-password':       return 'Password must be at least 6 characters.'
+    case 'auth/too-many-requests':   return 'Too many attempts. Wait a moment and try again.'
+    case 'auth/user-disabled':       return 'This account has been disabled. Contact the developer.'
+    case 'auth/network-request-failed': return 'Network error. Check your connection.'
+    case 'auth/operation-not-allowed':  return 'Sign-in is currently disabled.'
+    case 'auth/popup-closed-by-user':   return 'Sign-in was cancelled.'
+    default:                         return 'Something went wrong. Try again.'
+  }
+}
+
 const inp = 'border border-white/12 px-4 py-3 rounded-xl font-[Sora,sans-serif] text-[14px] outline-none w-full focus:border-[#42a5f5] transition'
 const inpStyle = { background: 'rgba(255,255,255,0.08)', color: '#fff', WebkitTextFillColor: '#fff' }
 const placeholderStyle = `.shield-inp::placeholder { color: rgba(255,255,255,0.3); opacity: 1; }`
@@ -121,8 +138,8 @@ export default function AdminShield() {
         navigate('/admin', { replace: true })
       }
     } catch (err) {
-      setStatus(err.message || 'Authentication failed')
-      setTimeout(() => setStatus(null), 4000)
+      setStatus(authError(err))
+      setTimeout(() => setStatus(null), 5000)
     }
   }
 
