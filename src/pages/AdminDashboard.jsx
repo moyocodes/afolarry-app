@@ -1559,12 +1559,12 @@ function ShipmentsSection({ readOnly = false, currentUser, isHardRestricted }) {
               </div>
               <div className="flex gap-2 shrink-0">
                 {/* View — always visible */}
-                <button
+                {/* <button
                   onClick={() => setViewingShipment(s)}
                   className="bg-[#f0f6ff] border border-[#dce8f7] rounded-lg p-2 cursor-pointer text-[#1565c0] flex transition hover:bg-[#e3f2fd]"
                 >
                   <Eye size={14} />
-                </button>
+                </button> */}
                 {!readOnly && (
                   <>
                     <button
