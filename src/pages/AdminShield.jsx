@@ -208,7 +208,7 @@ export default function AdminShield() {
         <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div>
             <label style={{ display: 'block', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>Email</label>
-            <input type="email" placeholder="admin@afolaray.com" value={email} onChange={e => setEmail(e.target.value)} required className={`shield-inp ${inp}`} style={inpStyle} />
+            <input type="email" placeholder="admin@afolaray.com" value={email} onChange={e => setEmail(e.target.value)} required className={`shield-inp ${inp}` } style={inpStyle} />
           </div>
 
           <div>
@@ -227,7 +227,7 @@ export default function AdminShield() {
               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} style={{ overflow: 'hidden' }}>
                 <label style={{ display: 'block', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>Confirm Password</label>
                 <div style={{ position: 'relative' }}>
-                  <input type={showConf ? 'text' : 'password'} placeholder="Repeat password" value={confirm} onChange={e => setConfirm(e.target.value)} required={mode === 'signup'} className={`shield-inp ${inp}`} style={{ ...inpStyle, paddingRight: 44 }} />
+                  <input type={showConf ? 'text' : 'password'} placeholder="Repeat password" value={confirm} onChange={e => setConfirm(e.target.value)} required={mode === 'signup'} className={`shield-inp ${inp}`} style={{ ...inpStyle, paddingRight: 44, background: 'rgba(255,255,255,0.1)' }} />
                   <button type="button" onClick={() => setShowConf(p => !p)}
                     style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.35)', display: 'flex', padding: 0 }}>
                     {showConf ? <EyeOff size={16} /> : <Eye size={16} />}
