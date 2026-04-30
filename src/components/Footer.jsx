@@ -224,7 +224,7 @@ export default function Footer() {
               +234 703 357 6017
             </a>
             <a
-              href="mailto:Afolaraynigerialimited@gmail.com"
+              href="mailto:afolaraylimited@gmail.com"
               style={{
                 display: "block",
                 fontSize: "12px",
@@ -234,7 +234,7 @@ export default function Footer() {
                 wordBreak: "break-all",
               }}
             >
-              Afolaraynigerialimited@gmail.com
+              afolaraylimited@gmail.com
             </a>
           </div>
         </div>
@@ -254,16 +254,33 @@ export default function Footer() {
           <p style={{ fontSize: "11px", color: "#9ab2cc", fontWeight: 300 }}>
             © 2025 Afolaray Nigeria Limited · All rights reserved.
           </p>
-          <div style={{ display: "flex", gap: "1rem", alignItems: "center", flexWrap: "wrap" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: "1rem",
+              alignItems: "center",
+              flexWrap: "wrap",
+            }}
+          >
             <Link
               to="/terms"
-              style={{ fontSize: "11px", color: "#9ab2cc", fontWeight: 300, textDecoration: "none" }}
+              style={{
+                fontSize: "11px",
+                color: "#9ab2cc",
+                fontWeight: 300,
+                textDecoration: "none",
+              }}
             >
               Terms &amp; Conditions
             </Link>
             <Link
               to="/privacy"
-              style={{ fontSize: "11px", color: "#9ab2cc", fontWeight: 300, textDecoration: "none" }}
+              style={{
+                fontSize: "11px",
+                color: "#9ab2cc",
+                fontWeight: 300,
+                textDecoration: "none",
+              }}
             >
               Privacy Policy
             </Link>

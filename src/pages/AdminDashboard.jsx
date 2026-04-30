@@ -83,7 +83,7 @@ const fmtDateTime = (ts) => {
 };
 
 const inp =
-  "w-full px-3 py-2.5 rounded-lg border border-[#dce8f7] bg-white text-[#0d1b2e] font-[Sora,sans-serif] text-[13px] outline-none focus:border-[#1565c0] transition";
+  "w-full px-3 py-2.5 rounded-lg border border-[#dce8f7] bg-[#f8fbff] text-[#0d1b2e] font-[Sora,sans-serif] text-[13px] outline-none focus:border-[#1565c0] placeholder:text-[#9ab2cc] transition";
 const lbl = "text-[10px] font-bold text-[#5a7599] tracking-[0.1em] uppercase";
 
 // ── SHARED UPLOAD HELPER ───────────────────────────────────────────────────
@@ -124,7 +124,7 @@ function auditMeta(currentUser, action = "updated") {
 }
 
 // ── Audit badge — small line shown on list cards ──────────────────────────
-function AuditBadge({ record }) {
+function AuditBadge({ record, isHardRestricted }) {
   // Show the most recent action
   const entry = record.updatedBy
     ? { label: "Updated by", who: record.updatedBy, ts: record.updatedAt }
@@ -133,11 +133,15 @@ function AuditBadge({ record }) {
       : null;
   if (!entry) return null;
   return (
-    <p className="text-[10px] text-[#9ab2cc] mt-1">
-      {entry.label}:{" "}
-      <span className="font-semibold text-[#5a7599]">{entry.who}</span>
-      {entry.ts && <> · {fmtDateTime(entry.ts)}</>}
-    </p>
+    <>
+      {!isHardRestricted && (
+        <p className="text-[10px] text-[#9ab2cc] mt-1">
+          {entry.label}:{" "}
+          <span className="font-semibold text-[#5a7599]">{entry.who}</span>
+          {entry.ts && <> · {fmtDateTime(entry.ts)}</>}
+        </p>
+      )}
+    </>
   );
 }
 
@@ -584,7 +588,7 @@ const BLANK_CAR = {
   preorderEnds: "",
 };
 
-function CarsSection({ readOnly = false, currentUser }) {
+function CarsSection({ readOnly = false, currentUser, isHardRestricted }) {
   const [cars, setCars] = useState([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState("list");
@@ -1017,7 +1021,7 @@ function CarsSection({ readOnly = false, currentUser }) {
                 <p className="text-[11px] text-[#5a7599] mb-0.5">
                   {car.type} · {car.location}
                 </p>
-                <AuditBadge record={car} />
+                <AuditBadge record={car} isHardRestricted={isHardRestricted} />
                 {!readOnly && (
                   <div className="flex gap-2 mt-3">
                     <button
@@ -1026,12 +1030,14 @@ function CarsSection({ readOnly = false, currentUser }) {
                     >
                       <Pencil size={13} /> Edit
                     </button>
-                    <button
-                      onClick={() => remove(car.id)}
-                      className="flex items-center justify-center bg-[#ffebee] hover:bg-[#ffcdd2] border-none rounded-lg px-3 py-2 text-[#c62828] cursor-pointer transition"
-                    >
-                      <Trash2 size={13} />
-                    </button>
+                    {!isHardRestricted && (
+                      <button
+                        onClick={() => remove(car.id)}
+                        className="flex items-center justify-center bg-[#ffebee] hover:bg-[#ffcdd2] border-none rounded-lg px-3 py-2 text-[#c62828] cursor-pointer transition"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -1091,7 +1097,7 @@ const BLANK_SHIP = {
   })),
 };
 
-function ShipmentsSection({ readOnly = false, currentUser }) {
+function ShipmentsSection({ readOnly = false, currentUser, isHardRestricted }) {
   const [shipments, setShipments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState("list");
@@ -1539,7 +1545,7 @@ function ShipmentsSection({ readOnly = false, currentUser }) {
                     {s.vin}
                   </p>
                 )}
-                <AuditBadge record={s} />
+                <AuditBadge record={s} isHardRestricted={isHardRestricted} />
               </div>
               <div className="flex flex-col items-end gap-1 shrink-0">
                 <span className="text-[11px] font-bold bg-[#e3f2fd] text-[#1565c0] px-2.5 py-0.5 rounded-full">
@@ -1567,12 +1573,14 @@ function ShipmentsSection({ readOnly = false, currentUser }) {
                     >
                       <Pencil size={14} />
                     </button>
-                    <button
-                      onClick={() => remove(s.id)}
-                      className="bg-[#ffebee] hover:bg-[#ffcdd2] border-none rounded-lg p-2 cursor-pointer text-[#c62828] flex transition"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    {!isHardRestricted && (
+                      <button
+                        onClick={() => remove(s.id)}
+                        className="bg-[#ffebee] hover:bg-[#ffcdd2] border-none rounded-lg p-2 cursor-pointer text-[#c62828] flex transition"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
                   </>
                 )}
               </div>
@@ -1674,6 +1682,7 @@ function ViewShipmentDrawer({ shipment: s, onClose }) {
                 >
                   {s.status}
                 </span>
+                <AuditBadge record={s} isHardRestricted={isHardRestricted} />
                 {s.eta && (
                   <span
                     style={{
@@ -2150,7 +2159,7 @@ function ViewShipmentDrawer({ shipment: s, onClose }) {
             </div>
           )}
 
-          <AuditBadge record={s} />
+          <AuditBadge record={s} isHardRestricted={isHardRestricted} />
         </div>
       </motion.div>
     </>
@@ -2158,7 +2167,7 @@ function ViewShipmentDrawer({ shipment: s, onClose }) {
 }
 // ── USERS SECTION ──────────────────────────────────────────────────────────
 // ── USERS SECTION ──────────────────────────────────────────────────────────
-function UsersSection({ readOnly = false, currentUser }) {
+function UsersSection({ readOnly = false, currentUser, isHardRestricted }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -2642,15 +2651,15 @@ function UsersSection({ readOnly = false, currentUser }) {
                                 alignItems: "center",
                                 gap: 5,
                                 background:
-                                  u.isAdmin !== false ? "#e3f2fd" : "#f5f5f5",
-                                border: `1px solid ${u.isAdmin !== false ? "#bbdefb" : "#e0e0e0"}`,
+                                  u.isAdmin !== false ? "#f5f5f5" : "#e3f2fd",
+                                border: `1px solid ${u.isAdmin !== false ? "#e0e0e0" : "#bbdefb"}`,
                                 borderRadius: 8,
                                 padding: "5px 10px",
                                 cursor: "pointer",
                                 fontSize: 11,
                                 fontWeight: 700,
                                 color:
-                                  u.isAdmin !== false ? "#1565c0" : "#9e9e9e",
+                                  u.isAdmin !== false ? "#9e9e9e" : "#1565c0",
                               }}
                             >
                               {u.isAdmin !== false ? (
@@ -2658,7 +2667,7 @@ function UsersSection({ readOnly = false, currentUser }) {
                               ) : (
                                 <ToggleLeft size={12} />
                               )}
-                              {u.isAdmin !== false ? "Full" : "View"}
+                              {u.isAdmin !== false ? "View Only" : "Full Access"}
                             </button>
                             <button
                               onClick={() => remove(u.id)}
@@ -3217,7 +3226,7 @@ const BLANK_TRACKER = {
   enabled: true,
 };
 
-function TrackersSection({ readOnly = false, currentUser }) {
+function TrackersSection({ readOnly = false, currentUser, isHardRestricted }) {
   const [trackers, setTrackers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState("list");
@@ -3474,7 +3483,7 @@ function TrackersSection({ readOnly = false, currentUser }) {
           </button>
         )}
       </div>
-   
+
       {loading ? (
         <div className="text-center py-12 text-[#5a7599] text-[13px]">
           Loading…
@@ -3530,7 +3539,7 @@ function TrackersSection({ readOnly = false, currentUser }) {
                     ? `Internal: ${t.internalPath}`
                     : t.url || "—"}
                 </p>
-                <AuditBadge record={t} />
+                <AuditBadge record={t} isHardRestricted={isHardRestricted} />
               </div>
               {!readOnly && (
                 <div className="flex gap-2 shrink-0">
@@ -3551,12 +3560,14 @@ function TrackersSection({ readOnly = false, currentUser }) {
                   >
                     <Pencil size={14} />
                   </button>
-                  <button
-                    onClick={() => remove(t.id)}
-                    className="bg-[#ffebee] hover:bg-[#ffcdd2] border-none rounded-lg p-2 cursor-pointer text-[#c62828] flex transition"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  {!isHardRestricted && (
+                    <button
+                      onClick={() => remove(t.id)}
+                      className="bg-[#ffebee] hover:bg-[#ffcdd2] border-none rounded-lg p-2 cursor-pointer text-[#c62828] flex transition"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -3579,7 +3590,15 @@ export default function AdminDashboard() {
   const [user, setUser] = useState(undefined);
   const [currentUserData, setCurrentUserData] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const [tab, setTab] = useState("cars");
+  const [tab, setTab] = useState(() => {
+    if (typeof window === "undefined") return "cars";
+    const saved = window.localStorage.getItem("adminTab");
+    return TABS.some((item) => item.id === saved) ? saved : "cars";
+  });
+  const handleSetTab = (id) => {
+    setTab(id);
+    window.localStorage.setItem("adminTab", id);
+  };
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -3602,6 +3621,19 @@ export default function AdminDashboard() {
   }, []);
 
   const isReadOnly = currentUserData?.isAdmin === false;
+  const allowedAdminEmail = "afolaraylimited@gmail.com";
+  const isHardRestricted =
+    user?.email?.toLowerCase() !== allowedAdminEmail && !!allowedAdminEmail;
+  const isViewOnly = isReadOnly;
+  const visibleTabs = TABS.filter(
+    (tabItem) => !(isHardRestricted && tabItem.id === "users"),
+  );
+
+  useEffect(() => {
+    if (tab === "users" && isHardRestricted) {
+      setTab("cars");
+    }
+  }, [tab, isHardRestricted]);
 
   if (user === undefined)
     return (
@@ -3751,22 +3783,6 @@ export default function AdminDashboard() {
         onEditProfile={() => setShowProfileModal(true)}
       />
 
-      {isReadOnly && (
-        <div
-          style={{
-            background: "#fff8e1",
-            borderBottom: "1px solid #ffe082",
-            padding: "8px 1.5rem",
-            fontSize: 12,
-            fontWeight: 700,
-            color: "#7c5800",
-            textAlign: "center",
-          }}
-        >
-          View-only mode — contact an admin to request full access.
-        </div>
-      )}
-
       {/* Tab nav */}
       <nav
         style={{
@@ -3778,10 +3794,10 @@ export default function AdminDashboard() {
           flexShrink: 0,
         }}
       >
-        {TABS.map(({ id, label, Icon }) => (
+        {visibleTabs.map(({ id, label, Icon }) => (
           <button
             key={id}
-            onClick={() => setTab(id)}
+            onClick={() => handleSetTab(id)}
             style={{
               display: "flex",
               alignItems: "center",
@@ -3825,16 +3841,32 @@ export default function AdminDashboard() {
             transition={{ duration: 0.16 }}
           >
             {tab === "cars" && (
-              <CarsSection readOnly={isReadOnly} currentUser={user} />
+              <CarsSection
+                readOnly={isViewOnly}
+                currentUser={user}
+                isHardRestricted={isHardRestricted}
+              />
             )}
             {tab === "shipments" && (
-              <ShipmentsSection readOnly={isReadOnly} currentUser={user} />
+              <ShipmentsSection
+                readOnly={isViewOnly}
+                currentUser={user}
+                isHardRestricted={isHardRestricted}
+              />
             )}
-            {tab === "users" && (
-              <UsersSection readOnly={isReadOnly} currentUser={user} />
+            {tab === "users" && !isHardRestricted && (
+              <UsersSection
+                readOnly={isReadOnly}
+                currentUser={user}
+                isHardRestricted={isHardRestricted}
+              />
             )}
             {tab === "trackers" && (
-              <TrackersSection readOnly={isReadOnly} currentUser={user} />
+              <TrackersSection
+                readOnly={isViewOnly}
+                currentUser={user}
+                isHardRestricted={isHardRestricted}
+              />
             )}
           </motion.div>
         </AnimatePresence>
