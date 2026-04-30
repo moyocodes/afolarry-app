@@ -111,10 +111,11 @@ export default function AdminShield() {
           return
         }
 
-        // Approved — update lastLogin and proceed
-        await setDoc(doc(db, 'adminUsers', cred.user.uid), {
-          lastLogin: serverTimestamp(),
-        }, { merge: true })
+        // Approved — sync Auth fields + update lastLogin
+        const updates = { lastLogin: serverTimestamp() }
+        if (!data.email && cred.user.email) updates.email = cred.user.email
+        if (!data.uid) updates.uid = cred.user.uid
+        await setDoc(doc(db, 'adminUsers', cred.user.uid), updates, { merge: true })
 
         setStatus('ok')
         navigate('/admin', { replace: true })

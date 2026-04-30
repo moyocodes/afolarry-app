@@ -2184,6 +2184,7 @@ function UsersSection({
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [viewingUser, setViewingUser] = useState(null);
+  const [notice, setNotice] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -2218,9 +2219,27 @@ function UsersSection({
   };
 
   const remove = async (id) => {
-    if (!window.confirm("Remove this user record?")) return;
-    await deleteDoc(doc(db, "adminUsers", id)).catch(() => {});
-    load();
+    if (!window.confirm("Permanently delete this user? This cannot be undone.")) return;
+    // Optimistically remove from UI
+    setUsers((prev) => prev.filter((u) => u.id !== id));
+    let authDeleted = false;
+    try {
+      const res = await fetch("/api/delete-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uid: id }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        authDeleted = json.authDeleted === true;
+      } else {
+        throw new Error("API error");
+      }
+    } catch {
+      // API unavailable — fall back to client-side Firestore delete only
+      await deleteDoc(doc(db, "adminUsers", id)).catch(() => {});
+    }
+    setNotice(authDeleted ? "full" : "partial");
   };
 
   const filtered = users.filter((u) => {
@@ -2261,6 +2280,55 @@ function UsersSection({
             user={viewingUser}
             onClose={() => setViewingUser(null)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Deletion notice */}
+      <AnimatePresence>
+        {notice && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            style={{
+              marginBottom: 16,
+              background: notice === "full" ? "#e8f5e9" : "#fff8e1",
+              border: `1px solid ${notice === "full" ? "#a5d6a7" : "#ffe082"}`,
+              borderRadius: 12,
+              padding: "12px 16px",
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 10,
+            }}
+          >
+            <div style={{ flex: 1 }}>
+              {notice === "full" ? (
+                <>
+                  <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#2e7d32", fontFamily: "Sora,sans-serif" }}>
+                    User deleted successfully.
+                  </p>
+                  <p style={{ margin: "3px 0 0", fontSize: 12, color: "#388e3c", fontFamily: "Sora,sans-serif" }}>
+                    Their account and access have been fully removed from Firebase.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#e65100", fontFamily: "Sora,sans-serif" }}>
+                    User removed from the dashboard.
+                  </p>
+                  <p style={{ margin: "3px 0 0", fontSize: 12, color: "#bf360c", fontFamily: "Sora,sans-serif" }}>
+                    Their Firebase Authentication account may still be active. Please contact the developer to complete the deletion, or advise the staff member to reset their password immediately.
+                  </p>
+                </>
+              )}
+            </div>
+            <button
+              onClick={() => setNotice(null)}
+              style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "#999", flexShrink: 0 }}
+            >
+              <X size={14} />
+            </button>
+          </motion.div>
         )}
       </AnimatePresence>
 
@@ -2334,7 +2402,6 @@ function UsersSection({
                   <th style={th}>Email</th>
                   <th style={th}>Status</th>
                   <th style={th}>Last Login</th>
-                  <th style={th}>Created</th>
                   <th
                     style={{
                       ...th,
@@ -2547,44 +2614,6 @@ function UsersSection({
                       )}
                     </td>
 
-                    {/* Created — countdown + full date */}
-                    <td style={td}>
-                      {u.createdAt ? (
-                        <div>
-                          <span
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: 5,
-                              fontSize: 12,
-                              fontWeight: 700,
-                              color: "#0d1b2e",
-                              background: "#f7f0ff",
-                              border: "1px solid #e8d5f5",
-                              borderRadius: 8,
-                              padding: "3px 9px",
-                            }}
-                          >
-                            <Calendar size={11} color="#7b1fa2" />
-                            {timeAgo(u.createdAt)}
-                          </span>
-                          <p
-                            style={{
-                              fontSize: 10,
-                              color: "#9ab2cc",
-                              margin: "4px 0 0",
-                            }}
-                          >
-                            {fmtDateTime(u.createdAt)}
-                          </p>
-                        </div>
-                      ) : (
-                        <span style={{ fontSize: 11, color: "#c7d7f5" }}>
-                          —
-                        </span>
-                      )}
-                    </td>
-
                     {/* Actions */}
                     <td style={{ ...td, textAlign: "right" }}>
                       <div
@@ -2786,6 +2815,7 @@ function ProfileModal({ uid, email, existingData, onComplete, onClose }) {
 
   const [name, setName] = useState(existingData?.name || "");
   const [address, setAddress] = useState(existingData?.address || "");
+  const [editEmail, setEditEmail] = useState(email || "");
   const [profileFile, setProfileFile] = useState(null);
   const [profilePreview, setProfilePreview] = useState(
     existingData?.profileImage || null,
@@ -2824,6 +2854,7 @@ function ProfileModal({ uid, email, existingData, onComplete, onClose }) {
       const updates = {
         name,
         address,
+        email: editEmail.trim().toLowerCase(),
         profileComplete: true,
         updatedAt: serverTimestamp(),
       };
@@ -2843,14 +2874,14 @@ function ProfileModal({ uid, email, existingData, onComplete, onClose }) {
     <>
       {/* Backdrop */}
       <div
-        onClick={onClose || undefined}
+        onClick={onClose}
         style={{
           position: "fixed",
           inset: 0,
           zIndex: 9998,
           background: "rgba(6,14,26,0.6)",
           backdropFilter: "blur(6px)",
-          cursor: onClose ? "pointer" : "default",
+          cursor: "pointer",
         }}
       />
       {/* Drawer slides in from right */}
@@ -2926,8 +2957,7 @@ function ProfileModal({ uid, email, existingData, onComplete, onClose }) {
               </h2>
             </div>
           </div>
-          {onClose && (
-            <button
+          <button
               onClick={onClose}
               style={{
                 background: "rgba(255,255,255,0.08)",
@@ -2943,10 +2973,9 @@ function ProfileModal({ uid, email, existingData, onComplete, onClose }) {
             >
               <X size={16} />
             </button>
-          )}
         </div>
 
-        {/* Email display */}
+        {/* Email — editable */}
         <div
           style={{
             padding: "12px 24px",
@@ -2954,28 +2983,42 @@ function ProfileModal({ uid, email, existingData, onComplete, onClose }) {
             borderBottom: "1px solid rgba(255,255,255,0.06)",
           }}
         >
-          <p
+          <label
             style={{
+              display: "block",
               fontSize: 10,
               fontWeight: 700,
-              color: "rgba(255,255,255,0.3)",
-              textTransform: "uppercase",
+              color: "rgba(255,255,255,0.35)",
               letterSpacing: "0.1em",
-              margin: "0 0 2px",
+              textTransform: "uppercase",
+              marginBottom: 7,
             }}
           >
-            Signed in as
-          </p>
-          <p
+            Email Address
+          </label>
+          <input
+            type="email"
+            value={editEmail}
+            required
+            placeholder="you@example.com"
+            onChange={(e) => setEditEmail(e.target.value)}
             style={{
+              width: "100%",
+              boxSizing: "border-box",
+              background: "rgba(255,255,255,0.07)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              borderRadius: 12,
+              padding: "11px 14px",
+              color: "#fff",
+              fontFamily: "Sora,sans-serif",
               fontSize: 13,
-              color: "#42a5f5",
-              fontWeight: 600,
-              margin: 0,
+              outline: "none",
             }}
-          >
-            {email}
-          </p>
+            onFocus={(e) => (e.target.style.borderColor = "#42a5f5")}
+            onBlur={(e) =>
+              (e.target.style.borderColor = "rgba(255,255,255,0.12)")
+            }
+          />
         </div>
 
         {/* Form */}
@@ -3254,8 +3297,7 @@ function ProfileModal({ uid, email, existingData, onComplete, onClose }) {
                   ? "Save Changes"
                   : "Save & Continue"}
             </button>
-            {onClose && (
-              <button
+            <button
                 type="button"
                 onClick={onClose}
                 style={{
@@ -3273,7 +3315,6 @@ function ProfileModal({ uid, email, existingData, onComplete, onClose }) {
               >
                 Cancel
               </button>
-            )}
           </div>
 
           {!isEditing && (
@@ -3689,6 +3730,14 @@ export default function AdminDashboard() {
       try {
         const snap = await getDoc(doc(db, "adminUsers", u.uid));
         const data = snap.exists() ? snap.data() : {};
+        // Backfill any Auth fields missing from Firestore
+        const missing = {};
+        if (!data.email && u.email) missing.email = u.email;
+        if (!data.uid) missing.uid = u.uid;
+        if (Object.keys(missing).length) {
+          await setDoc(doc(db, "adminUsers", u.uid), missing, { merge: true }).catch(() => {});
+          Object.assign(data, missing);
+        }
         setCurrentUserData(data);
         if (!data.idCard) setShowProfileModal(true);
       } catch {
@@ -3717,10 +3766,12 @@ export default function AdminDashboard() {
   );
 
   useEffect(() => {
+    // Only enforce tab restrictions once auth has resolved (user !== undefined)
+    if (user === undefined) return;
     if (tab === "users" && isHardRestricted) {
-      setTab("cars");
+      handleSetTab("cars");
     }
-  }, [tab, isHardRestricted]);
+  }, [tab, isHardRestricted, user]);
 
   if (user === undefined)
     return (
@@ -3765,9 +3816,7 @@ export default function AdminDashboard() {
             uid={user.uid}
             email={user.email}
             existingData={currentUserData}
-            onClose={
-              currentUserData?.idCard ? () => setShowProfileModal(false) : null
-            }
+            onClose={() => setShowProfileModal(false)}
             onComplete={(updates) => {
               setCurrentUserData((p) => ({ ...p, ...updates }));
               setShowProfileModal(false);
