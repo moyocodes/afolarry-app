@@ -2599,7 +2599,7 @@ function UsersSection({ readOnly = false, currentUser, isHardRestricted }) {
                             color: "#1565c0",
                           }}
                         >
-                          <Eye size={12} /> View
+                          <Eye size={12} /> View User
                         </button>
                         {!readOnly && (
                           <>
