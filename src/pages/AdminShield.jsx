@@ -19,7 +19,7 @@ const S = { fontFamily: "'Sora',sans-serif" }
 
 const inp = 'border border-white/12 px-4 py-3 rounded-xl font-[Sora,sans-serif] text-[14px] outline-none w-full focus:border-[#42a5f5] transition'
 const inpStyle = { background: 'rgba(255,255,255,0.08)', color: '#fff', WebkitTextFillColor: '#fff' }
-const placeholderStyle = `.shield-inp::placeholder { color: rgba(255,255,255,0.3); opacity: 1; }`
+// const placeholderStyle = `.shield-inp::placeholder { color: rgba(255,255,255,0.3); opacity: 1; }`
 
 export default function AdminShield() {
   const [loading, setLoading]         = useState(true)

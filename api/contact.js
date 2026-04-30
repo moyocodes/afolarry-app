@@ -19,10 +19,11 @@ export default async function handler(req, res) {
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
 
-  const safeMsg     = esc(message).replace(/\n/g, "<br>");
+  const safeMsg = esc(message).replace(/\n/g, "<br>");
   const safeService = esc(service || "General enquiry");
-  const safePhone   = esc(phone   || "Not provided");
-  const subjectLine = subject || `New enquiry from ${from_name}${service ? ` — ${service}` : ""}`;
+  const safePhone = esc(phone || "Not provided");
+  const subjectLine =
+    subject || `New enquiry from ${from_name}${service ? ` — ${service}` : ""}`;
 
   const row = (label, value) => `
     <tr>
@@ -55,20 +56,19 @@ export default async function handler(req, res) {
 
   try {
     await Promise.all([
-
       // ── Notify Afolaray team ──────────────────────────────────────────────
       resend.emails.send({
-        from:    "Afolaray Contact <contact@afolaray.com>",
-        to:      ["Yusuffafolabi@gmail.com", "contact@afolaray.com"],
+        from: "Afolaray Contact <contact@afolaray.com>",
+        to: ["contact@afolaray.com"],
         replyTo: from_email,
         subject: subjectLine,
         html: wrapper(`
           ${header("New enquiry received")}
           ${body(`
             <table style="width:100%;border-collapse:collapse;">
-              ${row("Name",    esc(from_name))}
-              ${row("Email",   `<a href="mailto:${esc(from_email)}" style="color:#1565c0;text-decoration:none;">${esc(from_email)}</a>`)}
-              ${row("Phone",   safePhone)}
+              ${row("Name", esc(from_name))}
+              ${row("Email", `<a href="mailto:${esc(from_email)}" style="color:#1565c0;text-decoration:none;">${esc(from_email)}</a>`)}
+              ${row("Phone", safePhone)}
               ${row("Service", safeService)}
             </table>
             ${msgBlock(safeMsg)}
@@ -79,9 +79,9 @@ export default async function handler(req, res) {
 
       // ── Confirmation to customer ──────────────────────────────────────────
       resend.emails.send({
-        from:    "Afolaray Contact <contact@afolaray.com>",
-        to:      from_email,
-        replyTo: ["contact@afolaray.com", "Yusuffafolabi@gmail.com"],
+        from: "Afolaray Contact <contact@afolaray.com>",
+        to: from_email,
+        replyTo: ["contact@afolaray.com"],
         subject: "We received your message — Afolaray Nigeria Limited",
         html: wrapper(`
           ${header("Message received")}
@@ -90,7 +90,7 @@ export default async function handler(req, res) {
             <p style="margin:0 0 20px;font-size:13px;color:#5a7599;line-height:1.7;">We've received your enquiry and our team will be in touch with you shortly.</p>
             <table style="width:100%;border-collapse:collapse;">
               ${row("Service", safeService)}
-              ${row("Phone",   safePhone)}
+              ${row("Phone", safePhone)}
             </table>
             ${msgBlock(safeMsg)}
             <div style="margin-top:20px;background:#e3f2fd;border-radius:8px;padding:14px 16px;font-size:12px;color:#0d1b2e;line-height:1.6;">

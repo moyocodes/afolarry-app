@@ -1,7 +1,7 @@
 import { Resend } from "resend";
 
 const FROM = "Afolaray Shipments <shipments@afolaray.com>";
-const TEAM = ["Yusuffafolabi@gmail.com", "contact@afolaray.com"];
+const TEAM = ["contact@afolaray.com"];
 
 export default async function handler(req, res) {
   if (req.method !== "POST")
@@ -22,8 +22,7 @@ export default async function handler(req, res) {
     isUpdate,
   } = req.body ?? {};
 
-  if (!shipmentId)
-    return res.status(400).json({ error: "Missing shipmentId" });
+  if (!shipmentId) return res.status(400).json({ error: "Missing shipmentId" });
 
   const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -114,7 +113,7 @@ export default async function handler(req, res) {
           ${recipientEmail ? `<p style="margin:16px 0 0;font-size:12px;color:#5a7599;">Recipient email: <a href="mailto:${esc(recipientEmail)}" style="color:#1565c0;">${esc(recipientEmail)}</a></p>` : ""}
         `)}
       `),
-    })
+    }),
   );
 
   // ── Customer / shipment person ─────────────────────────────────────────────
@@ -147,7 +146,7 @@ export default async function handler(req, res) {
             </p>
           `)}
         `),
-      })
+      }),
     );
   }
 
@@ -181,7 +180,7 @@ export default async function handler(req, res) {
             </p>
           `)}
         `),
-      })
+      }),
     );
   }
 

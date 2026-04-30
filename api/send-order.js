@@ -1,7 +1,7 @@
 import { Resend } from "resend";
 
 const FROM = "Afolaray Enquiries <enquiries@afolaray.com>";
-const ORDERS = ["Yusuffafolabi@gmail.com", "contact@afolaray.com"];
+const ORDERS = ["contact@afolaray.com"];
 
 export default async function handler(req, res) {
   if (req.method !== "POST")
@@ -51,7 +51,7 @@ export default async function handler(req, res) {
       resend.emails.send({
         from: FROM,
         to: from_email,
-        replyTo: ["contact@afolaray.com", "Yusuffafolabi@gmail.com"],
+        replyTo: ["contact@afolaray.com"],
         subject: `Order received — ${esc(car_name)}`,
         html: `
           <div style="font-family:'Sora',sans-serif;max-width:560px;margin:0 auto;padding:32px;background:#f7faff;border-radius:16px;">

@@ -130,10 +130,10 @@ export default function Privacy() {
         <Section title="10. Contact">
           For any privacy-related questions or requests, contact us at:{" "}
           <a
-            href="mailto:Yusuffafolabi@gmail.com"
+            href="mailto:contact@afolaray.com"
             style={{ color: "#1565c0", textDecoration: "none", fontWeight: 600 }}
           >
-            Yusuffafolabi@gmail.com
+          contact@afolaray.com
           </a>{" "}
           or call{" "}
           <a
