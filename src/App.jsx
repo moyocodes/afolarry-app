@@ -5,6 +5,7 @@ import "./index.css";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ScreenCTA from "./components/ScreenCTA";
+import WaFab from "./components/WaFab";
 
 import Home from "./pages/Home";
 import Solutions from "./pages/Solutions";
@@ -64,6 +65,7 @@ function Layout() {
       </main>
       <Footer />
       <ScreenCTA />
+      <WaFab />
     </>
   );
 }
@@ -71,8 +73,8 @@ function Layout() {
 function AppContent() {
   const { pathname } = useLocation();
   // if (pathname.startsWith("/mail"))      return <MailDashboard token={pathname.split('/')[2] || null} />;
-  if (pathname.startsWith("/shield"))    return <AdminShield />;
-  if (pathname.startsWith("/admin"))     return <AdminDashboard />;
+  if (pathname.startsWith("/shield")) return <AdminShield />;
+  if (pathname.startsWith("/admin")) return <AdminDashboard />;
   // if (pathname.startsWith("/shipments")) return <ShipmentsAdmin />;
   if (pathname.startsWith("/public-track")) return <PublicTrack />;
   return <Layout />;
