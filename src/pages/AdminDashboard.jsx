@@ -4337,6 +4337,103 @@ function ScheduleSection({ readOnly = false, currentUser, isHardRestricted }) {
   );
 }
 
+// ── VIEW VEHICLE MODAL ──────────────────────────────────────────────────────
+function ViewVehicleModal({ vehicle: v, trackers = [], onClose, onEdit }) {
+  const tracker = trackers.find((t) => t.name === v.company);
+  const accent = tracker?.accent || "#1565c0";
+
+  const Row = ({ label, value, mono }) =>
+    value ? (
+      <div style={{ display: "flex", flexDirection: "column", gap: 2, padding: "10px 0", borderBottom: "1px solid #f0f4ff" }}>
+        <span style={{ fontSize: 10, fontWeight: 700, color: "#9ab2cc", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+          {label}
+        </span>
+        <span style={{ fontSize: 13, color: "#0d1b2e", fontFamily: mono ? "monospace" : "'Sora',sans-serif", whiteSpace: "pre-wrap", wordBreak: "break-all" }}>
+          {value}
+        </span>
+      </div>
+    ) : null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(6,14,26,0.75)", backdropFilter: "blur(10px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem", fontFamily: "'Sora',sans-serif" }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <motion.div
+        initial={{ y: 20, opacity: 0, scale: 0.97 }}
+        animate={{ y: 0, opacity: 1, scale: 1 }}
+        exit={{ y: 10, opacity: 0 }}
+        style={{ background: "#fff", borderRadius: 20, width: "100%", maxWidth: 460, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", overflow: "hidden" }}
+      >
+        {/* Banner */}
+        <div style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)`, padding: "20px 24px 16px", position: "relative" }}>
+          <button onClick={onClose} style={{ position: "absolute", top: 14, right: 14, background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 8, padding: 6, cursor: "pointer", color: "#fff", display: "flex" }}>
+            <X size={14} />
+          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ background: "rgba(255,255,255,0.18)", borderRadius: 10, padding: 8, display: "flex" }}>
+              <Truck size={18} color="#fff" />
+            </div>
+            <div>
+              <p style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.7)", margin: 0, textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                Vehicle Record
+              </p>
+              <p style={{ fontSize: 15, fontWeight: 800, color: "#fff", margin: "2px 0 0" }}>
+                {v.consigneeName || "Unknown"}
+              </p>
+            </div>
+          </div>
+          {/* Badges row */}
+          <div style={{ display: "flex", gap: 6, marginTop: 12, flexWrap: "wrap" }}>
+            {v.date && (
+              <span style={{ fontSize: 10, fontWeight: 700, background: "rgba(255,255,255,0.2)", color: "#fff", padding: "2px 8px", borderRadius: 999 }}>
+                {v.date}
+              </span>
+            )}
+            {v.company && (
+              <span style={{ fontSize: 10, fontWeight: 700, background: "rgba(255,255,255,0.2)", color: "#fff", padding: "2px 8px", borderRadius: 999 }}>
+                {tracker?.short || v.company}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: "8px 24px 20px", maxHeight: "60vh", overflowY: "auto" }}>
+          <Row label="A Number" value={v.aNumber} />
+          <Row label="C Number" value={v.cNumber} />
+          <Row label="Consignee Name" value={v.consigneeName} />
+          <Row label="Chassis No(s)" value={v.chassisNo} mono />
+          <Row label="Duty" value={v.duty} mono />
+          <Row label="Make / Model" value={v.make} />
+          <Row label="Shipping Company" value={v.company} />
+        </div>
+
+        {/* Footer */}
+        <div style={{ padding: "12px 24px", borderTop: "1px solid #f0f4ff", display: "flex", gap: 8, justifyContent: "flex-end" }}>
+          {onEdit && (
+            <button
+              onClick={() => onEdit(v)}
+              style={{ display: "flex", alignItems: "center", gap: 5, background: "#e3f2fd", border: "1px solid #bbdefb", borderRadius: 10, padding: "7px 14px", cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#1565c0" }}
+            >
+              <Pencil size={12} /> Edit
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            style={{ background: "#f7faff", border: "1px solid #dce8f7", borderRadius: 10, padding: "7px 16px", cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#5a7599" }}
+          >
+            Close
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 // ── VEHICLES SECTION ────────────────────────────────────────────────────────
 const BLANK_VEHICLE = {
   date: "",
@@ -4359,6 +4456,7 @@ function VehiclesSection({ readOnly = false, currentUser, isHardRestricted, trac
   const [page, setPage] = useState(1);
   const [saving, setSaving] = useState(false);
   const [saveErr, setSaveErr] = useState(null);
+  const [viewingVehicle, setViewingVehicle] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -4405,7 +4503,7 @@ function VehiclesSection({ readOnly = false, currentUser, isHardRestricted, trac
     try {
       const payload = {
         ...form,
-        duty: form.duty ? Number(String(form.duty).replace(/,/g, "")) : null,
+        duty: form.duty || "",
         updatedAt: serverTimestamp(),
       };
       if (editId) {
@@ -4433,8 +4531,6 @@ function VehiclesSection({ readOnly = false, currentUser, isHardRestricted, trac
     setVehicles((p) => p.filter((v) => v.id !== id));
     await deleteDoc(doc(db, "vehicles", id)).catch(() => {});
   };
-
-  const fmtDuty = (v) => (v?.duty ? fmt(v.duty) : "—");
 
   const filtered = vehicles.filter(
     (v) =>
@@ -4559,15 +4655,15 @@ function VehiclesSection({ readOnly = false, currentUser, isHardRestricted, trac
 
           {/* Duty */}
           <div>
-            <label className={lbl}>Duty (₦)</label>
-            <input
-              type="text"
-              placeholder="e.g. 522,667"
+            <label className={lbl}>Duty</label>
+            <textarea
+              placeholder="e.g. 522,667, 397,553 — one per line or comma-separated"
               value={form.duty}
               onChange={(e) =>
                 setForm((p) => ({ ...p, duty: e.target.value }))
               }
-              className={inp}
+              rows={2}
+              className={`${inp} resize-none`}
             />
           </div>
 
@@ -4638,6 +4734,17 @@ function VehiclesSection({ readOnly = false, currentUser, isHardRestricted, trac
   // ── LIST VIEW ──
   return (
     <div>
+      <AnimatePresence>
+        {viewingVehicle && (
+          <ViewVehicleModal
+            vehicle={viewingVehicle}
+            trackers={trackers}
+            onClose={() => setViewingVehicle(null)}
+            onEdit={!readOnly ? (v) => { setViewingVehicle(null); startEdit(v); } : null}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div>
@@ -4823,17 +4930,22 @@ function VehiclesSection({ readOnly = false, currentUser, isHardRestricted, trac
                         {v.make || "—"}
                       </p>
                     </td>
-                    <td style={td}>
+                    <td style={{ ...td, maxWidth: 160 }}>
                       {v.duty ? (
-                        <span
+                        <p
                           style={{
-                            fontSize: 12,
-                            fontWeight: 700,
+                            margin: 0,
+                            fontFamily: "monospace",
+                            fontSize: 11,
                             color: "#2e7d32",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
                           }}
+                          title={v.duty}
                         >
-                          {fmtDuty(v)}
-                        </span>
+                          {v.duty}
+                        </p>
                       ) : (
                         <span style={{ color: "#c7d7f5" }}>—</span>
                       )}
@@ -4863,15 +4975,34 @@ function VehiclesSection({ readOnly = false, currentUser, isHardRestricted, trac
                         <span style={{ color: "#c7d7f5" }}>—</span>
                       )}
                     </td>
-                    {!readOnly && (
-                      <td style={{ ...td, textAlign: "right" }}>
-                        <div
+                    <td style={{ ...td, textAlign: "right" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: 6,
+                          justifyContent: "flex-end",
+                        }}
+                      >
+                        <button
+                          onClick={() => setViewingVehicle(v)}
                           style={{
                             display: "flex",
-                            gap: 6,
-                            justifyContent: "flex-end",
+                            alignItems: "center",
+                            gap: 4,
+                            background: "#f0f6ff",
+                            border: "1px solid #dce8f7",
+                            borderRadius: 8,
+                            padding: "5px 10px",
+                            cursor: "pointer",
+                            fontSize: 11,
+                            fontWeight: 700,
+                            color: "#1565c0",
                           }}
                         >
+                          <Eye size={11} /> View
+                        </button>
+                        {!readOnly && (
+                          <>
                           <button
                             onClick={() => startEdit(v)}
                             style={{
@@ -4907,9 +5038,10 @@ function VehiclesSection({ readOnly = false, currentUser, isHardRestricted, trac
                               <Trash2 size={12} />
                             </button>
                           )}
-                        </div>
-                      </td>
-                    )}
+                          </>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -5012,7 +5144,7 @@ export default function AdminDashboard() {
   const isReadOnly = currentUserData?.isAdmin === false;
   const SUPER_ADMIN_EMAILS = [
     "moyosorejames@gmail.com",
-    "afolaraylimited@gmail.com",
+    "afolaraylimited@gmamil.com",
     // add more super-admins here
   ];
   const HIDDEN_USER_EMAILS = [
