@@ -45,161 +45,145 @@ import {
   Mail,
   CreditCard,
   Calendar,
+  Truck,
+  ExternalLink,
+  CalendarDays,
 } from "lucide-react";
 
+// ── SHARED CONSTANTS ────────────────────────────────────────────────────────
 const S = { fontFamily: "'Sora',sans-serif" };
-const PER = 8;
-const timeAgo = (ts) => {
-  if (!ts) return null;
-  const d = ts?.toDate ? ts.toDate() : new Date(ts);
-  const sec = Math.floor((Date.now() - d.getTime()) / 1000);
-  if (sec < 60) return "just now";
-  if (sec < 3600) return `${Math.floor(sec / 60)}m ago`;
-  if (sec < 86400) return `${Math.floor(sec / 3600)}h ago`;
-  if (sec < 604800) return `${Math.floor(sec / 86400)}d ago`;
-  if (sec < 2592000) return `${Math.floor(sec / 604800)}w ago`;
-  return fmtDate(d);
-};
-const fmt = (n) =>
-  "₦" + Number(n).toLocaleString("en-NG", { minimumFractionDigits: 2 });
-const fmtDate = (ts) =>
-  ts
-    ? new Date(ts).toLocaleDateString("en-NG", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      })
-    : "—";
+const PER = 10; // rows per page across all sections
+
+// ── SHARED HELPERS ──────────────────────────────────────────────────────────
 const fmtDateTime = (ts) => {
   if (!ts) return "—";
-  const d = ts.toDate ? ts.toDate() : new Date(ts);
-  return d.toLocaleDateString("en-NG", {
-    day: "numeric",
+  const d = ts?.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleString("en-US", {
     month: "short",
+    day: "numeric",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
   });
 };
+const timeAgo = (ts) => {
+  if (!ts) return "just now";
+  const d = ts?.toDate ? ts.toDate() : new Date(ts);
+  const mins = Math.floor((Date.now() - d.getTime()) / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+};
+const fmtDate = (str) => {
+  if (!str) return "—";
+  const d = new Date(str);
+  return isNaN(d)
+    ? str
+    : d.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+};
+const fmt = (v) => (v ? `₦${Number(v).toLocaleString()}` : "—");
+const auditMeta = (user, action) => ({
+  [`${action}By`]: user?.email || user?.uid || "unknown",
+  [`${action}At`]: serverTimestamp(),
+});
 
+// ── SHARED TAILWIND CLASS STRINGS ───────────────────────────────────────────
 const inp =
-  "w-full px-3 py-2.5 rounded-lg border border-[#dce8f7] bg-[#f8fbff] text-[#0d1b2e] font-[Sora,sans-serif] text-[13px] outline-none focus:border-[#1565c0] placeholder:text-[#9ab2cc] transition";
-const lbl = "text-[10px] font-bold text-[#5a7599] tracking-[0.1em] uppercase";
+  "w-full rounded-xl border border-[#dce8f7] px-3 py-2.5 text-[13px] text-[#0d1b2e] outline-none focus:border-[#1565c0] focus:ring-2 focus:ring-[#1565c0]/10 bg-white";
+const lbl =
+  "block text-[10px] font-bold text-[#9ab2cc] uppercase tracking-widest mb-1.5";
 
-// ── SHARED UPLOAD HELPER ───────────────────────────────────────────────────
-function uploadFile(file) {
-  return new Promise((resolve, reject) => {
-    if (!file) return resolve(null);
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error("Failed to read file"));
-    reader.onload = (e) => {
-      const xhr = new XMLHttpRequest();
-      xhr.open("POST", "/api/upload");
-      xhr.setRequestHeader("Content-Type", "application/json");
-      xhr.onload = () => {
-        try {
-          const data = JSON.parse(xhr.responseText);
-          xhr.status === 200
-            ? resolve(data.url)
-            : reject(new Error(data.error || "Upload failed"));
-        } catch {
-          reject(new Error("Invalid response"));
-        }
-      };
-      xhr.onerror = () => reject(new Error("Network error"));
-      xhr.send(JSON.stringify({ file: e.target.result, filename: file.name }));
-    };
-    reader.readAsDataURL(file);
-  });
-}
-
-// ── Audit meta — attach to every save/update ──────────────────────────────
-// Writes e.g. createdBy, createdByUid, createdAt or updatedBy, updatedAt
-function auditMeta(currentUser, action = "updated") {
-  return {
-    [`${action}By`]: currentUser?.email || "unknown",
-    [`${action}ByUid`]: currentUser?.uid || "",
-    [`${action}At`]: serverTimestamp(),
-  };
-}
-
-// ── Audit badge — small line shown on list cards ──────────────────────────
-function AuditBadge({ record, isHardRestricted }) {
-  // Show the most recent action
-  const entry = record.updatedBy
-    ? { label: "Updated by", who: record.updatedBy, ts: record.updatedAt }
-    : record.createdBy
-      ? { label: "Created by", who: record.createdBy, ts: record.createdAt }
-      : null;
-  if (!entry) return null;
-  return (
-    <>
-      {!isHardRestricted && (
-        <p className="text-[10px] text-[#9ab2cc] mt-1">
-          {entry.label}:{" "}
-          <span className="font-semibold text-[#5a7599]">{entry.who}</span>
-          {entry.ts && <> · {fmtDateTime(entry.ts)}</>}
-        </p>
-      )}
-    </>
-  );
-}
-
-// ── Shared Pagination ──────────────────────────────────────────────────────
+// ── SHARED COMPONENTS ────────────────────────────────────────────────────────
 function Pagination({ page, total, onChange }) {
   if (total <= 1) return null;
-  const pages = Array.from({ length: total }, (_, i) => i + 1)
-    .filter(
-      (n) => total <= 7 || n === 1 || n === total || Math.abs(n - page) <= 2,
-    )
-    .reduce((acc, n, idx, arr) => {
-      if (idx > 0 && n - arr[idx - 1] > 1) acc.push("…");
-      acc.push(n);
-      return acc;
-    }, []);
   return (
-    <div className="flex items-center justify-center gap-1.5 mt-8 flex-wrap">
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+        marginTop: 24,
+      }}
+    >
       <button
         onClick={() => onChange(Math.max(1, page - 1))}
         disabled={page === 1}
-        className={`flex items-center gap-1 border border-[#dce8f7] rounded-lg px-3 py-2 text-[12px] font-semibold font-[Sora,sans-serif] transition ${page === 1 ? "bg-[#f7faff] text-[#b0c4de] cursor-not-allowed" : "bg-white text-[#1565c0] hover:bg-[#e3f2fd] cursor-pointer"}`}
+        style={{
+          padding: "6px 8px",
+          borderRadius: 8,
+          border: "1px solid #dce8f7",
+          background: "#fff",
+          color: "#5a7599",
+          cursor: page === 1 ? "not-allowed" : "pointer",
+          opacity: page === 1 ? 0.4 : 1,
+          display: "flex",
+        }}
       >
-        <ChevronLeft size={14} /> Prev
+        <ChevronLeft size={14} />
       </button>
-      {pages.map((n, i) =>
-        typeof n === "string" ? (
-          <span
-            key={i}
-            className="px-2 py-2 text-[12px] text-[#5a7599] select-none"
-          >
-            …
-          </span>
-        ) : (
-          <button
-            key={n}
-            onClick={() => onChange(n)}
-            className={`w-9 h-9 rounded-lg border text-[12px] font-semibold font-[Sora,sans-serif] transition ${page === n ? "bg-[#1565c0] border-[#1565c0] text-white cursor-default" : "bg-white border-[#dce8f7] text-[#1565c0] hover:bg-[#e3f2fd] cursor-pointer"}`}
-          >
-            {n}
-          </button>
-        ),
-      )}
+      <span
+        style={{ fontSize: 12, fontWeight: 700, color: "#0d1b2e", minWidth: 60, textAlign: "center" }}
+      >
+        {page} / {total}
+      </span>
       <button
         onClick={() => onChange(Math.min(total, page + 1))}
         disabled={page === total}
-        className={`flex items-center gap-1 border border-[#dce8f7] rounded-lg px-3 py-2 text-[12px] font-semibold font-[Sora,sans-serif] transition ${page === total ? "bg-[#f7faff] text-[#b0c4de] cursor-not-allowed" : "bg-white text-[#1565c0] hover:bg-[#e3f2fd] cursor-pointer"}`}
+        style={{
+          padding: "6px 8px",
+          borderRadius: 8,
+          border: "1px solid #dce8f7",
+          background: "#fff",
+          color: "#5a7599",
+          cursor: page === total ? "not-allowed" : "pointer",
+          opacity: page === total ? 0.4 : 1,
+          display: "flex",
+        }}
       >
-        Next <ChevronRight size={14} />
+        <ChevronRight size={14} />
       </button>
     </div>
   );
 }
 
-// ── View Profile Modal ─────────────────────────────────────────────────────
-function ViewProfileModal({ user: u, onClose }) {
-  if (!u) return null;
+function AuditBadge({ record, isHardRestricted }) {
+  const who = record?.updatedBy || record?.createdBy;
+  const when = record?.updatedAt || record?.createdAt;
+  if (!who && !when) return null;
+  const label = record?.updatedBy ? "Updated" : "Created";
   return (
     <div
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 5,
+        marginTop: 8,
+        fontSize: 10,
+        color: "#9ab2cc",
+        fontFamily: "'Sora',sans-serif",
+      }}
+    >
+      <Clock size={10} color="#c7d7f5" />
+      {label} {!isHardRestricted && who ? `by ${who}` : ""}
+      {when ? ` · ${timeAgo(when)}` : ""}
+    </div>
+  );
+}
+
+// ── VIEW PROFILE MODAL ─────────────────────────────────────────────────────
+function ViewProfileModal({ user: u, onClose }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
       style={{
         position: "fixed",
         inset: 0,
@@ -254,7 +238,6 @@ function ViewProfileModal({ user: u, onClose }) {
           >
             <X size={14} />
           </button>
-          {/* Avatar overhangs banner */}
           <div
             style={{
               position: "absolute",
@@ -299,12 +282,7 @@ function ViewProfileModal({ user: u, onClose }) {
             {u.name || "No name set"}
           </h3>
           <div
-            style={{
-              display: "flex",
-              gap: 6,
-              flexWrap: "wrap",
-              marginBottom: 20,
-            }}
+            style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 20 }}
           >
             <span
               style={{
@@ -316,11 +294,29 @@ function ViewProfileModal({ user: u, onClose }) {
                 borderRadius: 999,
               }}
             >
-              {u.approved === false
-                ? "⏳ Pending Approval"
-                : u.isAdmin !== false
-                  ? "Full Access"
-                  : "View Only"}
+              {u.approved === false ? "⏳ Pending" : "✓ Approved"}
+            </span>
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                background:
+                  u.role === "admin"
+                    ? "#e3f2fd"
+                    : u.role === "operations"
+                      ? "#f3e5f5"
+                      : "#f5f5f5",
+                color:
+                  u.role === "admin"
+                    ? "#1565c0"
+                    : u.role === "operations"
+                      ? "#7b1fa2"
+                      : "#9e9e9e",
+                padding: "3px 10px",
+                borderRadius: 999,
+              }}
+            >
+              {ROLE_LABELS[u.role] || "Viewer"}
             </span>
             {u.idCard && (
               <span
@@ -415,6 +411,41 @@ function ViewProfileModal({ user: u, onClose }) {
                   </div>
                 </div>
               ))}
+            {u.allowedTabs && u.allowedTabs.length > 0 && (
+              <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                <div
+                  style={{
+                    width: 30,
+                    height: 30,
+                    borderRadius: 8,
+                    background: "#f0f6ff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <Globe size={13} color="#1565c0" />
+                </div>
+                <div>
+                  <p
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      color: "#9ab2cc",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.08em",
+                      margin: "0 0 2px",
+                    }}
+                  >
+                    Allowed tabs
+                  </p>
+                  <p style={{ fontSize: 13, color: "#0d1b2e", margin: 0 }}>
+                    {u.allowedTabs.join(", ")}
+                  </p>
+                </div>
+              </div>
+            )}
             {u.idCard && (
               <a
                 href={u.idCard}
@@ -441,9 +472,10 @@ function ViewProfileModal({ user: u, onClose }) {
           </div>
         </div>
       </motion.div>
-    </div>
+    </motion.div>
   );
 }
+
 
 // ── Profile Preview Strip ─────────────────────────────────────────────────
 function ProfilePreview({ userData, user, onEditProfile }) {
@@ -2170,7 +2202,260 @@ function ViewShipmentDrawer({ shipment: s, onClose }) {
     </>
   );
 }
-// ── USERS SECTION ──────────────────────────────────────────────────────────
+// ── ROLE / TAB CONSTANTS (shared by ManageAccessModal + AdminDashboard) ────
+const TABS = [
+  { id: "cars", label: "Cars", Icon: Car },
+  { id: "shipments", label: "Shipments", Icon: Ship },
+  { id: "vehicles", label: "Vehicles", Icon: Truck },
+  { id: "schedules", label: "Schedules", Icon: Calendar },
+  { id: "users", label: "Users", Icon: Users },
+  { id: "trackers", label: "Trackers", Icon: Globe },
+];
+const ROLE_TABS = {
+  admin: ["cars", "shipments", "vehicles", "schedules", "users", "trackers"],
+  operations: ["shipments", "vehicles", "schedules", "trackers"],
+  viewer: ["trackers", "schedules"],
+};
+const ROLE_LABELS = {
+  admin: "Administrator",
+  operations: "Operations",
+  viewer: "Viewer",
+};
+
+// ── MANAGE ACCESS MODAL ─────────────────────────────────────────────────────
+function ManageAccessModal({ user, onClose, onSave, protectedEmails = [] }) {
+  const isProtected = protectedEmails.includes(user.email?.toLowerCase());
+  const currentRole = user.role || (user.isAdmin === false ? "viewer" : "admin");
+  const [role, setRole] = useState(currentRole);
+  const [selectedTabs, setSelectedTabs] = useState(
+    user.allowedTabs || ROLE_TABS[currentRole] || ROLE_TABS.viewer,
+  );
+  const [saving, setSaving] = useState(false);
+
+  const handleRoleChange = (newRole) => {
+    setRole(newRole);
+    setSelectedTabs(ROLE_TABS[newRole]);
+  };
+
+  const toggleTab = (tabId) => {
+    setSelectedTabs((prev) =>
+      prev.includes(tabId) ? prev.filter((t) => t !== tabId) : [...prev, tabId],
+    );
+  };
+
+  const handleSave = async () => {
+    if (saving || isProtected) return;
+    setSaving(true);
+    await onSave(user.id, role, selectedTabs);
+    setSaving(false);
+    onClose();
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 1000,
+        background: "rgba(6,14,26,0.6)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 16,
+      }}
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.95, opacity: 0 }}
+        style={{
+          background: "#fff",
+          borderRadius: 16,
+          padding: 24,
+          width: "100%",
+          maxWidth: 440,
+          fontFamily: "'Sora',sans-serif",
+          boxShadow: "0 8px 40px rgba(13,27,46,0.18)",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            marginBottom: 20,
+          }}
+        >
+          <div>
+            <p
+              style={{ fontSize: 15, fontWeight: 700, color: "#0d1b2e", margin: 0 }}
+            >
+              Manage Access
+            </p>
+            <p style={{ fontSize: 12, color: "#5a7599", margin: "2px 0 0" }}>
+              {user.name || user.email || "Unknown user"}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "#9ab2cc",
+              padding: 2,
+            }}
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Role selector */}
+        <div style={{ marginBottom: 20 }}>
+          <p
+            style={{
+              fontSize: 10,
+              fontWeight: 700,
+              color: "#9ab2cc",
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              marginBottom: 10,
+              margin: "0 0 10px",
+            }}
+          >
+            Role
+          </p>
+          <div style={{ display: "flex", gap: 8 }}>
+            {Object.entries(ROLE_LABELS).map(([value, label]) => (
+              <button
+                key={value}
+                onClick={() => !isProtected && handleRoleChange(value)}
+                disabled={isProtected}
+                style={{
+                  flex: 1,
+                  padding: "8px 6px",
+                  borderRadius: 10,
+                  border: `1.5px solid ${role === value ? "#1565c0" : "#dce8f7"}`,
+                  background: role === value ? "#e3f2fd" : "#f7faff",
+                  color: role === value ? "#1565c0" : "#5a7599",
+                  fontSize: 11,
+                  fontWeight: role === value ? 700 : 500,
+                  cursor: isProtected ? "not-allowed" : "pointer",
+                  transition: "all 0.15s",
+                  fontFamily: "'Sora',sans-serif",
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <p style={{ fontSize: 11, color: "#9ab2cc", margin: "8px 0 0" }}>
+            Selecting a role resets tab access to the role defaults — you can
+            still adjust individual tabs below.
+          </p>
+        </div>
+
+        {/* Tab checkboxes */}
+        <div style={{ marginBottom: 24 }}>
+          <p
+            style={{
+              fontSize: 10,
+              fontWeight: 700,
+              color: "#9ab2cc",
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              margin: "0 0 10px",
+            }}
+          >
+            Accessible Tabs
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {TABS.map(({ id, label }) => {
+              const checked = selectedTabs.includes(id);
+              return (
+                <label
+                  key={id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "8px 12px",
+                    borderRadius: 10,
+                    border: `1px solid ${checked ? "#bbdefb" : "#dce8f7"}`,
+                    background: checked ? "#f0f6ff" : "#fafcff",
+                    cursor: isProtected ? "not-allowed" : "pointer",
+                    userSelect: "none",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => !isProtected && toggleTab(id)}
+                    disabled={isProtected}
+                    style={{ accentColor: "#1565c0", width: 14, height: 14 }}
+                  />
+                  <span
+                    style={{
+                      fontSize: 13,
+                      fontWeight: checked ? 600 : 400,
+                      color: checked ? "#0d1b2e" : "#5a7599",
+                    }}
+                  >
+                    {label}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+          <button
+            onClick={onClose}
+            style={{
+              padding: "8px 16px",
+              borderRadius: 10,
+              border: "1px solid #dce8f7",
+              background: "#f7faff",
+              color: "#5a7599",
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: "pointer",
+              fontFamily: "'Sora',sans-serif",
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving || isProtected}
+            style={{
+              padding: "8px 20px",
+              borderRadius: 10,
+              border: "none",
+              background: isProtected ? "#e0e0e0" : "#1565c0",
+              color: isProtected ? "#9e9e9e" : "#fff",
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: saving || isProtected ? "not-allowed" : "pointer",
+              fontFamily: "'Sora',sans-serif",
+            }}
+          >
+            {saving ? "Saving…" : "Save"}
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 // ── USERS SECTION ──────────────────────────────────────────────────────────
 function UsersSection({
   readOnly = false,
@@ -2184,6 +2469,7 @@ function UsersSection({
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [viewingUser, setViewingUser] = useState(null);
+  const [managingUser, setManagingUser] = useState(null);
   const [notice, setNotice] = useState(null);
 
   const load = async () => {
@@ -2201,12 +2487,16 @@ function UsersSection({
     load();
   }, []);
 
-  const toggleAdmin = async (id, current) => {
-    const next = !current;
-    await updateDoc(doc(db, "adminUsers", id), { isAdmin: next }).catch(
-      () => {},
+  const updateUserAccess = async (id, role, allowedTabs) => {
+    const isAdmin = role !== "viewer";
+    await updateDoc(doc(db, "adminUsers", id), {
+      role,
+      allowedTabs,
+      isAdmin,
+    }).catch(() => {});
+    setUsers((p) =>
+      p.map((u) => (u.id === id ? { ...u, role, allowedTabs, isAdmin } : u)),
     );
-    setUsers((p) => p.map((u) => (u.id === id ? { ...u, isAdmin: next } : u)));
   };
 
   const setApproval = async (id, approved) => {
@@ -2219,7 +2509,8 @@ function UsersSection({
   };
 
   const remove = async (id) => {
-    if (!window.confirm("Permanently delete this user? This cannot be undone.")) return;
+    if (!window.confirm("Permanently delete this user? This cannot be undone."))
+      return;
     // Optimistically remove from UI
     setUsers((prev) => prev.filter((u) => u.id !== id));
     let authDeleted = false;
@@ -2282,6 +2573,16 @@ function UsersSection({
           />
         )}
       </AnimatePresence>
+      <AnimatePresence>
+        {managingUser && (
+          <ManageAccessModal
+            user={managingUser}
+            onClose={() => setManagingUser(null)}
+            onSave={updateUserAccess}
+            protectedEmails={protectedEmails}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Deletion notice */}
       <AnimatePresence>
@@ -2304,27 +2605,67 @@ function UsersSection({
             <div style={{ flex: 1 }}>
               {notice === "full" ? (
                 <>
-                  <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#2e7d32", fontFamily: "Sora,sans-serif" }}>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: 13,
+                      fontWeight: 700,
+                      color: "#2e7d32",
+                      fontFamily: "Sora,sans-serif",
+                    }}
+                  >
                     User deleted successfully.
                   </p>
-                  <p style={{ margin: "3px 0 0", fontSize: 12, color: "#388e3c", fontFamily: "Sora,sans-serif" }}>
-                    Their account and access have been fully removed from Firebase.
+                  <p
+                    style={{
+                      margin: "3px 0 0",
+                      fontSize: 12,
+                      color: "#388e3c",
+                      fontFamily: "Sora,sans-serif",
+                    }}
+                  >
+                    Their account and access have been fully removed from
+                    Firebase.
                   </p>
                 </>
               ) : (
                 <>
-                  <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#e65100", fontFamily: "Sora,sans-serif" }}>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: 13,
+                      fontWeight: 700,
+                      color: "#e65100",
+                      fontFamily: "Sora,sans-serif",
+                    }}
+                  >
                     User removed from the dashboard.
                   </p>
-                  <p style={{ margin: "3px 0 0", fontSize: 12, color: "#bf360c", fontFamily: "Sora,sans-serif" }}>
-                    Their Firebase Authentication account may still be active. Please contact the developer to complete the deletion, or advise the staff member to reset their password immediately.
+                  <p
+                    style={{
+                      margin: "3px 0 0",
+                      fontSize: 12,
+                      color: "#bf360c",
+                      fontFamily: "Sora,sans-serif",
+                    }}
+                  >
+                    Their Firebase Authentication account may still be active.
+                    Please contact the developer to complete the deletion, or
+                    advise the staff member to reset their password immediately.
                   </p>
                 </>
               )}
             </div>
             <button
               onClick={() => setNotice(null)}
-              style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "#999", flexShrink: 0 }}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: 2,
+                color: "#999",
+                flexShrink: 0,
+              }}
             >
               <X size={14} />
             </button>
@@ -2551,11 +2892,20 @@ function UsersSection({
                             display: "inline-block",
                             whiteSpace: "nowrap",
                             background:
-                              u.isAdmin !== false ? "#e3f2fd" : "#f5f5f5",
-                            color: u.isAdmin !== false ? "#1565c0" : "#9e9e9e",
+                              u.role === "admin"
+                                ? "#e3f2fd"
+                                : u.role === "operations"
+                                  ? "#f3e5f5"
+                                  : "#f5f5f5",
+                            color:
+                              u.role === "admin"
+                                ? "#1565c0"
+                                : u.role === "operations"
+                                  ? "#7b1fa2"
+                                  : "#9e9e9e",
                           }}
                         >
-                          {u.isAdmin !== false ? "Full Access" : "View Only"}
+                          {ROLE_LABELS[u.role] || "Viewer"}
                         </span>
                         {!u.idCard && (
                           <span
@@ -2721,8 +3071,7 @@ function UsersSection({
                                 )}
                                 <button
                                   onClick={() =>
-                                    !isProtected &&
-                                    toggleAdmin(u.id, u.isAdmin !== false)
+                                    !isProtected && setManagingUser(u)
                                   }
                                   disabled={isProtected}
                                   style={{
@@ -2731,10 +3080,8 @@ function UsersSection({
                                     gap: 5,
                                     background: isProtected
                                       ? "#f5f5f5"
-                                      : u.isAdmin !== false
-                                        ? "#f5f5f5"
-                                        : "#e3f2fd",
-                                    border: `1px solid ${isProtected ? "#e0e0e0" : u.isAdmin !== false ? "#e0e0e0" : "#bbdefb"}`,
+                                      : "#f3e5f5",
+                                    border: `1px solid ${isProtected ? "#e0e0e0" : "#e1bee7"}`,
                                     borderRadius: 8,
                                     padding: "5px 10px",
                                     cursor: isProtected
@@ -2742,27 +3089,17 @@ function UsersSection({
                                       : "pointer",
                                     fontSize: 11,
                                     fontWeight: 700,
-                                    color: isProtected
-                                      ? "#bdbdbd"
-                                      : u.isAdmin !== false
-                                        ? "#9e9e9e"
-                                        : "#1565c0",
+                                    color: isProtected ? "#bdbdbd" : "#7b1fa2",
                                     opacity: isProtected ? 0.6 : 1,
                                   }}
                                   title={
                                     isProtected
                                       ? "Cannot modify a super-admin"
-                                      : undefined
+                                      : "Manage role and tab access"
                                   }
                                 >
-                                  {u.isAdmin !== false ? (
-                                    <ToggleRight size={12} />
-                                  ) : (
-                                    <ToggleLeft size={12} />
-                                  )}
-                                  {u.isAdmin !== false
-                                    ? "View Only"
-                                    : "Full Access"}
+                                  <ShieldCheck size={12} />
+                                  Manage Access
                                 </button>
                                 <button
                                   onClick={() => !isProtected && remove(u.id)}
@@ -2958,21 +3295,21 @@ function ProfileModal({ uid, email, existingData, onComplete, onClose }) {
             </div>
           </div>
           <button
-              onClick={onClose}
-              style={{
-                background: "rgba(255,255,255,0.08)",
-                border: "none",
-                borderRadius: 8,
-                padding: 8,
-                cursor: "pointer",
-                color: "rgba(255,255,255,0.5)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <X size={16} />
-            </button>
+            onClick={onClose}
+            style={{
+              background: "rgba(255,255,255,0.08)",
+              border: "none",
+              borderRadius: 8,
+              padding: 8,
+              cursor: "pointer",
+              color: "rgba(255,255,255,0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <X size={16} />
+          </button>
         </div>
 
         {/* Email — editable */}
@@ -3298,23 +3635,23 @@ function ProfileModal({ uid, email, existingData, onComplete, onClose }) {
                   : "Save & Continue"}
             </button>
             <button
-                type="button"
-                onClick={onClose}
-                style={{
-                  flex: 1,
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  borderRadius: 12,
-                  padding: "13px 16px",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: "rgba(255,255,255,0.5)",
-                  cursor: "pointer",
-                  fontFamily: "Sora,sans-serif",
-                }}
-              >
-                Cancel
-              </button>
+              type="button"
+              onClick={onClose}
+              style={{
+                flex: 1,
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 12,
+                padding: "13px 16px",
+                fontSize: 13,
+                fontWeight: 600,
+                color: "rgba(255,255,255,0.5)",
+                cursor: "pointer",
+                fontFamily: "Sora,sans-serif",
+              }}
+            >
+              Cancel
+            </button>
           </div>
 
           {!isEditing && (
@@ -3342,6 +3679,13 @@ const BLANK_TRACKER = {
   short: "",
   accent: "#1565c0",
   url: "",
+  enabled: true,
+};
+
+const BLANK_SCHEDULE = {
+  name: "",
+  url: "",
+  note: "",
   enabled: true,
 };
 
@@ -3697,18 +4041,921 @@ function TrackersSection({ readOnly = false, currentUser, isHardRestricted }) {
   );
 }
 
-// ── MAIN DASHBOARD ─────────────────────────────────────────────────────────
-const TABS = [
-  { id: "cars", label: "Cars", Icon: Car },
-  { id: "shipments", label: "Shipments", Icon: Ship },
-  { id: "users", label: "Users", Icon: Users },
-  { id: "trackers", label: "Trackers", Icon: Globe },
-];
+// ── SCHEDULES SECTION ─────────────────────────────────────────────────────
+function ScheduleSection({ readOnly = false, currentUser, isHardRestricted }) {
+  const [schedules, setSchedules] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [view, setView] = useState("list");
+  const [form, setForm] = useState(BLANK_SCHEDULE);
+  const [editId, setEditId] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [saveErr, setSaveErr] = useState(null);
 
+  const load = async () => {
+    setLoading(true);
+    try {
+      const snap = await getDocs(
+        query(collection(db, "schedules"), orderBy("createdAt", "desc")),
+      );
+      setSchedules(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    } catch {
+      setSchedules([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    load();
+  }, []);
+
+  const resetForm = () => {
+    setForm(BLANK_SCHEDULE);
+    setEditId(null);
+    setSaveErr(null);
+  };
+
+  const startEdit = (item) => {
+    setForm({
+      name: item.name || "",
+      url: item.url || "",
+      note: item.note || "",
+      enabled: item.enabled !== false,
+    });
+    setEditId(item.id);
+    setSaveErr(null);
+    setView("form");
+  };
+
+  const save = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setSaveErr(null);
+    try {
+      if (editId) {
+        await updateDoc(doc(db, "schedules", editId), {
+          ...form,
+          ...auditMeta(currentUser, "updated"),
+        });
+      } else {
+        await addDoc(collection(db, "schedules"), {
+          ...form,
+          ...auditMeta(currentUser, "created"),
+        });
+      }
+      resetForm();
+      setView("list");
+      load();
+    } catch (err) {
+      setSaveErr(err.message || "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const remove = async (id) => {
+    if (!window.confirm("Delete this schedule?")) return;
+    await deleteDoc(doc(db, "schedules", id)).catch(() => {});
+    load();
+  };
+
+  if (view === "form")
+    return (
+      <div>
+        <div className="flex items-center gap-3 mb-6">
+          <button
+            onClick={() => {
+              resetForm();
+              setView("list");
+            }}
+            className="flex items-center gap-1.5 bg-[#e3f2fd] hover:bg-[#bbdefb] border-none rounded-lg px-3 py-2 text-[#1565c0] text-[12px] font-semibold cursor-pointer transition"
+          >
+            <ChevronLeft size={14} /> Back to Schedules
+          </button>
+          <h2 className="text-[18px] font-bold text-[#0d1b2e]">
+            {editId ? "Edit Schedule" : "Add Schedule"}
+          </h2>
+        </div>
+        <form className="max-w-3xl flex flex-col gap-5" onSubmit={save}>
+          <div className="bg-white border border-[#dce8f7] rounded-2xl p-6 flex flex-col gap-4">
+            <p className="text-[11px] font-bold text-[#1565c0] tracking-[0.1em] uppercase">
+              Schedule Portal Details
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5 sm:col-span-2">
+                <label className={lbl}>Name</label>
+                <input
+                  type="text"
+                  placeholder="Maritime Carrier Schedule"
+                  value={form.name}
+                  required
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, name: e.target.value }))
+                  }
+                  className={inp}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5 sm:col-span-2">
+                <label className={lbl}>Schedule URL</label>
+                <input
+                  type="url"
+                  placeholder="https://carrier.com/schedule"
+                  value={form.url}
+                  required
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, url: e.target.value }))
+                  }
+                  className={inp}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5 sm:col-span-2">
+                <label className={lbl}>Description</label>
+                <textarea
+                  rows={3}
+                  placeholder="Add a short label or notes for this schedule portal."
+                  value={form.note}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, note: e.target.value }))
+                  }
+                  className={`${inp} resize-y`}
+                />
+              </div>
+            </div>
+          </div>
+          <div
+            onClick={() => setForm((p) => ({ ...p, enabled: !p.enabled }))}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer select-none transition ${form.enabled ? "bg-[#e3f2fd] border-[#bbdefb]" : "bg-[#f7faff] border-[#dce8f7]"}`}
+          >
+            <div
+              style={{
+                width: 36,
+                height: 20,
+                borderRadius: 999,
+                background: form.enabled ? "#1565c0" : "#dce8f7",
+                position: "relative",
+                flexShrink: 0,
+                transition: "background 0.18s",
+              }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  top: 2,
+                  left: form.enabled ? 18 : 2,
+                  width: 16,
+                  height: 16,
+                  borderRadius: "50%",
+                  background: "#fff",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                  transition: "left 0.18s",
+                }}
+              />
+            </div>
+            <div>
+              <p className="text-[13px] font-bold text-[#0d1b2e]">Enabled</p>
+              <p className="text-[11px] text-[#5a7599]">
+                {form.enabled
+                  ? "Visible on the schedules page"
+                  : "Hidden from public schedule listings"}
+              </p>
+            </div>
+          </div>
+          {saveErr && (
+            <div className="bg-[#ffebee] border border-[#ffcdd2] rounded-xl p-3 text-[13px] text-[#c62828]">
+              {saveErr}
+            </div>
+          )}
+          <div className="flex gap-3">
+            <button
+              type="submit"
+              disabled={saving}
+              className={`flex-[2] flex items-center justify-center gap-2 bg-[#1565c0] hover:bg-[#1255a8] text-white border-none py-3 rounded-xl font-[Sora,sans-serif] text-[13px] font-bold transition ${saving ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
+            >
+              {saving ? "Saving…" : editId ? "Update Schedule" : "Add Schedule"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                resetForm();
+                setView("list");
+              }}
+              className="flex-1 bg-[#f7faff] border border-[#dce8f7] text-[#5a7599] py-3 rounded-xl font-[Sora,sans-serif] text-[13px] font-semibold cursor-pointer hover:bg-[#eef4ff] transition"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    );
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+        <div>
+          <h2 className="text-[20px] font-bold text-[#0d1b2e]">Schedules</h2>
+          <p className="text-[13px] text-[#5a7599] font-light">
+            {schedules.length} record{schedules.length !== 1 ? "s" : ""}
+          </p>
+        </div>
+        {!readOnly && (
+          <button
+            onClick={() => {
+              resetForm();
+              setView("form");
+            }}
+            className="flex items-center gap-2 bg-[#1565c0] hover:bg-[#1255a8] text-white border-none px-4 py-2.5 rounded-lg font-[Sora,sans-serif] text-[13px] font-bold cursor-pointer transition"
+          >
+            <Plus size={15} /> Add Schedule
+          </button>
+        )}
+      </div>
+      {loading ? (
+        <div className="text-center py-12 text-[#5a7599] text-[13px]">
+          Loading…
+        </div>
+      ) : schedules.length === 0 ? (
+        <div className="text-center py-16 bg-white rounded-2xl border border-[#dce8f7]">
+          <CalendarDays size={36} className="mx-auto mb-3 text-[#dce8f7]" />
+          <p className="text-[15px] font-bold text-[#0d1b2e]">
+            No schedules yet
+          </p>
+          <p className="text-[13px] text-[#5a7599]">
+            Add a schedule portal to make it visible on the public schedules
+            page.
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {schedules.map((item) => (
+            <div
+              key={item.id}
+              className="bg-white border border-[#dce8f7] rounded-2xl p-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+            >
+              <div className="min-w-0">
+                <p className="text-[14px] font-bold text-[#0d1b2e]">
+                  {item.name}
+                </p>
+                <p className="text-[12px] text-[#5a7599] mt-1">
+                  {item.note || item.url}
+                </p>
+                <a
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[#1565c0] text-[13px] font-semibold mt-2"
+                >
+                  Open schedule portal <ExternalLink size={14} />
+                </a>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[11px] font-bold bg-[#e3f2fd] text-[#1565c0] px-2.5 py-0.5 rounded-full">
+                  {item.enabled !== false ? "Enabled" : "Disabled"}
+                </span>
+                {!readOnly && (
+                  <>
+                    <button
+                      onClick={() => startEdit(item)}
+                      className="bg-[#e3f2fd] hover:bg-[#bbdefb] border-none rounded-lg p-2 cursor-pointer text-[#1565c0] flex transition"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    {!isHardRestricted && (
+                      <button
+                        onClick={() => remove(item.id)}
+                        className="bg-[#ffebee] hover:bg-[#ffcdd2] border-none rounded-lg p-2 cursor-pointer text-[#c62828] flex transition"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── VEHICLES SECTION ────────────────────────────────────────────────────────
+const BLANK_VEHICLE = {
+  date: "",
+  aNumber: "",
+  cNumber: "",
+  consigneeName: "",
+  chassisNo: "",
+  duty: "",
+  make: "",
+  company: "",
+};
+
+function VehiclesSection({ readOnly = false, currentUser, isHardRestricted, trackers = [] }) {
+  const [vehicles, setVehicles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [view, setView] = useState("list");
+  const [form, setForm] = useState(BLANK_VEHICLE);
+  const [editId, setEditId] = useState(null);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [saving, setSaving] = useState(false);
+  const [saveErr, setSaveErr] = useState(null);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const snap = await getDocs(
+        query(collection(db, "vehicles"), orderBy("createdAt", "desc")),
+      );
+      setVehicles(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    } catch {
+      setVehicles([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    load();
+  }, []);
+
+  const resetForm = () => {
+    setForm(BLANK_VEHICLE);
+    setEditId(null);
+    setSaveErr(null);
+  };
+
+  const startEdit = (v) => {
+    setForm({
+      date: v.date || "",
+      aNumber: v.aNumber || "",
+      cNumber: v.cNumber || "",
+      consigneeName: v.consigneeName || "",
+      chassisNo: v.chassisNo || "",
+      duty: v.duty || "",
+      make: v.make || "",
+      company: v.company || "PIML",
+    });
+    setEditId(v.id);
+    setView("form");
+  };
+
+  const save = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setSaveErr(null);
+    try {
+      const payload = {
+        ...form,
+        duty: form.duty ? Number(String(form.duty).replace(/,/g, "")) : null,
+        updatedAt: serverTimestamp(),
+      };
+      if (editId) {
+        await updateDoc(doc(db, "vehicles", editId), payload);
+        setVehicles((p) =>
+          p.map((v) => (v.id === editId ? { ...v, ...payload } : v)),
+        );
+      } else {
+        payload.createdAt = serverTimestamp();
+        const ref = await addDoc(collection(db, "vehicles"), payload);
+        setVehicles((p) => [{ id: ref.id, ...payload }, ...p]);
+      }
+      resetForm();
+      setView("list");
+    } catch (err) {
+      setSaveErr("Could not save. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const remove = async (id) => {
+    if (!window.confirm("Delete this vehicle record? This cannot be undone."))
+      return;
+    setVehicles((p) => p.filter((v) => v.id !== id));
+    await deleteDoc(doc(db, "vehicles", id)).catch(() => {});
+  };
+
+  const fmtDuty = (v) => (v?.duty ? fmt(v.duty) : "—");
+
+  const filtered = vehicles.filter(
+    (v) =>
+      !search ||
+      [v.consigneeName, v.make, v.chassisNo, v.aNumber, v.cNumber, v.company]
+        .join(" ")
+        .toLowerCase()
+        .includes(search.toLowerCase()),
+  );
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PER));
+  const paged = filtered.slice((page - 1) * PER, page * PER);
+
+  const th = {
+    fontSize: 10,
+    fontWeight: 700,
+    color: "#9ab2cc",
+    textTransform: "uppercase",
+    letterSpacing: "0.08em",
+    padding: "10px 14px",
+    background: "#f7faff",
+    borderBottom: "1px solid #dce8f7",
+    whiteSpace: "nowrap",
+  };
+  const td = {
+    padding: "11px 14px",
+    borderBottom: "1px solid #eef4ff",
+    verticalAlign: "middle",
+    fontSize: 12,
+    color: "#0d1b2e",
+  };
+
+  // ── FORM VIEW ──
+  if (view === "form")
+    return (
+      <div>
+        <div className="flex items-center gap-3 mb-6">
+          <button
+            onClick={() => {
+              resetForm();
+              setView("list");
+            }}
+            className="flex items-center gap-2 text-[13px] font-bold text-[#5a7599] hover:text-[#0d1b2e] transition-colors"
+          >
+            <ChevronLeft size={16} />
+            Back
+          </button>
+          <h2 className="text-[20px] font-bold text-[#0d1b2e]">
+            {editId ? "Edit Vehicle Record" : "New Vehicle Record"}
+          </h2>
+        </div>
+        <form
+          onSubmit={save}
+          className="bg-white rounded-2xl border border-[#dce8f7] p-6 grid grid-cols-1 md:grid-cols-2 gap-5"
+        >
+          {/* Date */}
+          <div>
+            <label className={lbl}>Date</label>
+            <input
+              type="date"
+              value={form.date}
+              onChange={(e) => setForm((p) => ({ ...p, date: e.target.value }))}
+              className={inp}
+            />
+          </div>
+
+          {/* A Number */}
+          <div>
+            <label className={lbl}>A Number</label>
+            <input
+              type="text"
+              placeholder="e.g. 118452"
+              value={form.aNumber}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, aNumber: e.target.value }))
+              }
+              className={inp}
+            />
+          </div>
+
+          {/* C Number */}
+          <div>
+            <label className={lbl}>C Number</label>
+            <input
+              type="text"
+              placeholder="e.g. 115599"
+              value={form.cNumber}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, cNumber: e.target.value }))
+              }
+              className={inp}
+            />
+          </div>
+
+          {/* Consignee Name */}
+          <div>
+            <label className={lbl}>Consignee Name</label>
+            <input
+              type="text"
+              placeholder="e.g. T LAW NIG ENT"
+              value={form.consigneeName}
+              required
+              onChange={(e) =>
+                setForm((p) => ({ ...p, consigneeName: e.target.value }))
+              }
+              className={inp}
+            />
+          </div>
+
+          {/* Chassis No — full width, supports multiple */}
+          <div className="md:col-span-2">
+            <label className={lbl}>Chassis No(s)</label>
+            <textarea
+              placeholder="e.g. 2H4YK16597, H52418 — one per line or comma-separated"
+              value={form.chassisNo}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, chassisNo: e.target.value }))
+              }
+              rows={2}
+              className={`${inp} resize-none`}
+            />
+          </div>
+
+          {/* Duty */}
+          <div>
+            <label className={lbl}>Duty (₦)</label>
+            <input
+              type="text"
+              placeholder="e.g. 522,667"
+              value={form.duty}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, duty: e.target.value }))
+              }
+              className={inp}
+            />
+          </div>
+
+          {/* Make */}
+          <div>
+            <label className={lbl}>Make / Model</label>
+            <input
+              type="text"
+              placeholder="e.g. Used Toyota Camry"
+              value={form.make}
+              onChange={(e) => setForm((p) => ({ ...p, make: e.target.value }))}
+              className={inp}
+            />
+          </div>
+
+          {/* Company — pulled from trackingPortals */}
+          <div>
+            <label className={lbl}>Shipping Company</label>
+            <select
+              value={form.company}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, company: e.target.value }))
+              }
+              className={inp}
+            >
+              <option value="">— Select company —</option>
+              {trackers.map((t) => (
+                <option key={t.id} value={t.name}>
+                  {t.name}{t.short ? ` (${t.short})` : ""}
+                </option>
+              ))}
+            </select>
+            {trackers.length === 0 && (
+              <p className="text-[11px] text-[#e65100] mt-1">
+                No trackers found — add shipping companies in the Trackers tab first.
+              </p>
+            )}
+          </div>
+
+          {saveErr && (
+            <p className="md:col-span-2 text-[12px] text-red-600">{saveErr}</p>
+          )}
+
+          <div className="md:col-span-2 flex gap-3 pt-2">
+            <button
+              type="submit"
+              disabled={saving}
+              className="flex items-center gap-2 bg-[#1565c0] hover:bg-[#0d47a1] text-white text-[13px] font-bold px-5 py-2.5 rounded-xl transition-colors disabled:opacity-60"
+            >
+              <Save size={14} />
+              {saving ? "Saving…" : editId ? "Update Record" : "Save Record"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                resetForm();
+                setView("list");
+              }}
+              className="text-[13px] font-bold text-[#5a7599] hover:text-[#0d1b2e] px-4 py-2.5 rounded-xl border border-[#dce8f7] transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    );
+
+  // ── LIST VIEW ──
+  return (
+    <div>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+        <div>
+          <h2 className="text-[20px] font-bold text-[#0d1b2e]">Vehicles</h2>
+          <p className="text-[13px] text-[#5a7599] font-light">
+            {vehicles.length} record{vehicles.length !== 1 ? "s" : ""}
+          </p>
+        </div>
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="relative">
+            <Search
+              size={14}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5a7599] pointer-events-none"
+            />
+            <input
+              type="text"
+              placeholder="Search consignee, make, chassis…"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="pl-9 pr-3 py-2 rounded-xl border border-[#dce8f7] text-[13px] text-[#0d1b2e] outline-none focus:border-[#1565c0] min-w-[220px] font-[Sora,sans-serif]"
+            />
+          </div>
+          {!readOnly && (
+            <button
+              onClick={() => {
+                resetForm();
+                setView("form");
+              }}
+              className="flex items-center gap-2 bg-[#1565c0] hover:bg-[#0d47a1] text-white text-[13px] font-bold px-4 py-2.5 rounded-xl transition-colors"
+            >
+              <Plus size={14} /> Add Record
+            </button>
+          )}
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-12 text-[#5a7599] text-[13px]">
+          Loading…
+        </div>
+      ) : paged.length === 0 ? (
+        <div className="text-center py-16 bg-white rounded-2xl border border-[#dce8f7]">
+          <Truck size={36} className="mx-auto mb-3 text-[#dce8f7]" />
+          <p className="text-[15px] font-bold text-[#0d1b2e] mb-1">
+            {search ? "No records match" : "No vehicle records yet"}
+          </p>
+          {!readOnly && (
+            <p className="text-[13px] text-[#5a7599]">
+              Click "Add Record" to log the first entry.
+            </p>
+          )}
+        </div>
+      ) : (
+        <div
+          style={{
+            background: "#fff",
+            border: "1px solid #dce8f7",
+            borderRadius: 16,
+            overflow: "hidden",
+          }}
+        >
+          <div style={{ overflowX: "auto" }}>
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                fontFamily: "'Sora',sans-serif",
+                minWidth: 860,
+              }}
+            >
+              <thead>
+                <tr>
+                  <th style={{ ...th, borderRadius: "16px 0 0 0" }}>Date</th>
+                  <th style={th}>A / C No.</th>
+                  <th style={th}>Consignee</th>
+                  <th style={th}>Chassis No</th>
+                  <th style={th}>Make / Model</th>
+                  <th style={th}>Duty</th>
+                  <th style={th}>Company</th>
+                  {!readOnly && (
+                    <th
+                      style={{
+                        ...th,
+                        borderRadius: "0 16px 0 0",
+                        textAlign: "right",
+                      }}
+                    >
+                      Actions
+                    </th>
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {paged.map((v, idx) => (
+                  <tr
+                    key={v.id}
+                    style={{
+                      background: idx % 2 === 0 ? "#fff" : "#fafcff",
+                    }}
+                  >
+                    <td style={td}>
+                      {v.date ? (
+                        <span
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: "#1565c0",
+                            background: "#f0f6ff",
+                            border: "1px solid #dce8f7",
+                            borderRadius: 6,
+                            padding: "2px 8px",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {v.date}
+                        </span>
+                      ) : (
+                        <span style={{ color: "#c7d7f5" }}>—</span>
+                      )}
+                    </td>
+                    <td style={td}>
+                      {v.aNumber && (
+                        <p
+                          style={{
+                            margin: 0,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            color: "#0d1b2e",
+                          }}
+                        >
+                          A: {v.aNumber}
+                        </p>
+                      )}
+                      {v.cNumber && (
+                        <p
+                          style={{
+                            margin: "2px 0 0",
+                            fontSize: 11,
+                            color: "#5a7599",
+                          }}
+                        >
+                          C: {v.cNumber}
+                        </p>
+                      )}
+                      {!v.aNumber && !v.cNumber && (
+                        <span style={{ color: "#c7d7f5" }}>—</span>
+                      )}
+                    </td>
+                    <td style={{ ...td, maxWidth: 180 }}>
+                      <p
+                        style={{
+                          margin: 0,
+                          fontWeight: 600,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {v.consigneeName || "—"}
+                      </p>
+                    </td>
+                    <td style={{ ...td, maxWidth: 160 }}>
+                      <p
+                        style={{
+                          margin: 0,
+                          fontFamily: "monospace",
+                          fontSize: 11,
+                          color: "#5a7599",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                        title={v.chassisNo}
+                      >
+                        {v.chassisNo || "—"}
+                      </p>
+                    </td>
+                    <td style={td}>
+                      <p style={{ margin: 0, fontWeight: 600 }}>
+                        {v.make || "—"}
+                      </p>
+                    </td>
+                    <td style={td}>
+                      {v.duty ? (
+                        <span
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 700,
+                            color: "#2e7d32",
+                          }}
+                        >
+                          {fmtDuty(v)}
+                        </span>
+                      ) : (
+                        <span style={{ color: "#c7d7f5" }}>—</span>
+                      )}
+                    </td>
+                    <td style={td}>
+                      {v.company ? (
+                        (() => {
+                          const tracker = trackers.find((t) => t.name === v.company);
+                          const accent = tracker?.accent || "#1565c0";
+                          return (
+                            <span
+                              style={{
+                                fontSize: 10,
+                                fontWeight: 700,
+                                padding: "3px 8px",
+                                borderRadius: 999,
+                                background: `${accent}18`,
+                                color: accent,
+                                border: `1px solid ${accent}33`,
+                              }}
+                            >
+                              {tracker?.short || v.company}
+                            </span>
+                          );
+                        })()
+                      ) : (
+                        <span style={{ color: "#c7d7f5" }}>—</span>
+                      )}
+                    </td>
+                    {!readOnly && (
+                      <td style={{ ...td, textAlign: "right" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: 6,
+                            justifyContent: "flex-end",
+                          }}
+                        >
+                          <button
+                            onClick={() => startEdit(v)}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 4,
+                              background: "#f0f6ff",
+                              border: "1px solid #dce8f7",
+                              borderRadius: 8,
+                              padding: "5px 10px",
+                              cursor: "pointer",
+                              fontSize: 11,
+                              fontWeight: 700,
+                              color: "#1565c0",
+                            }}
+                          >
+                            <Pencil size={11} /> Edit
+                          </button>
+                          {!isHardRestricted && (
+                            <button
+                              onClick={() => remove(v.id)}
+                              style={{
+                                background: "#ffebee",
+                                border: "none",
+                                borderRadius: 8,
+                                padding: "5px 8px",
+                                cursor: "pointer",
+                                color: "#c62828",
+                                display: "flex",
+                                alignItems: "center",
+                              }}
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 mt-6">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="p-2 rounded-lg border border-[#dce8f7] text-[#5a7599] disabled:opacity-40 hover:border-[#1565c0] hover:text-[#1565c0] transition-colors"
+          >
+            <ChevronLeft size={14} />
+          </button>
+          <span className="text-[12px] font-bold text-[#0d1b2e]">
+            {page} / {totalPages}
+          </span>
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="p-2 rounded-lg border border-[#dce8f7] text-[#5a7599] disabled:opacity-40 hover:border-[#1565c0] hover:text-[#1565c0] transition-colors"
+          >
+            <ChevronRight size={14} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── MAIN DASHBOARD ─────────────────────────────────────────────────────────
 export default function AdminDashboard() {
   const [user, setUser] = useState(undefined);
   const [currentUserData, setCurrentUserData] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [trackers, setTrackers] = useState([]);
+
+  useEffect(() => {
+    getDocs(collection(db, "trackingPortals"))
+      .then((snap) => setTrackers(snap.docs.map((d) => ({ id: d.id, ...d.data() }))))
+      .catch(() => {});
+  }, []);
   const [tab, setTab] = useState(() => {
     if (typeof window === "undefined") return "cars";
     const saved = window.localStorage.getItem("adminTab");
@@ -3734,8 +4981,23 @@ export default function AdminDashboard() {
         const missing = {};
         if (!data.email && u.email) missing.email = u.email;
         if (!data.uid) missing.uid = u.uid;
+        const role = data.role || (data.isAdmin === false ? "viewer" : "admin");
+        const roleTabs = ROLE_TABS[role] || ROLE_TABS.viewer;
+        // Merge stored tabs with any new tabs added to the role since last login
+        const storedTabs = data.allowedTabs || [];
+        const allowedTabs = storedTabs.length
+          ? [...new Set([...storedTabs, ...roleTabs.filter((t) => roleTabs.includes(t) && !storedTabs.includes(t))])]
+          : roleTabs;
+        const tabsChanged =
+          !data.allowedTabs ||
+          allowedTabs.length !== (data.allowedTabs?.length ?? 0);
+        if (!data.role || tabsChanged) {
+          Object.assign(missing, { role, allowedTabs });
+        }
         if (Object.keys(missing).length) {
-          await setDoc(doc(db, "adminUsers", u.uid), missing, { merge: true }).catch(() => {});
+          await setDoc(doc(db, "adminUsers", u.uid), missing, {
+            merge: true,
+          }).catch(() => {});
           Object.assign(data, missing);
         }
         setCurrentUserData(data);
@@ -3761,10 +5023,22 @@ export default function AdminDashboard() {
     user?.email?.toLowerCase() ?? "",
   );
   const isViewOnly = isReadOnly;
-  const visibleTabs = TABS.filter(
-    (tabItem) => !(isHardRestricted && tabItem.id === "users"),
-  );
+  const allowedTabs =
+    currentUserData?.allowedTabs ||
+    ROLE_TABS[currentUserData?.role] ||
+    ROLE_TABS.viewer;
+  const visibleTabs = TABS.filter((tabItem) => {
+    if (!allowedTabs.includes(tabItem.id)) return false;
+    if (isHardRestricted && tabItem.id === "users") return false;
+    return true;
+  });
 
+  useEffect(() => {
+    if (user === undefined || visibleTabs.length === 0) return;
+    if (!visibleTabs.some((item) => item.id === tab)) {
+      handleSetTab(visibleTabs[0]?.id || "cars");
+    }
+  }, [tab, user, visibleTabs]);
   useEffect(() => {
     // Only enforce tab restrictions once auth has resolved (user !== undefined)
     if (user === undefined) return;
@@ -3985,6 +5259,21 @@ export default function AdminDashboard() {
             )}
             {tab === "shipments" && (
               <ShipmentsSection
+                readOnly={isViewOnly}
+                currentUser={user}
+                isHardRestricted={isHardRestricted}
+              />
+            )}
+            {tab === "vehicles" && (
+              <VehiclesSection
+                readOnly={isViewOnly}
+                currentUser={user}
+                isHardRestricted={isHardRestricted}
+                trackers={trackers}
+              />
+            )}
+            {tab === "schedules" && (
+              <ScheduleSection
                 readOnly={isViewOnly}
                 currentUser={user}
                 isHardRestricted={isHardRestricted}
