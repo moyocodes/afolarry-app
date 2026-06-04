@@ -5136,30 +5136,13 @@ export default function AdminDashboard() {
   }, []);
 
   const isReadOnly = currentUserData?.isAdmin === false;
-  const SUPER_ADMIN_EMAILS = [
-    "moyosorejames@gmail.com",
-    // "afolaraylimited@gmail.com",
-    "yusuffafolabi@gmail.com"
-    // add more super-admins here
-  ];
-  const HIDDEN_USER_EMAILS = [
-    "moyosorejames@gmail.com",
-  
-    // add emails to hide from the users table here
-  ];
-  const isHardRestricted = !SUPER_ADMIN_EMAILS.includes(
-    user?.email?.toLowerCase() ?? "",
-  );
+  const isHardRestricted = currentUserData?.role !== "admin";
   const isViewOnly = isReadOnly;
   const allowedTabs =
     currentUserData?.allowedTabs ||
     ROLE_TABS[currentUserData?.role] ||
     ROLE_TABS.viewer;
-  const visibleTabs = TABS.filter((tabItem) => {
-    if (!allowedTabs.includes(tabItem.id)) return false;
-    if (isHardRestricted && tabItem.id === "users") return false;
-    return true;
-  });
+  const visibleTabs = TABS.filter((tabItem) => allowedTabs.includes(tabItem.id));
 
   useEffect(() => {
     if (user === undefined || visibleTabs.length === 0) return;
@@ -5167,13 +5150,6 @@ export default function AdminDashboard() {
       handleSetTab(visibleTabs[0]?.id || "cars");
     }
   }, [tab, user, visibleTabs]);
-  useEffect(() => {
-    // Only enforce tab restrictions once auth has resolved (user !== undefined)
-    if (user === undefined) return;
-    if (tab === "users" && isHardRestricted) {
-      handleSetTab("cars");
-    }
-  }, [tab, isHardRestricted, user]);
 
   if (user === undefined)
     return (
@@ -5407,13 +5383,13 @@ export default function AdminDashboard() {
                 isHardRestricted={isHardRestricted}
               />
             )}
-            {tab === "users" && !isHardRestricted && (
+            {tab === "users" && (
               <UsersSection
                 readOnly={isReadOnly}
                 currentUser={user}
                 isHardRestricted={isHardRestricted}
-                hiddenEmails={HIDDEN_USER_EMAILS}
-                protectedEmails={SUPER_ADMIN_EMAILS}
+                hiddenEmails={[]}
+                protectedEmails={[]}
               />
             )}
             {tab === "trackers" && (
