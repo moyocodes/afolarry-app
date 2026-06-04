@@ -2534,6 +2534,7 @@ function UsersSection({
   };
 
   const filtered = users.filter((u) => {
+    if (u.id === currentUser?.uid) return false;
     if (hiddenEmails.includes(u.email?.toLowerCase())) return false;
     if (!search) return true;
     return (
