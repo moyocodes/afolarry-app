@@ -48,6 +48,7 @@ import {
   Truck,
   ExternalLink,
   CalendarDays,
+  Download,
 } from "lucide-react";
 
 // ── SHARED CONSTANTS ────────────────────────────────────────────────────────
@@ -88,6 +89,18 @@ const fmtDate = (str) => {
       });
 };
 const fmt = (v) => (v ? `₦${Number(v).toLocaleString()}` : "—");
+const downloadCSV = (filename, rows) => {
+  if (!rows.length) return;
+  const esc = (v) => { const s = v == null ? "" : String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  const headers = Object.keys(rows[0]);
+  const csv = [headers, ...rows.map((r) => headers.map((h) => esc(r[h])))].map((r) => r.join(",")).join("\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+
 const auditMeta = (user, action) => ({
   [`${action}By`]: user?.email || user?.uid || "unknown",
   [`${action}At`]: serverTimestamp(),
@@ -999,6 +1012,13 @@ function CarsSection({ readOnly = false, currentUser, isHardRestricted }) {
               className={`${inp} pl-9 min-w-[180px]`}
             />
           </div>
+          <button
+            onClick={() => downloadCSV("cars.csv", filtered.map((c) => ({ Name: c.name, Type: c.type, Location: c.location, Price: c.price, Status: c.status, Description: c.description })))}
+            className="flex items-center gap-2 bg-[#f0f6ff] hover:bg-[#dce8f7] border border-[#dce8f7] text-[#1565c0] px-3 py-2.5 rounded-lg font-[Sora,sans-serif] text-[13px] font-bold cursor-pointer transition"
+            title="Download CSV"
+          >
+            <Download size={15} /> CSV
+          </button>
           {!readOnly && (
             <button
               onClick={() => {
@@ -1529,6 +1549,13 @@ function ShipmentsSection({ readOnly = false, currentUser, isHardRestricted }) {
               className={`${inp} pl-9 min-w-[180px]`}
             />
           </div>
+          <button
+            onClick={() => downloadCSV("shipments.csv", filtered.map((s) => ({ "Shipment ID": s.shipmentId, Status: s.status, "Customer Name": s.customerName, "Customer Email": s.customerEmail, "Recipient Email": s.recipientEmail, Origin: s.origin, Destination: s.destination, Carrier: s.carrier, Vessel: s.vessel, VIN: s.vin, "Car Make": s.carMake, ETA: s.eta ? fmtDate(s.eta) : "", Notes: s.notes })))}
+            className="flex items-center gap-2 bg-[#f0f6ff] hover:bg-[#dce8f7] border border-[#dce8f7] text-[#1565c0] px-3 py-2.5 rounded-lg font-[Sora,sans-serif] text-[13px] font-bold cursor-pointer transition"
+            title="Download CSV"
+          >
+            <Download size={15} /> CSV
+          </button>
           {!readOnly && (
             <button
               onClick={() => {
@@ -2686,21 +2713,30 @@ function UsersSection({
             )}
           </p>
         </div>
-        <div className="relative">
-          <Search
-            size={14}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5a7599] pointer-events-none"
-          />
-          <input
-            type="text"
-            placeholder="Search name or email…"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            className={`${inp} pl-9 min-w-[220px]`}
-          />
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="relative">
+            <Search
+              size={14}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5a7599] pointer-events-none"
+            />
+            <input
+              type="text"
+              placeholder="Search name or email…"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className={`${inp} pl-9 min-w-[220px]`}
+            />
+          </div>
+          <button
+            onClick={() => downloadCSV("users.csv", filtered.map((u) => ({ Name: u.name, Email: u.email, Role: u.role, Approved: u.approved === false ? "Pending" : "Approved", UID: u.uid, "Created At": fmtDateTime(u.createdAt), "Last Login": fmtDateTime(u.lastLogin) })))}
+            className="flex items-center gap-2 bg-[#f0f6ff] hover:bg-[#dce8f7] border border-[#dce8f7] text-[#1565c0] px-3 py-2.5 rounded-lg font-[Sora,sans-serif] text-[13px] font-bold cursor-pointer transition"
+            title="Download CSV"
+          >
+            <Download size={15} /> CSV
+          </button>
         </div>
       </div>
 
@@ -3934,17 +3970,26 @@ function TrackersSection({ readOnly = false, currentUser, isHardRestricted }) {
             on /track
           </p>
         </div>
-        {!readOnly && (
+        <div className="flex items-center gap-3">
           <button
-            onClick={() => {
-              resetForm();
-              setView("form");
-            }}
-            className="flex items-center gap-2 bg-[#1565c0] hover:bg-[#1255a8] text-white border-none px-4 py-2.5 rounded-lg font-[Sora,sans-serif] text-[13px] font-bold cursor-pointer transition"
+            onClick={() => downloadCSV("trackers.csv", trackers.map((t) => ({ Name: t.name, "Short Name": t.short, URL: t.url, Enabled: t.enabled ? "Yes" : "No" })))}
+            className="flex items-center gap-2 bg-[#f0f6ff] hover:bg-[#dce8f7] border border-[#dce8f7] text-[#1565c0] px-3 py-2.5 rounded-lg font-[Sora,sans-serif] text-[13px] font-bold cursor-pointer transition"
+            title="Download CSV"
           >
-            <Plus size={15} /> Add Tracker
+            <Download size={15} /> CSV
           </button>
-        )}
+          {!readOnly && (
+            <button
+              onClick={() => {
+                resetForm();
+                setView("form");
+              }}
+              className="flex items-center gap-2 bg-[#1565c0] hover:bg-[#1255a8] text-white border-none px-4 py-2.5 rounded-lg font-[Sora,sans-serif] text-[13px] font-bold cursor-pointer transition"
+            >
+              <Plus size={15} /> Add Tracker
+            </button>
+          )}
+        </div>
       </div>
 
       {loading ? (
@@ -4256,17 +4301,26 @@ function ScheduleSection({ readOnly = false, currentUser, isHardRestricted }) {
             {schedules.length} record{schedules.length !== 1 ? "s" : ""}
           </p>
         </div>
-        {!readOnly && (
+        <div className="flex items-center gap-3">
           <button
-            onClick={() => {
-              resetForm();
-              setView("form");
-            }}
-            className="flex items-center gap-2 bg-[#1565c0] hover:bg-[#1255a8] text-white border-none px-4 py-2.5 rounded-lg font-[Sora,sans-serif] text-[13px] font-bold cursor-pointer transition"
+            onClick={() => downloadCSV("schedules.csv", schedules.map((s) => ({ Name: s.name, URL: s.url, Note: s.note, Enabled: s.enabled ? "Yes" : "No" })))}
+            className="flex items-center gap-2 bg-[#f0f6ff] hover:bg-[#dce8f7] border border-[#dce8f7] text-[#1565c0] px-3 py-2.5 rounded-lg font-[Sora,sans-serif] text-[13px] font-bold cursor-pointer transition"
+            title="Download CSV"
           >
-            <Plus size={15} /> Add Schedule
+            <Download size={15} /> CSV
           </button>
-        )}
+          {!readOnly && (
+            <button
+              onClick={() => {
+                resetForm();
+                setView("form");
+              }}
+              className="flex items-center gap-2 bg-[#1565c0] hover:bg-[#1255a8] text-white border-none px-4 py-2.5 rounded-lg font-[Sora,sans-serif] text-[13px] font-bold cursor-pointer transition"
+            >
+              <Plus size={15} /> Add Schedule
+            </button>
+          )}
+        </div>
       </div>
       {loading ? (
         <div className="text-center py-12 text-[#5a7599] text-[13px]">
@@ -4770,6 +4824,13 @@ function VehiclesSection({ readOnly = false, currentUser, isHardRestricted, trac
               className="pl-9 pr-3 py-2 rounded-xl border border-[#dce8f7] text-[13px] text-[#0d1b2e] outline-none focus:border-[#1565c0] min-w-[220px] font-[Sora,sans-serif]"
             />
           </div>
+          <button
+            onClick={() => downloadCSV("vehicles.csv", filtered.map((v) => ({ Date: v.date, "A-Number": v.aNumber, "C-Number": v.cNumber, Consignee: v.consigneeName, "Chassis No": v.chassisNo, Duty: v.duty, Make: v.make, Company: v.company })))}
+            className="flex items-center gap-2 bg-[#f0f6ff] hover:bg-[#dce8f7] border border-[#dce8f7] text-[#1565c0] px-3 py-2.5 rounded-xl text-[13px] font-bold cursor-pointer transition"
+            title="Download CSV"
+          >
+            <Download size={14} /> CSV
+          </button>
           {!readOnly && (
             <button
               onClick={() => {
