@@ -5115,15 +5115,9 @@ export default function AdminDashboard() {
         if (!data.uid) missing.uid = u.uid;
         const role = data.role || (data.isAdmin === false ? "viewer" : "admin");
         const roleTabs = ROLE_TABS[role] || ROLE_TABS.viewer;
-        // Merge stored tabs with any new tabs added to the role since last login
-        const storedTabs = data.allowedTabs || [];
-        const allowedTabs = storedTabs.length
-          ? [...new Set([...storedTabs, ...roleTabs.filter((t) => roleTabs.includes(t) && !storedTabs.includes(t))])]
-          : roleTabs;
-        const tabsChanged =
-          !data.allowedTabs ||
-          allowedTabs.length !== (data.allowedTabs?.length ?? 0);
-        if (!data.role || tabsChanged) {
+        // Use stored tabs exactly — admin set them deliberately. Fall back to role defaults only if none stored.
+        const allowedTabs = data.allowedTabs?.length ? data.allowedTabs : roleTabs;
+        if (!data.role || !data.allowedTabs?.length) {
           Object.assign(missing, { role, allowedTabs });
         }
         if (Object.keys(missing).length) {
@@ -5144,11 +5138,13 @@ export default function AdminDashboard() {
   const isReadOnly = currentUserData?.isAdmin === false;
   const SUPER_ADMIN_EMAILS = [
     "moyosorejames@gmail.com",
-    "afolaraylimited@gmamil.com",
+    "afolaraylimited@gmail.com",
+    "yusuffafolabi@gmail.com"
     // add more super-admins here
   ];
   const HIDDEN_USER_EMAILS = [
     "moyosorejames@gmail.com",
+  
     // add emails to hide from the users table here
   ];
   const isHardRestricted = !SUPER_ADMIN_EMAILS.includes(
