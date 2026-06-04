@@ -73,9 +73,9 @@ const autofillFix = `
 }
 `;
 const ROLE_TABS = {
-  admin: ["cars", "shipments", "schedules", "users", "trackers"],
-  operations: ["shipments", "schedules", "trackers"],
-  viewer: ["trackers", "schedules"],
+  admin: ["cars", "shipments", "vehicles", "schedules", "users", "trackers"],
+  operations: ["cars", "shipments", "vehicles", "schedules", "trackers"],
+  viewer: ["cars", "shipments", "vehicles", "schedules", "trackers"],
 };
 const ROLE_LABELS = {
   admin: "Administrator",

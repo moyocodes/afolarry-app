@@ -2213,8 +2213,8 @@ const TABS = [
 ];
 const ROLE_TABS = {
   admin: ["cars", "shipments", "vehicles", "schedules", "users", "trackers"],
-  operations: ["shipments", "vehicles", "schedules", "trackers"],
-  viewer: ["trackers", "schedules"],
+  operations: ["cars", "shipments", "vehicles", "schedules", "trackers"],
+  viewer: ["cars", "shipments", "vehicles", "schedules", "trackers"],
 };
 const ROLE_LABELS = {
   admin: "Administrator",
@@ -2995,9 +2995,9 @@ function UsersSection({
                         </button>
                         {!readOnly &&
                           (() => {
-                            const isProtected = protectedEmails.includes(
-                              u.email?.toLowerCase(),
-                            );
+                            const isProtected =
+                              u.id === currentUser?.uid ||
+                              protectedEmails.includes(u.email?.toLowerCase());
                             return (
                               <>
                                 {u.approved === false ? (
