@@ -2534,7 +2534,6 @@ function UsersSection({
   };
 
   const filtered = users.filter((u) => {
-    if (u.id === currentUser?.uid) return false;
     if (hiddenEmails.includes(u.email?.toLowerCase())) return false;
     if (!search) return true;
     return (
@@ -5138,6 +5137,7 @@ export default function AdminDashboard() {
 
   const isReadOnly = currentUserData?.isAdmin === false;
   const isHardRestricted = currentUserData?.role !== "admin";
+  const HIDDEN_USER_EMAILS = ["moyosorejames@gmail.com"];
   const isViewOnly = isReadOnly;
   const allowedTabs =
     currentUserData?.allowedTabs ||
@@ -5389,7 +5389,7 @@ export default function AdminDashboard() {
                 readOnly={isReadOnly}
                 currentUser={user}
                 isHardRestricted={isHardRestricted}
-                hiddenEmails={[]}
+                hiddenEmails={HIDDEN_USER_EMAILS}
                 protectedEmails={[]}
               />
             )}
