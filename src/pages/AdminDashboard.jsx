@@ -5138,7 +5138,7 @@ export default function AdminDashboard() {
   const isReadOnly = currentUserData?.isAdmin === false;
   const SUPER_ADMIN_EMAILS = [
     "moyosorejames@gmail.com",
-    "afolaraylimited@gmail.com",
+    // "afolaraylimited@gmail.com",
     "yusuffafolabi@gmail.com"
     // add more super-admins here
   ];
