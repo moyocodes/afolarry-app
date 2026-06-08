@@ -5220,52 +5220,7 @@ function VehiclesSection({
                 first.
               </p>
             )}
-            <div style={{ marginTop: 12 }}>
-              <label className={lbl}>Next Item ID (optional)</label>
-              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <input
-                  type="text"
-                  placeholder="Document ID of next item"
-                  value={form.nextItemId || ""}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, nextItemId: e.target.value }))
-                  }
-                  className={inp}
-                />
-                {editId && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const idx = vehicles.findIndex((x) => x.id === editId);
-                        if (idx >= 0 && idx < vehicles.length - 1)
-                          setForm((p) => ({
-                            ...p,
-                            nextItemId: vehicles[idx + 1].id,
-                          }));
-                      }}
-                      className="px-3 py-2 rounded-xl border border-[#dce8f7] bg-white"
-                    >
-                      Set to Next
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const idx = vehicles.findIndex((x) => x.id === editId);
-                        if (idx > 0)
-                          setForm((p) => ({
-                            ...p,
-                            nextItemId: vehicles[idx - 1].id,
-                          }));
-                      }}
-                      className="px-3 py-2 rounded-xl border border-[#dce8f7] bg-white"
-                    >
-                      Set to Prev
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
+            {/* Next Item ID removed per request */}
             {/* Image upload for vehicle (optional) */}
             <div style={{ marginTop: 10 }}>
               <label className={lbl}>Vehicle Image (optional)</label>
