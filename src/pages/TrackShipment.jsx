@@ -1,21 +1,48 @@
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../lib/firebase";
-import { Anchor, Globe, ExternalLink, ArrowRight } from "lucide-react";
+import {
+  Anchor,
+  Globe,
+  ExternalLink,
+  ArrowRight,
+  Phone,
+  MessageCircle,
+  Search,
+  X,
+  Truck,
+  ChevronRight,
+  MapPin,
+  Clock,
+} from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import PageHeader from "../components/PageHeader";
+import VehicleDetail from "./VehicleDetail";
+import { toDisplayString } from "../lib/utils";
 
-const S = { fontFamily: "'Sora',sans-serif" };
+/* ─── tokens ──────────────────────────────────────────────────── */
+const NAVY = "#03112A";
+const BLUE = "#1055CC";
+const BLUE_MID = "#1A6BEF";
+const BLUE_LIGHT = "#E8F0FE";
+const BLUE_DIM = "#9DB8F2";
+const SLATE = "#5A7299";
+const BORDER = "#E4EBF5";
+const WHITE = "#FFFFFF";
+const GREEN = "#0D9E6E";
+const AMBER = "#E58A00";
+const SKY = "#0EA5E9";
 
+/* ─── default trackers ────────────────────────────────────────── */
 const DEFAULT_TRACKERS = [
   {
     id: "afolaray",
     name: "Afolaray Nigeria Limited",
-    desc: "Track your AFL shipment in real time.",
+    desc: "Track your AFL shipment in real time with full event timeline.",
     short: "AFL",
-    accent: "#1565c0",
-    hint: "Open the dedicated AFL tracker and enter your shipment ID to see the latest timeline.",
+    accent: BLUE,
+    hint: "Open the dedicated AFL tracker and enter your shipment ID.",
     internalPath: "/public-track",
     ctaLabel: "Open AFL Tracker",
     sortOrder: 0,
@@ -25,8 +52,7 @@ const DEFAULT_TRACKERS = [
 function normalizeTracker(raw, index) {
   const fallback =
     DEFAULT_TRACKERS.find(
-      (item) =>
-        item.id === raw.id || item.id === raw.slug || item.name === raw.name,
+      (t) => t.id === raw.id || t.id === raw.slug || t.name === raw.name,
     ) || {};
   const id =
     raw.id ||
@@ -48,15 +74,12 @@ function normalizeTracker(raw, index) {
       fallback.short ||
       (raw.name || "TR")
         .split(" ")
-        .map((part) => part[0])
+        .map((p) => p[0])
         .join("")
         .slice(0, 3)
         .toUpperCase(),
-    accent: raw.accent || raw.color || fallback.accent || "#1565c0",
-    hint:
-      raw.hint ||
-      fallback.hint ||
-      "Open the attached tracking page to continue.",
+    accent: raw.accent || raw.color || fallback.accent || BLUE,
+    hint: raw.hint || fallback.hint || "Open the tracking page to continue.",
     url: raw.url || fallback.url || "",
     internalPath: raw.internalPath || raw.path || fallback.internalPath || "",
     ctaLabel:
@@ -74,82 +97,74 @@ function normalizeTracker(raw, index) {
   };
 }
 
+/* ─── status helpers ──────────────────────────────────────────── */
+function statusMeta(status) {
+  const s = (status || "").toLowerCase();
+  if (s.includes("deliv")) return { color: GREEN, label: "Delivered" };
+  if (s.includes("trans")) return { color: SKY, label: "In Transit" };
+  return { color: AMBER, label: status || "Pending" };
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
 export default function TrackShipment() {
   const navigate = useNavigate();
+  const [selectedVehicleId, setSelectedVehicleId] = useState(null);
   const [trackers, setTrackers] = useState(DEFAULT_TRACKERS);
   const [loadingTrackers, setLoadingTrackers] = useState(true);
   const [vehicles, setVehicles] = useState([]);
   const [loadingVehicles, setLoadingVehicles] = useState(true);
   const [vehicleSearch, setVehicleSearch] = useState("");
+  const [hoveredTracker, setHoveredTracker] = useState(null);
 
+  /* load trackers */
   useEffect(() => {
     let mounted = true;
-
-    const loadTrackers = async () => {
+    const load = async () => {
       setLoadingTrackers(true);
       try {
         const snap = await getDocs(collection(db, "trackingPortals"));
-        const trackerMap = new Map(
-          DEFAULT_TRACKERS.map((tracker, index) => [
-            tracker.id,
-            normalizeTracker(tracker, index),
-          ]),
+        const map = new Map(
+          DEFAULT_TRACKERS.map((t, i) => [t.id, normalizeTracker(t, i)]),
         );
-
-        snap.docs.forEach((doc, index) => {
-          const tracker = normalizeTracker(
-            { id: doc.id, ...doc.data() },
-            index,
-          );
-          trackerMap.set(tracker.id, tracker);
+        snap.docs.forEach((doc, i) => {
+          const t = normalizeTracker({ id: doc.id, ...doc.data() }, i);
+          map.set(t.id, t);
         });
-
-        const nextTrackers = Array.from(trackerMap.values())
-          .filter((tracker) => tracker.enabled)
+        const next = Array.from(map.values())
+          .filter((t) => t.enabled)
           .sort((a, b) => a.sortOrder - b.sortOrder);
-
-        if (mounted && nextTrackers.length > 0) {
-          setTrackers(nextTrackers);
-        }
+        if (mounted && next.length) setTrackers(next);
       } catch {
         if (mounted) setTrackers(DEFAULT_TRACKERS);
       } finally {
         if (mounted) setLoadingTrackers(false);
       }
     };
-
-    loadTrackers();
-    return () => {
-      mounted = false;
-    };
+    load();
+    return () => { mounted = false; };
   }, []);
 
+  /* load vehicles */
   useEffect(() => {
     let mounted = true;
-    const loadVehicles = async () => {
+    const load = async () => {
       setLoadingVehicles(true);
       try {
         const snap = await getDocs(collection(db, "vehicles"));
-        const next = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        if (mounted) setVehicles(next);
-      } catch (err) {
+        if (mounted) setVehicles(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      } catch {
         if (mounted) setVehicles([]);
       } finally {
         if (mounted) setLoadingVehicles(false);
       }
     };
-    loadVehicles();
-    return () => {
-      mounted = false;
-    };
+    load();
+    return () => { mounted = false; };
   }, []);
 
   const openTracker = (tracker) => {
     if (!tracker) return;
-    if (tracker.internalPath) {
-      navigate(tracker.internalPath);
-      return;
-    }
+    if (tracker.internalPath) { navigate(tracker.internalPath); return; }
     if (!tracker.url) return;
     if (tracker.openInNewTab) {
       window.open(tracker.url, "_blank", "noopener,noreferrer");
@@ -158,427 +173,525 @@ export default function TrackShipment() {
     window.location.assign(tracker.url);
   };
 
+  /* filter vehicles */
+  const q = vehicleSearch.trim().toLowerCase();
+  const filteredVehicles = q
+    ? vehicles.filter((v) =>
+        [toDisplayString(v.chassisNo), v.make, v.company, v.aNumber, v.cNumber, v.consigneeName]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase()
+          .includes(q),
+      )
+    : vehicles;
+
   return (
-    <div style={S}>
+    <div style={{ fontFamily: "'DM Sans', 'Sora', sans-serif", background: "#F4F7FC", minHeight: "100vh" }}>
+
+      {/* ── PAGE HEADER ── */}
       <PageHeader
         eyebrow="Track Shipment"
         title="Track Your Shipment"
         description="Choose a shipping line and jump straight into its tracking page."
         image="https://images.unsplash.com/photo-1519003722824-194d4455a60c?w=1600&q=80&auto=format&fit=crop"
-        maxWidth="980px"
+        maxWidth="1140px"
       >
-        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-          <Link
-            to="/public-track"
-            style={{
-              fontSize: "14px",
-              color: "#fff",
-              background: "rgba(255,255,255,0.15)",
-              border: "1px solid rgba(255,255,255,0.3)",
-              padding: "12px 22px",
-              borderRadius: "10px",
-              textDecoration: "none",
-              fontWeight: 700,
-              backdropFilter: "blur(8px)",
-            }}
-          >
-            Open AFL Tracker
-          </Link>
-          <Link
-            to="/solutions"
-            style={{
-              fontSize: "14px",
-              color: "#1565c0",
-              background: "#fff",
-              padding: "12px 22px",
-              borderRadius: "10px",
-              textDecoration: "none",
-              fontWeight: 800,
-            }}
-          >
-            Explore Solutions
-          </Link>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          <Link to="/public-track" style={styles.heroBtnPrimary}>Open AFL Tracker</Link>
+          <Link to="/solutions" style={styles.heroBtnSecondary}>Explore Solutions</Link>
         </div>
       </PageHeader>
 
-      <section style={{ padding: "4rem 1.5rem", background: "#fff" }}>
-        <div
-          style={{
-            maxWidth: "980px",
-            margin: "0 auto",
-            display: "grid",
-            gridTemplateColumns: "1fr 320px",
-            gap: "2rem",
-          }}
-        >
-          {/* Left: trackers (main) */}
+      {/* ── MAIN BODY ── */}
+      <section style={{ padding: "3rem 1.5rem 5rem", maxWidth: 1140, margin: "0 auto" }}>
+
+        {/* grid: left trackers + right vehicles */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 420px", gap: "1.75rem", alignItems: "start" }}>
+
+          {/* ─ LEFT: TRACKERS ─ */}
           <div>
-            {/* Section header */}
-            <div style={{ marginBottom: "2.5rem" }}>
-              <p
-                style={{
-                  fontSize: "11px",
-                  fontWeight: 800,
-                  color: "#1565c0",
-                  letterSpacing: "0.12em",
-                  textTransform: "uppercase",
-                  marginBottom: "0.6rem",
-                }}
-              >
-                Select a tracker
-              </p>
-              <h2
-                style={{
-                  fontSize: "clamp(1.6rem,3vw,2.2rem)",
-                  fontWeight: 800,
-                  color: "#0d1b2e",
-                  lineHeight: 1.15,
-                  marginBottom: "0.6rem",
-                }}
-              >
-                Where is your shipment?
-              </h2>
-              <p
-                style={{
-                  fontSize: "15px",
-                  color: "#5a7599",
-                  fontWeight: 300,
-                  lineHeight: 1.8,
-                }}
-              >
-                Click a carrier below to open its tracking portal directly.
-              </p>
-            </div>
-
-            {/* Tracker cards */}
-            <div
-              style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
             >
-              {trackers.map((tracker, i) => (
-                <motion.button
-                  key={tracker.id}
-                  type="button"
-                  onClick={() => openTracker(tracker)}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  whileHover={{
-                    y: -2,
-                    boxShadow: "0 8px 28px rgba(21,101,192,0.13)",
-                  }}
-                  whileTap={{ scale: 0.99 }}
-                  style={{
-                    width: "100%",
-                    textAlign: "left",
-                    background: "#fff",
-                    border: "1.5px solid #e9f0f9",
-                    borderRadius: "18px",
-                    padding: "1.1rem 1.2rem",
-                    cursor: "pointer",
-                    boxShadow: "0 2px 12px rgba(21,101,192,0.05)",
-                    transition: "all 0.2s ease",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "1rem",
-                  }}
-                >
-                  {/* Accent badge */}
-                  <div
-                    style={{
-                      width: 52,
-                      height: 52,
-                      borderRadius: 14,
-                      background: tracker.accent,
-                      color: "#fff",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "13px",
-                      fontWeight: 800,
-                      flexShrink: 0,
-                      boxShadow: `0 4px 16px ${tracker.accent}44`,
-                    }}
-                  >
-                    {tracker.short}
-                  </div>
+              {/* heading row */}
+              <div style={{ marginBottom: "2rem" }}>
+                <p style={styles.eyebrow}>Select a carrier</p>
+                <h2 style={styles.sectionTitle}>Where is your shipment?</h2>
+                <p style={styles.sectionSub}>
+                  Click a carrier below to open its tracking portal instantly.
+                </p>
+              </div>
 
-                  {/* Info */}
-                  <div style={{ flex: 1 }}>
-                    <div
+              {/* tracker cards */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
+                {trackers.map((tracker, i) => {
+                  const isHovered = hoveredTracker === tracker.id;
+                  return (
+                    <motion.button
+                      key={tracker.id}
+                      type="button"
+                      onClick={() => openTracker(tracker)}
+                      onHoverStart={() => setHoveredTracker(tracker.id)}
+                      onHoverEnd={() => setHoveredTracker(null)}
+                      initial={{ opacity: 0, y: 14 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.07, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                      whileHover={{ y: -3 }}
+                      whileTap={{ scale: 0.985 }}
                       style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: "0.5rem",
-                        marginBottom: "0.25rem",
+                        ...styles.trackerCard,
+                        border: isHovered
+                          ? `1.5px solid ${tracker.accent}55`
+                          : `1.5px solid ${BORDER}`,
+                        boxShadow: isHovered
+                          ? `0 8px 32px ${tracker.accent}18`
+                          : "0 2px 10px rgba(0,0,0,0.04)",
                       }}
                     >
-                      <span
+                      {/* badge */}
+                      <motion.div
+                        animate={{ scale: isHovered ? 1.06 : 1 }}
+                        transition={{ duration: 0.2 }}
                         style={{
-                          fontSize: "15px",
-                          fontWeight: 800,
-                          color: "#0d1b2e",
+                          ...styles.trackerBadge,
+                          background: tracker.accent,
+                          boxShadow: `0 6px 20px ${tracker.accent}40`,
                         }}
                       >
-                        {tracker.name}
-                      </span>
-                      <span
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 4,
-                          fontSize: "10px",
-                          fontWeight: 700,
-                          letterSpacing: "0.08em",
-                          textTransform: "uppercase",
-                          color: tracker.accent,
-                          flexShrink: 0,
-                        }}
-                      >
-                        {tracker.internalPath ? (
-                          <Anchor size={11} />
-                        ) : (
-                          <Globe size={11} />
-                        )}
-                        {tracker.internalPath ? "AFL Page" : "External"}
-                      </span>
-                    </div>
-                    <p
-                      style={{
-                        fontSize: "13px",
-                        color: "#5a7599",
-                        fontWeight: 300,
-                        lineHeight: 1.5,
-                        margin: 0,
-                      }}
-                    >
-                      {tracker.desc}
-                    </p>
-                  </div>
+                        {tracker.short}
+                      </motion.div>
 
-                  {/* CTA arrow */}
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                      flexShrink: 0,
-                      fontSize: "12px",
-                      fontWeight: 700,
-                      color: tracker.accent,
-                    }}
-                  >
-                    {tracker.internalPath ? null : <ExternalLink size={13} />}
-                    <ArrowRight size={16} />
-                  </div>
-                </motion.button>
-              ))}
-            </div>
+                      {/* info */}
+                      <div style={{ flex: 1, textAlign: "left" }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5 }}>
+                          <span style={styles.trackerName}>{tracker.name}</span>
+                          <span style={{
+                            ...styles.trackerPill,
+                            background: isHovered ? `${tracker.accent}15` : BLUE_LIGHT,
+                            color: isHovered ? tracker.accent : BLUE,
+                          }}>
+                            {tracker.internalPath ? <Anchor size={10} /> : <Globe size={10} />}
+                            {tracker.internalPath ? "AFL Page" : "External"}
+                          </span>
+                        </div>
+                        <p style={styles.trackerDesc}>{tracker.desc}</p>
+                      </div>
+
+                      {/* arrow */}
+                      <motion.div
+                        animate={{ x: isHovered ? 3 : 0 }}
+                        transition={{ duration: 0.2 }}
+                        style={{ display: "flex", alignItems: "center", gap: 4, color: isHovered ? tracker.accent : SLATE, flexShrink: 0 }}
+                      >
+                        {!tracker.internalPath && <ExternalLink size={12} />}
+                        <ArrowRight size={17} />
+                      </motion.div>
+                    </motion.button>
+                  );
+                })}
+              </div>
+
+              {/* hint row */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                style={styles.hintRow}
+              >
+                <MapPin size={13} strokeWidth={2} style={{ color: BLUE, flexShrink: 0, marginTop: 1 }} />
+                <span>
+                  {loadingTrackers
+                    ? "Loading carrier destinations…"
+                    : "More carriers added regularly. Contact us if yours isn't listed."}
+                </span>
+              </motion.div>
+            </motion.div>
           </div>
 
-          {/* Right: Delivered Vehicles sidebar */}
-          <aside
-            style={{
-              background: "#fff",
-              border: "1px solid #e9f0f9",
-              borderRadius: 12,
-              padding: 16,
-              height: "fit-content",
-            }}
+          {/* ─ RIGHT: VEHICLES ─ */}
+          <motion.aside
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+            style={styles.sidebar}
           >
-            <h3
-              style={{
-                fontSize: 16,
-                fontWeight: 800,
-                color: "#0d1b2e",
-                marginBottom: 6,
-              }}
-            >
-              Delivered Vehicles
-            </h3>
-            <p style={{ fontSize: 13, color: "#5a7599", margin: "0 0 12px 0" }}>
-              Search vehicles from our public records (admin directory).
-            </p>
+            {/* sidebar header */}
+            <div style={styles.sidebarHeader}>
+              <div style={styles.sidebarIconWrap}>
+                <Truck size={16} strokeWidth={2} color={WHITE} />
+              </div>
+              <div>
+                <h3 style={styles.sidebarTitle}>Delivered Vehicles</h3>
+                <p style={styles.sidebarSub}>Public records — admin directory</p>
+              </div>
+            </div>
 
-            <input
-              aria-label="Search delivered vehicles"
-              value={vehicleSearch}
-              onChange={(e) => setVehicleSearch(e.target.value)}
-              placeholder="Search VIN, make, model, chassis..."
-              style={{
-                width: "100%",
-                padding: "10px 12px",
-                borderRadius: 8,
-                border: "1px solid #e6eef9",
-                marginBottom: 12,
-              }}
-            />
+            <div style={styles.sidebarDivider} />
 
-            <div style={{ maxHeight: 360, overflow: "auto" }}>
-              {loadingVehicles ? (
-                <p style={{ fontSize: 13, color: "#5a7599" }}>
-                  Loading vehicles…
-                </p>
-              ) : (
-                (() => {
-                  const q = vehicleSearch.trim().toLowerCase();
-                  const filtered = q
-                    ? vehicles.filter((v) => {
-                        const fields = [
-                          v.chassisNo,
-                          v.make,
-                          v.company,
-                          v.aNumber,
-                          v.cNumber,
-                          v.consigneeName,
-                        ]
-                          .filter(Boolean)
-                          .join(" ")
-                          .toLowerCase();
-                        return fields.includes(q);
-                      })
-                    : vehicles;
-
-                  if (!filtered.length) {
-                    return (
-                      <p style={{ fontSize: 13, color: "#5a7599" }}>
-                        {q ? "No vehicles match" : "No vehicle records yet"}
-                      </p>
-                    );
-                  }
-
-                  return filtered.slice(0, 12).map((v) => (
-                    <div
-                      key={v.id}
-                      style={{
-                        padding: 10,
-                        borderRadius: 8,
-                        border: "1px solid #f3f7fb",
-                        marginBottom: 10,
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 6,
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                        }}
-                      >
-                        <strong style={{ fontSize: 14, color: "#0d1b2e" }}>
-                          {(v.make || "Unknown").toString()}
-                        </strong>
-                        <span
-                          style={{
-                            fontSize: 12,
-                            color: "#1565c0",
-                            fontWeight: 700,
-                            cursor: "pointer",
-                          }}
-                          onClick={() => navigate(`/vehicle/${v.id}`)}
-                        >
-                          View details
-                        </span>
-                      </div>
-                      <div style={{ fontSize: 13, color: "#5a7599" }}>
-                        {v.chassisNo
-                          ? `Chassis: ${v.chassisNo}`
-                          : v.cNumber
-                            ? `C-No: ${v.cNumber}`
-                            : v.aNumber
-                              ? `A-No: ${v.aNumber}`
-                              : null}
-                      </div>
-                      <div style={{ fontSize: 12, color: "#7a93bb" }}>
-                        {v.consigneeName || v.company || "—"}
-                      </div>
-                    </div>
-                  ));
-                })()
+            {/* search */}
+            <div style={styles.searchRow}>
+              <div style={styles.searchWrap}>
+                <Search size={14} color={SLATE} style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+                <input
+                  aria-label="Search delivered vehicles"
+                  value={vehicleSearch}
+                  onChange={(e) => setVehicleSearch(e.target.value)}
+                  placeholder="Search VIN, make, model, chassis…"
+                  style={styles.searchInput}
+                />
+              </div>
+              {vehicleSearch && (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  onClick={() => setVehicleSearch("")}
+                  style={styles.clearBtn}
+                  title="Clear"
+                >
+                  <X size={14} />
+                </motion.button>
               )}
             </div>
-          </aside>
+
+            {/* count */}
+            {!loadingVehicles && (
+              <p style={styles.countLabel}>
+                {filteredVehicles.length} vehicle{filteredVehicles.length !== 1 ? "s" : ""}{q ? " found" : " total"}
+              </p>
+            )}
+
+            {/* vehicle list */}
+            <div style={styles.vehicleList}>
+              {loadingVehicles ? (
+                <div style={styles.loadingWrap}>
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} style={{ ...styles.skeletonCard, animationDelay: `${i * 0.12}s` }} />
+                  ))}
+                </div>
+              ) : filteredVehicles.length === 0 ? (
+                <div style={styles.emptyState}>
+                  <Truck size={28} color={BLUE_DIM} strokeWidth={1.5} />
+                  <p style={{ color: SLATE, fontSize: 13, marginTop: 8 }}>
+                    {q ? "No vehicles match your search" : "No vehicle records yet"}
+                  </p>
+                </div>
+              ) : (
+                filteredVehicles.slice(0, 14).map((v, i) => {
+                  const { color: stColor, label: stLabel } = statusMeta(v.status);
+                  return (
+                    <motion.div
+                      key={v.id}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.04 }}
+                      style={styles.vehicleCard}
+                      whileHover={{ backgroundColor: BLUE_LIGHT }}
+                    >
+                      {/* thumb */}
+                      <div style={styles.vehicleThumb}>
+                        {v.image ? (
+                          <img src={v.image} alt={v.make || "vehicle"} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 10 }} />
+                        ) : (
+                          <span style={{ fontSize: 13, fontWeight: 700, color: BLUE, letterSpacing: "0.02em" }}>
+                            {((v.make || "?").toString()).slice(0, 2).toUpperCase()}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* info */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 6 }}>
+                          <span style={styles.vehicleMake}>{(v.make || "Unknown").toString()}</span>
+                          <span
+                            style={styles.vehicleViewBtn}
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => setSelectedVehicleId(v.id)}
+                            onKeyDown={(e) => e.key === "Enter" && setSelectedVehicleId(v.id)}
+                          >
+                            View <ChevronRight size={11} strokeWidth={2.5} style={{ verticalAlign: -1 }} />
+                          </span>
+                        </div>
+                        <p style={styles.vehicleChassis}>{toDisplayString(v.chassisNo)}</p>
+                        <p style={styles.vehicleConsignee}>{v.consigneeName || v.company || "—"}</p>
+                      </div>
+
+                      {/* status */}
+                      <div style={{ ...styles.statusDot, background: stColor }} title={stLabel} />
+                    </motion.div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* sidebar footer */}
+            {!loadingVehicles && filteredVehicles.length > 14 && (
+              <p style={{ fontSize: 12, color: SLATE, textAlign: "center", paddingTop: 10 }}>
+                Showing 14 of {filteredVehicles.length} — refine your search
+              </p>
+            )}
+          </motion.aside>
         </div>
 
-        {/* Help bar */}
+        {/* ─ HELP BAR ─ */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ delay: 0.2 }}
-          style={{
-            maxWidth: "860px",
-            margin: "2.5rem auto 0",
-            padding: "1.75rem 2rem",
-            background: "#0d1b2e",
-            borderRadius: "18px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: "1rem",
-          }}
+          transition={{ duration: 0.5, delay: 0.15 }}
+          style={styles.helpBar}
         >
-          <div>
-            <p
-              style={{
-                fontSize: "16px",
-                fontWeight: 800,
-                color: "#fff",
-                marginBottom: "0.3rem",
-              }}
-            >
-              Need help with your shipment?
-            </p>
-            <p
-              style={{
-                fontSize: "13px",
-                color: "rgba(255,255,255,0.5)",
-                fontWeight: 300,
-                lineHeight: 1.7,
-              }}
-            >
+          <div style={styles.helpBarGlow} />
+          <div style={{ position: "relative", zIndex: 1 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 5 }}>
+              <Clock size={15} color={BLUE_DIM} strokeWidth={1.5} />
+              <p style={styles.helpTitle}>Need help with your shipment?</p>
+            </div>
+            <p style={styles.helpSub}>
               {loadingTrackers
-                ? "Loading the latest tracking destinations…"
-                : "Our team is available Monday to Friday, 8 AM – 6 PM WAT."}
+                ? "Loading tracking destinations…"
+                : "Our team is available Monday – Friday, 8 AM – 6 PM WAT."}
             </p>
           </div>
-          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-            <a
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", position: "relative", zIndex: 1 }}>
+            <motion.a
               href="tel:+2347033576017"
-              style={{
-                fontSize: "13px",
-                color: "#fff",
-                background: "#1565c0",
-                padding: "11px 20px",
-                borderRadius: "10px",
-                textDecoration: "none",
-                fontWeight: 700,
-              }}
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.97 }}
+              style={styles.callBtn}
             >
-              Call Now
-            </a>
-            <a
+              <Phone size={14} strokeWidth={2} /> Call Now
+            </motion.a>
+            <motion.a
               href="https://wa.me/2347033576017"
               target="_blank"
               rel="noopener noreferrer"
-              style={{
-                fontSize: "13px",
-                color: "#fff",
-                background: "#25d366",
-                padding: "11px 20px",
-                borderRadius: "10px",
-                textDecoration: "none",
-                fontWeight: 700,
-              }}
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.97 }}
+              style={styles.waBtn}
             >
-              WhatsApp
-            </a>
+              <MessageCircle size={14} strokeWidth={2} /> WhatsApp
+            </motion.a>
           </div>
         </motion.div>
       </section>
+
+      {/* ─ VEHICLE DETAIL DRAWER ─ */}
+      <AnimatePresence>
+        {selectedVehicleId && (
+          <VehicleDetail
+            id={selectedVehicleId}
+            onClose={() => setSelectedVehicleId(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
+
+/* ─── styles object ───────────────────────────────────────────── */
+const styles = {
+  heroBtnPrimary: {
+    fontSize: 14, fontWeight: 700, color: WHITE,
+    background: "rgba(255,255,255,0.18)",
+    border: "1px solid rgba(255,255,255,0.35)",
+    padding: "12px 24px", borderRadius: 12, textDecoration: "none",
+    backdropFilter: "blur(10px)",
+  },
+  heroBtnSecondary: {
+    fontSize: 14, fontWeight: 800, color: NAVY,
+    background: WHITE, padding: "12px 24px",
+    borderRadius: 12, textDecoration: "none",
+  },
+
+  eyebrow: {
+    fontSize: 11, fontWeight: 700, color: BLUE,
+    letterSpacing: "0.13em", textTransform: "uppercase",
+    marginBottom: "0.5rem",
+  },
+  sectionTitle: {
+    fontSize: "clamp(1.5rem, 2.8vw, 2.1rem)", fontWeight: 800,
+    color: NAVY, lineHeight: 1.15, marginBottom: "0.5rem",
+  },
+  sectionSub: {
+    fontSize: 15, color: SLATE, fontWeight: 300, lineHeight: 1.8,
+  },
+
+  trackerCard: {
+    width: "100%", textAlign: "left",
+    background: WHITE, borderRadius: 20,
+    padding: "1.05rem 1.1rem", cursor: "pointer",
+    transition: "border 0.2s, box-shadow 0.2s",
+    display: "flex", alignItems: "center", gap: "1rem",
+  },
+  trackerBadge: {
+    width: 54, height: 54, borderRadius: 15,
+    color: WHITE, display: "flex", alignItems: "center",
+    justifyContent: "center", fontSize: 12, fontWeight: 800,
+    flexShrink: 0, letterSpacing: "0.06em",
+  },
+  trackerName: {
+    fontSize: 15, fontWeight: 800, color: NAVY,
+  },
+  trackerPill: {
+    display: "inline-flex", alignItems: "center", gap: 4,
+    fontSize: 10, fontWeight: 700, letterSpacing: "0.08em",
+    textTransform: "uppercase", padding: "3px 9px",
+    borderRadius: 999, transition: "background 0.2s, color 0.2s",
+    flexShrink: 0,
+  },
+  trackerDesc: {
+    fontSize: 13, color: SLATE, fontWeight: 300,
+    lineHeight: 1.55, margin: 0,
+  },
+  hintRow: {
+    display: "flex", alignItems: "flex-start", gap: 8, marginTop: "1.25rem",
+    fontSize: 12, color: SLATE, lineHeight: 1.6, padding: "0 4px",
+  },
+
+  /* sidebar */
+  sidebar: {
+    background: WHITE,
+    border: `1px solid ${BORDER}`,
+    borderRadius: 20,
+    padding: "1.25rem",
+    height: "fit-content",
+    boxShadow: "0 8px 36px rgba(16,85,204,0.07)",
+    position: "sticky",
+    top: "1.5rem",
+  },
+  sidebarHeader: {
+    display: "flex", alignItems: "center", gap: 12, marginBottom: 0,
+  },
+  sidebarIconWrap: {
+    width: 38, height: 38, borderRadius: 11,
+    background: BLUE, display: "flex", alignItems: "center",
+    justifyContent: "center", flexShrink: 0,
+  },
+  sidebarTitle: {
+    fontSize: 15, fontWeight: 800, color: NAVY, margin: 0,
+  },
+  sidebarSub: {
+    fontSize: 11, color: SLATE, margin: 0,
+  },
+  sidebarDivider: {
+    height: 1, background: BORDER, margin: "1rem 0 0.75rem",
+  },
+
+  /* search */
+  searchRow: {
+    display: "flex", gap: 8, marginBottom: "0.5rem",
+  },
+  searchWrap: {
+    flex: 1, position: "relative",
+  },
+  searchInput: {
+    width: "100%", padding: "9px 10px 9px 34px",
+    border: `1px solid ${BORDER}`, borderRadius: 12,
+    fontSize: 13, color: NAVY, background: "#F8FAFE",
+    outline: "none", fontFamily: "inherit",
+  },
+  clearBtn: {
+    padding: "0 12px", borderRadius: 12,
+    border: `1px solid ${BORDER}`, background: WHITE,
+    color: SLATE, cursor: "pointer", display: "flex",
+    alignItems: "center",
+  },
+  countLabel: {
+    fontSize: 11, color: SLATE, marginBottom: "0.5rem",
+    fontWeight: 500, letterSpacing: "0.04em",
+  },
+
+  /* vehicle list */
+  vehicleList: {
+    maxHeight: 560, overflowY: "auto",
+    paddingRight: 2,
+  },
+  vehicleCard: {
+    display: "flex", alignItems: "center", gap: 10,
+    padding: "10px 8px", borderRadius: 12,
+    cursor: "pointer", transition: "background 0.15s",
+    marginBottom: 2,
+  },
+  vehicleThumb: {
+    width: 52, height: 42, borderRadius: 10,
+    background: BLUE_LIGHT, flexShrink: 0,
+    display: "flex", alignItems: "center",
+    justifyContent: "center", overflow: "hidden",
+  },
+  vehicleMake: {
+    fontSize: 13, fontWeight: 700, color: NAVY,
+    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+  },
+  vehicleChassis: {
+    fontSize: 11, color: SLATE, marginTop: 2,
+    fontFamily: "monospace",
+  },
+  vehicleConsignee: {
+    fontSize: 11, color: SLATE, marginTop: 2,
+    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+  },
+  vehicleViewBtn: {
+    fontSize: 11, fontWeight: 700, color: BLUE,
+    cursor: "pointer", flexShrink: 0, display: "flex",
+    alignItems: "center", gap: 1, whiteSpace: "nowrap",
+  },
+  statusDot: {
+    width: 8, height: 8, borderRadius: "50%", flexShrink: 0,
+  },
+
+  /* loading skeleton */
+  loadingWrap: { display: "flex", flexDirection: "column", gap: 8 },
+  skeletonCard: {
+    height: 58, borderRadius: 12,
+    background: "linear-gradient(90deg, #EFF3FB 25%, #E4EBF5 50%, #EFF3FB 75%)",
+    backgroundSize: "200% 100%",
+    animation: "shimmer 1.4s infinite",
+  },
+
+  /* empty */
+  emptyState: {
+    display: "flex", flexDirection: "column",
+    alignItems: "center", justifyContent: "center",
+    padding: "2rem 0",
+  },
+
+  /* help bar */
+  helpBar: {
+    marginTop: "2rem",
+    background: NAVY,
+    borderRadius: 20,
+    padding: "1.75rem 2rem",
+    display: "flex", alignItems: "center",
+    justifyContent: "space-between",
+    flexWrap: "wrap", gap: "1rem",
+    position: "relative", overflow: "hidden",
+  },
+  helpBarGlow: {
+    position: "absolute", top: -60, right: -60,
+    width: 220, height: 220, borderRadius: "50%",
+    background: `${BLUE_MID}22`, pointerEvents: "none",
+  },
+  helpTitle: {
+    fontSize: 16, fontWeight: 800, color: WHITE, margin: 0,
+  },
+  helpSub: {
+    fontSize: 13, color: "rgba(255,255,255,0.45)",
+    fontWeight: 300, lineHeight: 1.6,
+  },
+  callBtn: {
+    fontSize: 13, fontWeight: 700, color: WHITE,
+    background: BLUE_MID, padding: "11px 20px",
+    borderRadius: 12, textDecoration: "none",
+    display: "flex", alignItems: "center", gap: 7,
+  },
+  waBtn: {
+    fontSize: 13, fontWeight: 700, color: WHITE,
+    background: "#0D9E6E", padding: "11px 20px",
+    borderRadius: 12, textDecoration: "none",
+    display: "flex", alignItems: "center", gap: 7,
+  },
+};

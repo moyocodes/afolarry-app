@@ -21,8 +21,11 @@ export default async function handler(req, res) {
           .slice(0, 60)
       : String(Date.now());
 
+    // allow caller to specify folder (useful for vehicles vs cars)
+    const folder = req.body?.folder || "afolaray/cars";
+
     const result = await cloudinary.uploader.upload(file, {
-      folder: "afolaray/cars",
+      folder,
       public_id: `${Date.now()}_${slug}`,
       resource_type: "image",
       overwrite: false,
