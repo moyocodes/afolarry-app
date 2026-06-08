@@ -4963,19 +4963,24 @@ function VehiclesSection({
             <ChevronLeft size={16} />
             Back
           </button>
-          <h2 className="text-[20px] font-bold text-[#0d1b2e]" style={{flex:1}}>
+          <h2
+            className="text-[20px] font-bold text-[#0d1b2e]"
+            style={{ flex: 1 }}
+          >
             {editId ? "Edit Vehicle Record" : "New Vehicle Record"}
           </h2>
-            {editId && (
-              (() => {
-                const current = vehicles.find((x) => x.id === editId);
-                return current ? (
-                  <div style={{ marginLeft: 12 }}>
-                    <AuditBadge record={current} isHardRestricted={isHardRestricted} />
-                  </div>
-                ) : null;
-              })()
-            )}
+          {editId &&
+            (() => {
+              const current = vehicles.find((x) => x.id === editId);
+              return current ? (
+                <div style={{ marginLeft: 12 }}>
+                  <AuditBadge
+                    record={current}
+                    isHardRestricted={isHardRestricted}
+                  />
+                </div>
+              ) : null;
+            })()}
           {/* Prev/Next quick nav */}
           {editId && (
             <div style={{ display: "flex", gap: 8 }}>
@@ -5222,7 +5227,9 @@ function VehiclesSection({
                   type="text"
                   placeholder="Document ID of next item"
                   value={form.nextItemId || ""}
-                  onChange={(e) => setForm((p) => ({ ...p, nextItemId: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, nextItemId: e.target.value }))
+                  }
                   className={inp}
                 />
                 {editId && (
@@ -5232,7 +5239,10 @@ function VehiclesSection({
                       onClick={() => {
                         const idx = vehicles.findIndex((x) => x.id === editId);
                         if (idx >= 0 && idx < vehicles.length - 1)
-                          setForm((p) => ({ ...p, nextItemId: vehicles[idx + 1].id }));
+                          setForm((p) => ({
+                            ...p,
+                            nextItemId: vehicles[idx + 1].id,
+                          }));
                       }}
                       className="px-3 py-2 rounded-xl border border-[#dce8f7] bg-white"
                     >
@@ -5242,7 +5252,11 @@ function VehiclesSection({
                       type="button"
                       onClick={() => {
                         const idx = vehicles.findIndex((x) => x.id === editId);
-                        if (idx > 0) setForm((p) => ({ ...p, nextItemId: vehicles[idx - 1].id }));
+                        if (idx > 0)
+                          setForm((p) => ({
+                            ...p,
+                            nextItemId: vehicles[idx - 1].id,
+                          }));
                       }}
                       className="px-3 py-2 rounded-xl border border-[#dce8f7] bg-white"
                     >
@@ -5523,7 +5537,10 @@ function VehiclesSection({
                         {v.consigneeName || "—"}
                       </p>
                       <div style={{ marginTop: 6 }}>
-                        <AuditBadge record={v} isHardRestricted={isHardRestricted} />
+                        <AuditBadge
+                          record={v}
+                          isHardRestricted={isHardRestricted}
+                        />
                       </div>
                     </td>
                     <td style={{ ...td, maxWidth: 160 }}>
