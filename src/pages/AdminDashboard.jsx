@@ -4603,274 +4603,151 @@ function ViewVehicleModal({ vehicle: v, trackers = [], onClose, onEdit }) {
       </div>
     ) : null;
 
+  const images = v.images?.length ? v.images : v.image ? [v.image] : [];
+  const [imgIdx, setImgIdx] = useState(0);
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 9999,
-        background: "rgba(6,14,26,0.75)",
-        backdropFilter: "blur(10px)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "1.5rem",
-        fontFamily: "'Sora',sans-serif",
-      }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4"
+      style={{ background: "rgba(6,14,26,0.75)", backdropFilter: "blur(10px)", fontFamily: "'Sora',sans-serif" }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <motion.div
-        initial={{ y: 20, opacity: 0, scale: 0.98 }}
+        initial={{ y: 40, opacity: 0, scale: 0.98 }}
         animate={{ y: 0, opacity: 1, scale: 1 }}
-        exit={{ y: 10, opacity: 0 }}
-        style={{
-          background: "#fff",
-          borderRadius: 18,
-          width: "100%",
-          maxWidth: 720,
-          boxShadow: "0 30px 80px rgba(0,0,0,0.25)",
-          overflow: "hidden",
-        }}
+        exit={{ y: 20, opacity: 0 }}
+        className="bg-white w-full sm:max-w-2xl sm:rounded-[18px] rounded-t-[22px] shadow-[0_30px_80px_rgba(0,0,0,0.25)] flex flex-col overflow-hidden"
+        style={{ maxHeight: "92dvh" }}
       >
         {/* Banner */}
         <div
-          style={{
-            background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
-            padding: "18px 20px",
-            position: "relative",
-            display: "flex",
-            alignItems: "center",
-            gap: 16,
-            justifyContent: "space-between",
-          }}
+          className="flex items-center justify-between gap-3 px-4 py-3.5 shrink-0"
+          style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)` }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div
-              style={{
-                background: "rgba(255,255,255,0.18)",
-                borderRadius: 12,
-                padding: 10,
-                display: "flex",
-              }}
-            >
-              <Truck size={20} color="#fff" />
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="bg-white/20 rounded-xl p-2 flex shrink-0">
+              <Truck size={18} color="#fff" />
             </div>
-            <div>
-              <p
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: "rgba(255,255,255,0.85)",
-                  margin: 0,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.08em",
-                }}
-              >
+            <div className="min-w-0">
+              <p className="text-[9px] font-bold text-white/80 uppercase tracking-[0.08em] m-0">
                 Vehicle Record
               </p>
-              <p
-                style={{
-                  fontSize: 18,
-                  fontWeight: 800,
-                  color: "#fff",
-                  margin: "4px 0 0",
-                }}
-              >
-                {v.consigneeName || "Unknown"}
+              <p className="text-[16px] font-extrabold text-white m-0 truncate leading-tight mt-0.5">
+                {v.make || v.consigneeName || "Unknown"}
               </p>
             </div>
           </div>
-
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ textAlign: "right" }}>
-              {v.date && (
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: "rgba(255,255,255,0.9)",
-                    fontWeight: 700,
-                  }}
-                >
-                  {v.date}
-                </div>
-              )}
-              {v.company && (
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: "rgba(255,255,255,0.9)",
-                    fontWeight: 700,
-                  }}
-                >
-                  {tracker?.short || v.company}
-                </div>
-              )}
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="text-right hidden sm:block">
+              {v.date && <p className="text-[11px] text-white/90 font-bold m-0">{v.date}</p>}
+              {v.company && <p className="text-[11px] text-white/90 font-bold m-0">{tracker?.short || v.company}</p>}
             </div>
             <button
               onClick={onClose}
-              style={{
-                background: "rgba(255,255,255,0.12)",
-                border: "none",
-                borderRadius: 10,
-                padding: 8,
-                cursor: "pointer",
-                color: "#fff",
-                display: "flex",
-              }}
+              className="bg-white/10 hover:bg-white/20 border-none rounded-lg p-2 cursor-pointer text-white flex transition"
             >
               <X size={16} />
             </button>
           </div>
         </div>
 
-        {/* Image hero (optional) */}
-        {v.image && (
-          <div style={{ width: "100%", maxHeight: 320, overflow: "hidden" }}>
+        {/* Image gallery */}
+        {images.length > 0 && (
+          <div className="relative bg-[#0d1b2e] shrink-0">
             <img
-              src={v.image}
-              alt={v.consigneeName || "vehicle image"}
-              style={{
-                width: "100%",
-                height: 320,
-                objectFit: "cover",
-                display: "block",
-              }}
+              src={images[imgIdx]}
+              alt={v.make || "vehicle"}
+              className="w-full object-cover block"
+              style={{ maxHeight: 240 }}
             />
+            {images.length > 1 && (
+              <>
+                <button
+                  onClick={() => setImgIdx((i) => (i - 1 + images.length) % images.length)}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 border-none rounded-full p-1.5 cursor-pointer text-white flex transition"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <button
+                  onClick={() => setImgIdx((i) => (i + 1) % images.length)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 border-none rounded-full p-1.5 cursor-pointer text-white flex transition"
+                >
+                  <ChevronRight size={16} />
+                </button>
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                  {images.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setImgIdx(i)}
+                      className={`w-1.5 h-1.5 rounded-full border-none cursor-pointer transition ${i === imgIdx ? "bg-white" : "bg-white/40"}`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         )}
 
-        {/* Body */}
-        <div
-          style={{
-            padding: "14px 22px 18px",
-            maxHeight: "58vh",
-            overflowY: "auto",
-            display: "grid",
-            gridTemplateColumns: "1fr 320px",
-            gap: 18,
-          }}
-        >
+        {/* Body — scrollable */}
+        <div className="flex-1 overflow-y-auto px-4 py-4 grid grid-cols-1 sm:grid-cols-[1fr_220px] gap-4 sm:gap-5">
           <div>
+            <Row label="Consignee Name" value={v.consigneeName} />
+            <Row label="Make / Model" value={v.make} />
             <Row label="A Number" value={v.aNumber} />
             <Row label="C Number" value={v.cNumber} />
-            <Row label="Consignee Name" value={v.consigneeName} />
-            <Row
-              label="Chassis No(s)"
-              value={toDisplayString(v.chassisNo)}
-              mono
-            />
+            <Row label="Chassis No(s)" value={toDisplayString(v.chassisNo)} mono />
             <Row label="Duty" value={toDisplayString(v.duty)} mono />
-            <Row label="Make / Model" value={v.make} />
             <Row label="Shipping Company" value={v.company} />
             <Row label="Notes" value={v.note || v.notes} />
           </div>
-
-          <div style={{ borderLeft: "1px solid #f0f4ff", paddingLeft: 14 }}>
-            <div style={{ marginBottom: 12 }}>
-              <span
-                style={{
-                  display: "inline-block",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: "#9ab2cc",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.06em",
-                }}
-              >
-                Status
-              </span>
-              <div style={{ marginTop: 8 }}>
-                <span
-                  style={{ fontSize: 13, fontWeight: 800, color: "#0d1b2e" }}
-                >
-                  {v.status || "—"}
+          <div className="sm:border-l sm:border-[#f0f4ff] sm:pl-4 flex flex-col gap-4">
+            {v.date && (
+              <div>
+                <p className="text-[10px] font-bold text-[#9ab2cc] uppercase tracking-[0.08em] mb-1">Date</p>
+                <span className="bg-[#f0f6ff] border border-[#dce8f7] text-[#1565c0] text-[12px] font-bold px-2.5 py-1 rounded-md">
+                  {v.date}
                 </span>
               </div>
-            </div>
-
-            <div style={{ marginBottom: 12 }}>
-              <span
-                style={{
-                  display: "inline-block",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: "#9ab2cc",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.06em",
-                }}
-              >
-                Image
-              </span>
-              {v.image ? (
-                <div style={{ marginTop: 8 }}>
-                  <img
-                    src={v.image}
-                    alt="thumb"
-                    style={{
-                      width: "100%",
-                      borderRadius: 8,
-                      objectFit: "cover",
-                    }}
-                  />
-                </div>
-              ) : (
-                <div style={{ marginTop: 8, color: "#c7d7f5" }}>No image</div>
-              )}
-            </div>
-
-            <div style={{ marginTop: 8 }}>
+            )}
+            {v.company && (
+              <div>
+                <p className="text-[10px] font-bold text-[#9ab2cc] uppercase tracking-[0.08em] mb-1">Company</p>
+                <span
+                  className="text-[11px] font-bold px-2.5 py-1 rounded-full border"
+                  style={{ background: `${accent}18`, color: accent, borderColor: `${accent}33` }}
+                >
+                  {tracker?.short || v.company}
+                </span>
+              </div>
+            )}
+            {v.status && (
+              <div>
+                <p className="text-[10px] font-bold text-[#9ab2cc] uppercase tracking-[0.08em] mb-1">Status</p>
+                <p className="text-[13px] font-extrabold text-[#0d1b2e]">{v.status}</p>
+              </div>
+            )}
+            <div className="mt-auto">
               <AuditBadge record={v} isHardRestricted={false} />
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div
-          style={{
-            padding: "12px 22px",
-            borderTop: "1px solid #f0f4ff",
-            display: "flex",
-            gap: 8,
-            justifyContent: "flex-end",
-          }}
-        >
+        <div className="px-4 py-3 border-t border-[#f0f4ff] flex gap-2 justify-end shrink-0">
           {onEdit && (
             <button
               onClick={() => onEdit(v)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                background: "#e3f2fd",
-                border: "1px solid #bbdefb",
-                borderRadius: 10,
-                padding: "8px 14px",
-                cursor: "pointer",
-                fontSize: 13,
-                fontWeight: 700,
-                color: "#1565c0",
-              }}
+              className="flex items-center gap-1.5 bg-[#e3f2fd] hover:bg-[#bbdefb] border border-[#bbdefb] rounded-lg px-4 py-2 cursor-pointer text-[13px] font-bold text-[#1565c0] transition"
             >
               <Pencil size={13} /> Edit
             </button>
           )}
           <button
             onClick={onClose}
-            style={{
-              background: "#f7faff",
-              border: "1px solid #dce8f7",
-              borderRadius: 10,
-              padding: "8px 16px",
-              cursor: "pointer",
-              fontSize: 13,
-              fontWeight: 600,
-              color: "#5a7599",
-            }}
+            className="bg-[#f7faff] hover:bg-[#eef4ff] border border-[#dce8f7] rounded-lg px-4 py-2 cursor-pointer text-[13px] font-semibold text-[#5a7599] transition"
           >
             Close
           </button>

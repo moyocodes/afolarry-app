@@ -207,6 +207,90 @@ function OrderModal({ car, onClose }) {
 }
 
 // ─── Cars Page ────────────────────────────────────────────────────────────────
+function CarCard({ car, i, onOrder }) {
+  const imgs = car.images?.length ? car.images : car.image ? [car.image] : [];
+  const [idx, setIdx] = useState(0);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: i * 0.06 }}
+      whileHover={{ y: -5 }}
+      className="bg-white border border-[#dce8f7] rounded-2xl overflow-hidden shadow-[0_2px_12px_rgba(21,101,192,0.05)] relative"
+    >
+      <div className="relative aspect-[16/10] overflow-hidden bg-[#f7faff]">
+        {imgs.length > 0 ? (
+          <img
+            src={imgs[idx]}
+            alt={car.name}
+            className="w-full h-full object-cover block hover:scale-105 transition-transform duration-500"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-[#5a7599] text-[12px]">
+            No image
+          </div>
+        )}
+
+        {/* Status badge */}
+        <div className={`absolute top-2.5 left-2.5 text-white text-[9px] font-bold px-2.5 py-0.5 rounded-full tracking-[0.06em]
+          ${car.status === "available" ? "bg-[#2e7d32]" : car.status === "sold" ? "bg-[#c62828]" : "bg-[#e65100]"}`}>
+          {car.status === "available" ? "Available Now" : car.status === "sold" ? "Sold" : "Pre-Order"}
+        </div>
+
+        {/* Carousel controls */}
+        {imgs.length > 1 && (
+          <>
+            <button
+              onClick={(e) => { e.stopPropagation(); setIdx((n) => (n - 1 + imgs.length) % imgs.length); }}
+              className="absolute left-1.5 top-1/2 -translate-y-1/2 bg-black/45 hover:bg-black/65 border-none rounded-md text-white text-[18px] leading-none px-1.5 py-0.5 cursor-pointer transition z-10"
+              aria-label="Previous image"
+            >‹</button>
+            <button
+              onClick={(e) => { e.stopPropagation(); setIdx((n) => (n + 1) % imgs.length); }}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-black/45 hover:bg-black/65 border-none rounded-md text-white text-[18px] leading-none px-1.5 py-0.5 cursor-pointer transition z-10"
+              aria-label="Next image"
+            >›</button>
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-10">
+              {imgs.map((_, n) => (
+                <button
+                  key={n}
+                  onClick={(e) => { e.stopPropagation(); setIdx(n); }}
+                  className="w-1.5 h-1.5 rounded-full border-none cursor-pointer p-0 transition"
+                  style={{ background: n === idx ? "#fff" : "rgba(255,255,255,0.4)" }}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="p-5">
+        <p className="text-[14px] font-bold text-[#0d1b2e] mb-1">{car.name}</p>
+        <p className="text-[11px] text-[#5a7599] mb-0.5">Type: {car.type}</p>
+        <p className="text-[11px] text-[#5a7599] mb-3">Location: {car.location}</p>
+        {car.description && (
+          <p className="text-[11px] text-[#5a7599] font-light leading-relaxed mb-3 line-clamp-2">
+            {car.description}
+          </p>
+        )}
+        {car.preorderEnds && <Countdown endsAt={car.preorderEnds} />}
+        <p className="text-[17px] font-bold text-[#1565c0] mb-4">{fmt(car.price)}</p>
+        <motion.button
+          onClick={() => car.status !== "sold" && onOrder(car)}
+          disabled={car.status === "sold"}
+          className={`w-full border-none py-2.5 rounded-[9px] font-[Sora,sans-serif] text-[13px] font-bold transition
+            ${car.status === "sold"
+              ? "bg-[#e0e0e0] text-[#9e9e9e] cursor-not-allowed"
+              : "bg-[#1565c0] hover:bg-[#1255a8] text-white cursor-pointer"}`}
+        >
+          {car.status === "sold" ? "Unavailable" : "Pre-Order This Car"}
+        </motion.button>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function Cars() {
   const [user, setUser] = useState(null);
   const [cars, setCars] = useState([]);
@@ -383,55 +467,7 @@ export default function Cars() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {paginated.map((car, i) => (
-              <motion.div
-                key={car.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.06 }}
-                whileHover={{ y: -5 }}
-                className="bg-white border border-[#dce8f7] rounded-2xl overflow-hidden shadow-[0_2px_12px_rgba(21,101,192,0.05)] relative"
-              >
-                <div className="relative aspect-[16/10] overflow-hidden bg-[#f7faff]">
-                  {car.image ? (
-                    <img
-                      src={car.image}
-                      alt={car.name}
-                      className="w-full h-full object-cover block hover:scale-105 transition-transform duration-500"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-[#5a7599] text-[12px]">
-                      No image
-                    </div>
-                  )}
-                  <div className={`absolute top-2.5 left-2.5 text-white text-[9px] font-bold px-2.5 py-0.5 rounded-full tracking-[0.06em]
-                    ${car.status === "available" ? "bg-[#2e7d32]" : car.status === "sold" ? "bg-[#c62828]" : "bg-[#e65100]"}`}>
-                    {car.status === "available" ? "Available Now" : car.status === "sold" ? "Sold" : "Pre-Order"}
-                  </div>
-                </div>
-
-                <div className="p-5">
-                  <p className="text-[14px] font-bold text-[#0d1b2e] mb-1">{car.name}</p>
-                  <p className="text-[11px] text-[#5a7599] mb-0.5">Type: {car.type}</p>
-                  <p className="text-[11px] text-[#5a7599] mb-3">Location: {car.location}</p>
-                  {car.description && (
-                    <p className="text-[11px] text-[#5a7599] font-light leading-relaxed mb-3 line-clamp-2">
-                      {car.description}
-                    </p>
-                  )}
-                  {car.preorderEnds && <Countdown endsAt={car.preorderEnds} />}
-                  <p className="text-[17px] font-bold text-[#1565c0] mb-4">{fmt(car.price)}</p>
-                  <motion.button
-                    onClick={() => car.status !== "sold" && setOrderCar(car)}
-                    disabled={car.status === "sold"}
-                    className={`w-full border-none py-2.5 rounded-[9px] font-[Sora,sans-serif] text-[13px] font-bold transition
-                      ${car.status === "sold"
-                        ? "bg-[#e0e0e0] text-[#9e9e9e] cursor-not-allowed"
-                        : "bg-[#1565c0] hover:bg-[#1255a8] text-white cursor-pointer"}`}
-                  >
-                    {car.status === "sold" ? "Unavailable" : "Pre-Order This Car"}
-                  </motion.button>
-                </div>
-              </motion.div>
+              <CarCard key={car.id} car={car} i={i} onOrder={setOrderCar} />
             ))}
           </div>
         )}

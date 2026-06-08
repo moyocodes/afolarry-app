@@ -15,6 +15,7 @@ import {
   ChevronRight,
   MapPin,
   Clock,
+  Ship,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import PageHeader from "../components/PageHeader";
@@ -205,7 +206,6 @@ export default function TrackShipment() {
       {/* ── MAIN BODY ── */}
       <section style={{ padding: "3rem 1.5rem 5rem", maxWidth: 1140, margin: "0 auto" }}>
 
-        {/* grid: left trackers + right vehicles */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 420px", gap: "1.75rem", alignItems: "start" }}>
 
           {/* ─ LEFT: TRACKERS ─ */}
@@ -215,7 +215,6 @@ export default function TrackShipment() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
             >
-              {/* heading row */}
               <div style={{ marginBottom: "2rem" }}>
                 <p style={styles.eyebrow}>Select a carrier</p>
                 <h2 style={styles.sectionTitle}>Where is your shipment?</h2>
@@ -224,10 +223,10 @@ export default function TrackShipment() {
                 </p>
               </div>
 
-              {/* tracker cards */}
               <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
                 {trackers.map((tracker, i) => {
                   const isHovered = hoveredTracker === tracker.id;
+                  const isInternal = !!tracker.internalPath;
                   return (
                     <motion.button
                       key={tracker.id}
@@ -250,7 +249,7 @@ export default function TrackShipment() {
                           : "0 2px 10px rgba(0,0,0,0.04)",
                       }}
                     >
-                      {/* badge */}
+                      {/* icon badge — Ship for internal AFL, Globe for external */}
                       <motion.div
                         animate={{ scale: isHovered ? 1.06 : 1 }}
                         transition={{ duration: 0.2 }}
@@ -260,7 +259,10 @@ export default function TrackShipment() {
                           boxShadow: `0 6px 20px ${tracker.accent}40`,
                         }}
                       >
-                        {tracker.short}
+                        {isInternal
+                          ? <Ship size={22} strokeWidth={1.8} color={WHITE} />
+                          : <Globe size={22} strokeWidth={1.8} color={WHITE} />
+                        }
                       </motion.div>
 
                       {/* info */}
@@ -272,8 +274,8 @@ export default function TrackShipment() {
                             background: isHovered ? `${tracker.accent}15` : BLUE_LIGHT,
                             color: isHovered ? tracker.accent : BLUE,
                           }}>
-                            {tracker.internalPath ? <Anchor size={10} /> : <Globe size={10} />}
-                            {tracker.internalPath ? "AFL Page" : "External"}
+                            {isInternal ? <Anchor size={10} /> : <Globe size={10} />}
+                            {isInternal ? "AFL Page" : "External"}
                           </span>
                         </div>
                         <p style={styles.trackerDesc}>{tracker.desc}</p>
@@ -285,7 +287,7 @@ export default function TrackShipment() {
                         transition={{ duration: 0.2 }}
                         style={{ display: "flex", alignItems: "center", gap: 4, color: isHovered ? tracker.accent : SLATE, flexShrink: 0 }}
                       >
-                        {!tracker.internalPath && <ExternalLink size={12} />}
+                        {!isInternal && <ExternalLink size={12} />}
                         <ArrowRight size={17} />
                       </motion.div>
                     </motion.button>
@@ -293,7 +295,6 @@ export default function TrackShipment() {
                 })}
               </div>
 
-              {/* hint row */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -317,14 +318,15 @@ export default function TrackShipment() {
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
             style={styles.sidebar}
           >
-            {/* sidebar header */}
             <div style={styles.sidebarHeader}>
               <div style={styles.sidebarIconWrap}>
                 <Truck size={16} strokeWidth={2} color={WHITE} />
               </div>
               <div>
-                <h3 style={styles.sidebarTitle}>Delivered Vehicles</h3>
-                <p style={styles.sidebarSub}>Public records — admin directory</p>
+                <h3 style={styles.sidebarTitle}>Vehicle Records</h3>
+                <p style={styles.sidebarSub}>
+                  {!loadingVehicles && `${filteredVehicles.length} vehicle${filteredVehicles.length !== 1 ? "s" : ""}${q ? " found" : " on record"}`}
+                </p>
               </div>
             </div>
 
@@ -335,10 +337,10 @@ export default function TrackShipment() {
               <div style={styles.searchWrap}>
                 <Search size={14} color={SLATE} style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
                 <input
-                  aria-label="Search delivered vehicles"
+                  aria-label="Search vehicles"
                   value={vehicleSearch}
                   onChange={(e) => setVehicleSearch(e.target.value)}
-                  placeholder="Search VIN, make, model, chassis…"
+                  placeholder="Search make, chassis…"
                   style={styles.searchInput}
                 />
               </div>
@@ -356,13 +358,6 @@ export default function TrackShipment() {
               )}
             </div>
 
-            {/* count */}
-            {!loadingVehicles && (
-              <p style={styles.countLabel}>
-                {filteredVehicles.length} vehicle{filteredVehicles.length !== 1 ? "s" : ""}{q ? " found" : " total"}
-              </p>
-            )}
-
             {/* vehicle list */}
             <div style={styles.vehicleList}>
               {loadingVehicles ? (
@@ -379,7 +374,7 @@ export default function TrackShipment() {
                   </p>
                 </div>
               ) : (
-                filteredVehicles.slice(0, 14).map((v, i) => {
+                filteredVehicles.map((v, i) => {
                   const { color: stColor, label: stLabel } = statusMeta(v.status);
                   return (
                     <motion.div
@@ -390,14 +385,16 @@ export default function TrackShipment() {
                       style={styles.vehicleCard}
                       whileHover={{ backgroundColor: BLUE_LIGHT }}
                     >
-                      {/* thumb */}
+                      {/* thumb — image if available, Truck icon fallback */}
                       <div style={styles.vehicleThumb}>
                         {v.image ? (
-                          <img src={v.image} alt={v.make || "vehicle"} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 10 }} />
+                          <img
+                            src={v.image}
+                            alt={v.make || "vehicle"}
+                            style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 10 }}
+                          />
                         ) : (
-                          <span style={{ fontSize: 13, fontWeight: 700, color: BLUE, letterSpacing: "0.02em" }}>
-                            {((v.make || "?").toString()).slice(0, 2).toUpperCase()}
-                          </span>
+                          <Truck size={20} strokeWidth={1.6} color={BLUE} />
                         )}
                       </div>
 
@@ -416,23 +413,16 @@ export default function TrackShipment() {
                           </span>
                         </div>
                         <p style={styles.vehicleChassis}>{toDisplayString(v.chassisNo)}</p>
-                        <p style={styles.vehicleConsignee}>{v.consigneeName || v.company || "—"}</p>
+                        <p style={styles.vehicleConsignee}>{v.company || "—"}</p>
                       </div>
 
-                      {/* status */}
+                      {/* status dot */}
                       <div style={{ ...styles.statusDot, background: stColor }} title={stLabel} />
                     </motion.div>
                   );
                 })
               )}
             </div>
-
-            {/* sidebar footer */}
-            {!loadingVehicles && filteredVehicles.length > 14 && (
-              <p style={{ fontSize: 12, color: SLATE, textAlign: "center", paddingTop: 10 }}>
-                Showing 14 of {filteredVehicles.length} — refine your search
-              </p>
-            )}
           </motion.aside>
         </div>
 
@@ -492,7 +482,7 @@ export default function TrackShipment() {
   );
 }
 
-/* ─── styles object ───────────────────────────────────────────── */
+/* ─── styles ──────────────────────────────────────────────────── */
 const styles = {
   heroBtnPrimary: {
     fontSize: 14, fontWeight: 700, color: WHITE,
@@ -506,7 +496,6 @@ const styles = {
     background: WHITE, padding: "12px 24px",
     borderRadius: 12, textDecoration: "none",
   },
-
   eyebrow: {
     fontSize: 11, fontWeight: 700, color: BLUE,
     letterSpacing: "0.13em", textTransform: "uppercase",
@@ -519,7 +508,6 @@ const styles = {
   sectionSub: {
     fontSize: 15, color: SLATE, fontWeight: 300, lineHeight: 1.8,
   },
-
   trackerCard: {
     width: "100%", textAlign: "left",
     background: WHITE, borderRadius: 20,
@@ -529,9 +517,9 @@ const styles = {
   },
   trackerBadge: {
     width: 54, height: 54, borderRadius: 15,
-    color: WHITE, display: "flex", alignItems: "center",
-    justifyContent: "center", fontSize: 12, fontWeight: 800,
-    flexShrink: 0, letterSpacing: "0.06em",
+    display: "flex", alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
   },
   trackerName: {
     fontSize: 15, fontWeight: 800, color: NAVY,
@@ -551,17 +539,12 @@ const styles = {
     display: "flex", alignItems: "flex-start", gap: 8, marginTop: "1.25rem",
     fontSize: 12, color: SLATE, lineHeight: 1.6, padding: "0 4px",
   },
-
-  /* sidebar */
   sidebar: {
-    background: WHITE,
-    border: `1px solid ${BORDER}`,
-    borderRadius: 20,
-    padding: "1.25rem",
+    background: WHITE, border: `1px solid ${BORDER}`,
+    borderRadius: 20, padding: "1.25rem",
     height: "fit-content",
     boxShadow: "0 8px 36px rgba(16,85,204,0.07)",
-    position: "sticky",
-    top: "1.5rem",
+    position: "sticky", top: "1.5rem",
   },
   sidebarHeader: {
     display: "flex", alignItems: "center", gap: 12, marginBottom: 0,
@@ -580,8 +563,6 @@ const styles = {
   sidebarDivider: {
     height: 1, background: BORDER, margin: "1rem 0 0.75rem",
   },
-
-  /* search */
   searchRow: {
     display: "flex", gap: 8, marginBottom: "0.5rem",
   },
@@ -600,15 +581,8 @@ const styles = {
     color: SLATE, cursor: "pointer", display: "flex",
     alignItems: "center",
   },
-  countLabel: {
-    fontSize: 11, color: SLATE, marginBottom: "0.5rem",
-    fontWeight: 500, letterSpacing: "0.04em",
-  },
-
-  /* vehicle list */
   vehicleList: {
-    maxHeight: 560, overflowY: "auto",
-    paddingRight: 2,
+    maxHeight: 560, overflowY: "auto", paddingRight: 2,
   },
   vehicleCard: {
     display: "flex", alignItems: "center", gap: 10,
@@ -627,8 +601,7 @@ const styles = {
     overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
   },
   vehicleChassis: {
-    fontSize: 11, color: SLATE, marginTop: 2,
-    fontFamily: "monospace",
+    fontSize: 11, color: SLATE, marginTop: 2, fontFamily: "monospace",
   },
   vehicleConsignee: {
     fontSize: 11, color: SLATE, marginTop: 2,
@@ -642,8 +615,6 @@ const styles = {
   statusDot: {
     width: 8, height: 8, borderRadius: "50%", flexShrink: 0,
   },
-
-  /* loading skeleton */
   loadingWrap: { display: "flex", flexDirection: "column", gap: 8 },
   skeletonCard: {
     height: 58, borderRadius: 12,
@@ -651,20 +622,14 @@ const styles = {
     backgroundSize: "200% 100%",
     animation: "shimmer 1.4s infinite",
   },
-
-  /* empty */
   emptyState: {
     display: "flex", flexDirection: "column",
     alignItems: "center", justifyContent: "center",
     padding: "2rem 0",
   },
-
-  /* help bar */
   helpBar: {
-    marginTop: "2rem",
-    background: NAVY,
-    borderRadius: 20,
-    padding: "1.75rem 2rem",
+    marginTop: "2rem", background: NAVY,
+    borderRadius: 20, padding: "1.75rem 2rem",
     display: "flex", alignItems: "center",
     justifyContent: "space-between",
     flexWrap: "wrap", gap: "1rem",
