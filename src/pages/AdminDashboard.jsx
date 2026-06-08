@@ -4257,6 +4257,18 @@ function ScheduleSection({ readOnly = false, currentUser, isHardRestricted }) {
           <h2 className="text-[18px] font-bold text-[#0d1b2e]">
             {editId ? "Edit Schedule" : "Add Schedule"}
           </h2>
+          {editId &&
+            (() => {
+              const current = schedules.find((x) => x.id === editId);
+              return current ? (
+                <div style={{ marginLeft: 12 }}>
+                  <AuditBadge
+                    record={current}
+                    isHardRestricted={isHardRestricted}
+                  />
+                </div>
+              ) : null;
+            })()}
         </div>
         <form className="max-w-3xl flex flex-col gap-5" onSubmit={save}>
           <div className="bg-white border border-[#dce8f7] rounded-2xl p-6 flex flex-col gap-4">
@@ -4439,6 +4451,12 @@ function ScheduleSection({ readOnly = false, currentUser, isHardRestricted }) {
                 <p className="text-[12px] text-[#5a7599] mt-1">
                   {item.note || item.url}
                 </p>
+                <div style={{ marginTop: 8 }}>
+                  <AuditBadge
+                    record={item}
+                    isHardRestricted={isHardRestricted}
+                  />
+                </div>
                 <a
                   href={item.url}
                   target="_blank"
@@ -4542,15 +4560,15 @@ function ViewVehicleModal({ vehicle: v, trackers = [], onClose, onEdit }) {
       }}
     >
       <motion.div
-        initial={{ y: 20, opacity: 0, scale: 0.97 }}
+        initial={{ y: 20, opacity: 0, scale: 0.98 }}
         animate={{ y: 0, opacity: 1, scale: 1 }}
         exit={{ y: 10, opacity: 0 }}
         style={{
           background: "#fff",
-          borderRadius: 20,
+          borderRadius: 18,
           width: "100%",
-          maxWidth: 460,
-          boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+          maxWidth: 720,
+          boxShadow: "0 30px 80px rgba(0,0,0,0.25)",
           overflow: "hidden",
         }}
       >
@@ -4558,123 +4576,198 @@ function ViewVehicleModal({ vehicle: v, trackers = [], onClose, onEdit }) {
         <div
           style={{
             background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
-            padding: "20px 24px 16px",
+            padding: "18px 20px",
             position: "relative",
+            display: "flex",
+            alignItems: "center",
+            gap: 16,
+            justifyContent: "space-between",
           }}
         >
-          <button
-            onClick={onClose}
-            style={{
-              position: "absolute",
-              top: 14,
-              right: 14,
-              background: "rgba(255,255,255,0.2)",
-              border: "none",
-              borderRadius: 8,
-              padding: 6,
-              cursor: "pointer",
-              color: "#fff",
-              display: "flex",
-            }}
-          >
-            <X size={14} />
-          </button>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div
               style={{
                 background: "rgba(255,255,255,0.18)",
-                borderRadius: 10,
-                padding: 8,
+                borderRadius: 12,
+                padding: 10,
                 display: "flex",
               }}
             >
-              <Truck size={18} color="#fff" />
+              <Truck size={20} color="#fff" />
             </div>
             <div>
               <p
                 style={{
                   fontSize: 11,
                   fontWeight: 700,
-                  color: "rgba(255,255,255,0.7)",
+                  color: "rgba(255,255,255,0.85)",
                   margin: 0,
                   textTransform: "uppercase",
-                  letterSpacing: "0.1em",
+                  letterSpacing: "0.08em",
                 }}
               >
                 Vehicle Record
               </p>
               <p
                 style={{
-                  fontSize: 15,
+                  fontSize: 18,
                   fontWeight: 800,
                   color: "#fff",
-                  margin: "2px 0 0",
+                  margin: "4px 0 0",
                 }}
               >
                 {v.consigneeName || "Unknown"}
               </p>
             </div>
           </div>
-          {/* Badges row */}
-          <div
-            style={{ display: "flex", gap: 6, marginTop: 12, flexWrap: "wrap" }}
-          >
-            {v.date && (
-              <span
-                style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  background: "rgba(255,255,255,0.2)",
-                  color: "#fff",
-                  padding: "2px 8px",
-                  borderRadius: 999,
-                }}
-              >
-                {v.date}
-              </span>
-            )}
-            {v.company && (
-              <span
-                style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  background: "rgba(255,255,255,0.2)",
-                  color: "#fff",
-                  padding: "2px 8px",
-                  borderRadius: 999,
-                }}
-              >
-                {tracker?.short || v.company}
-              </span>
-            )}
+
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ textAlign: "right" }}>
+              {v.date && (
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: "rgba(255,255,255,0.9)",
+                    fontWeight: 700,
+                  }}
+                >
+                  {v.date}
+                </div>
+              )}
+              {v.company && (
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: "rgba(255,255,255,0.9)",
+                    fontWeight: 700,
+                  }}
+                >
+                  {tracker?.short || v.company}
+                </div>
+              )}
+            </div>
+            <button
+              onClick={onClose}
+              style={{
+                background: "rgba(255,255,255,0.12)",
+                border: "none",
+                borderRadius: 10,
+                padding: 8,
+                cursor: "pointer",
+                color: "#fff",
+                display: "flex",
+              }}
+            >
+              <X size={16} />
+            </button>
           </div>
         </div>
+
+        {/* Image hero (optional) */}
+        {v.image && (
+          <div style={{ width: "100%", maxHeight: 320, overflow: "hidden" }}>
+            <img
+              src={v.image}
+              alt={v.consigneeName || "vehicle image"}
+              style={{
+                width: "100%",
+                height: 320,
+                objectFit: "cover",
+                display: "block",
+              }}
+            />
+          </div>
+        )}
 
         {/* Body */}
         <div
           style={{
-            padding: "8px 24px 20px",
-            maxHeight: "60vh",
+            padding: "14px 22px 18px",
+            maxHeight: "58vh",
             overflowY: "auto",
+            display: "grid",
+            gridTemplateColumns: "1fr 320px",
+            gap: 18,
           }}
         >
-          <Row label="A Number" value={v.aNumber} />
-          <Row label="C Number" value={v.cNumber} />
-          <Row label="Consignee Name" value={v.consigneeName} />
-          <Row
-            label="Chassis No(s)"
-            value={toDisplayString(v.chassisNo)}
-            mono
-          />
-          <Row label="Duty" value={toDisplayString(v.duty)} mono />
-          <Row label="Make / Model" value={v.make} />
-          <Row label="Shipping Company" value={v.company} />
+          <div>
+            <Row label="A Number" value={v.aNumber} />
+            <Row label="C Number" value={v.cNumber} />
+            <Row label="Consignee Name" value={v.consigneeName} />
+            <Row
+              label="Chassis No(s)"
+              value={toDisplayString(v.chassisNo)}
+              mono
+            />
+            <Row label="Duty" value={toDisplayString(v.duty)} mono />
+            <Row label="Make / Model" value={v.make} />
+            <Row label="Shipping Company" value={v.company} />
+            <Row label="Notes" value={v.note || v.notes} />
+          </div>
+
+          <div style={{ borderLeft: "1px solid #f0f4ff", paddingLeft: 14 }}>
+            <div style={{ marginBottom: 12 }}>
+              <span
+                style={{
+                  display: "inline-block",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: "#9ab2cc",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                }}
+              >
+                Status
+              </span>
+              <div style={{ marginTop: 8 }}>
+                <span
+                  style={{ fontSize: 13, fontWeight: 800, color: "#0d1b2e" }}
+                >
+                  {v.status || "—"}
+                </span>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 12 }}>
+              <span
+                style={{
+                  display: "inline-block",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: "#9ab2cc",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                }}
+              >
+                Image
+              </span>
+              {v.image ? (
+                <div style={{ marginTop: 8 }}>
+                  <img
+                    src={v.image}
+                    alt="thumb"
+                    style={{
+                      width: "100%",
+                      borderRadius: 8,
+                      objectFit: "cover",
+                    }}
+                  />
+                </div>
+              ) : (
+                <div style={{ marginTop: 8, color: "#c7d7f5" }}>No image</div>
+              )}
+            </div>
+
+            <div style={{ marginTop: 8 }}>
+              <AuditBadge record={v} isHardRestricted={false} />
+            </div>
+          </div>
         </div>
 
         {/* Footer */}
         <div
           style={{
-            padding: "12px 24px",
+            padding: "12px 22px",
             borderTop: "1px solid #f0f4ff",
             display: "flex",
             gap: 8,
@@ -4687,18 +4780,18 @@ function ViewVehicleModal({ vehicle: v, trackers = [], onClose, onEdit }) {
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 5,
+                gap: 6,
                 background: "#e3f2fd",
                 border: "1px solid #bbdefb",
                 borderRadius: 10,
-                padding: "7px 14px",
+                padding: "8px 14px",
                 cursor: "pointer",
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: 700,
                 color: "#1565c0",
               }}
             >
-              <Pencil size={12} /> Edit
+              <Pencil size={13} /> Edit
             </button>
           )}
           <button
@@ -4707,9 +4800,9 @@ function ViewVehicleModal({ vehicle: v, trackers = [], onClose, onEdit }) {
               background: "#f7faff",
               border: "1px solid #dce8f7",
               borderRadius: 10,
-              padding: "7px 16px",
+              padding: "8px 16px",
               cursor: "pointer",
-              fontSize: 12,
+              fontSize: 13,
               fontWeight: 600,
               color: "#5a7599",
             }}
