@@ -18,6 +18,7 @@ import MailDashboard from "./pages/MailDashboard";
 import AdminShield from "./pages/AdminShield";
 import AdminDashboard from "./pages/AdminDashboard";
 import PublicTrack from "./pages/PublicTrack";
+import VehicleDetail from "./pages/VehicleDetail";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import ShipmentsAdmin from "./pages/ShipmentsAdmin";
@@ -57,6 +58,7 @@ function Layout() {
           <Route path="/schedules" element={<Schedules />} />
           <Route path="/cars" element={<Cars />} />
           <Route path="/track" element={<TrackShipment />} />
+          <Route path="/vehicle/:id" element={<VehicleDetail />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />

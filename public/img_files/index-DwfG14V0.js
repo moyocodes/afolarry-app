@@ -14274,7 +14274,7 @@ function og() {
                             }),
                             u.jsx("p", {
                               style: { color: "var(--gray)" },
-                              children: "afolaraylimited@gmail.com",
+                              children: "contact@afolaray.com",
                             }),
                           ],
                         }),
@@ -15926,37 +15926,35 @@ function _g() {
                         gap: "6px",
                         marginBottom: "10px",
                       },
-                      children: f.images
-                        .slice(0, 4)
-                        .map((E, w) =>
-                          u.jsx(
-                            "button",
-                            {
-                              type: "button",
-                              onClick: () => re(f, w),
-                              style: {
-                                border: "1px solid #cbd5e1",
-                                borderRadius: "6px",
-                                padding: 0,
-                                overflow: "hidden",
-                                cursor: "pointer",
-                                width: "56px",
-                                height: "42px",
-                                background: "#fff",
-                              },
-                              children: u.jsx("img", {
-                                src: E,
-                                alt: `${f.name} preview ${w + 1}`,
-                                style: {
-                                  width: "100%",
-                                  height: "100%",
-                                  objectFit: "cover",
-                                },
-                              }),
+                      children: f.images.slice(0, 4).map((E, w) =>
+                        u.jsx(
+                          "button",
+                          {
+                            type: "button",
+                            onClick: () => re(f, w),
+                            style: {
+                              border: "1px solid #cbd5e1",
+                              borderRadius: "6px",
+                              padding: 0,
+                              overflow: "hidden",
+                              cursor: "pointer",
+                              width: "56px",
+                              height: "42px",
+                              background: "#fff",
                             },
-                            `${f.id}-thumb-${w}`,
-                          ),
+                            children: u.jsx("img", {
+                              src: E,
+                              alt: `${f.name} preview ${w + 1}`,
+                              style: {
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                              },
+                            }),
+                          },
+                          `${f.id}-thumb-${w}`,
                         ),
+                      ),
                     }),
                   u.jsx("span", {
                     className: `car-badge ${f.availability === "Available" ? "available" : "preorder"}`,
@@ -17343,8 +17341,8 @@ function wg({ children: s }) {
                           children: "+2347033576017",
                         }),
                         u.jsx("a", {
-                          href: "mailto:afolaraylimited@gmail.com",
-                          children: "afolaraylimited@gmail.com",
+                          href: "mailto:contact@afolaray.com",
+                          children: "contact@afolaray.com",
                         }),
                       ],
                     }),

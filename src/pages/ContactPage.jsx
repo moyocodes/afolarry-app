@@ -112,8 +112,8 @@ export default function ContactPage() {
               {
                 icon: <Mail size={16} color="#42a5f5" />,
                 label: "Email",
-                val: "afolaraylimited@gmail.com",
-                href: "mailto:afolaraylimited@gmail.com",
+                val: "contact@afolaray.com",
+                href: "mailto:contact@afolaray.com",
               },
             ].map((item) => (
               <div

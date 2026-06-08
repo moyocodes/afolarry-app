@@ -224,7 +224,7 @@ export default function Footer() {
               +234 703 357 6017
             </a>
             <a
-              href="mailto:afolaraylimited@gmail.com"
+              href="mailto:contact@afolaray.com"
               style={{
                 display: "block",
                 fontSize: "12px",
@@ -234,7 +234,7 @@ export default function Footer() {
                 wordBreak: "break-all",
               }}
             >
-              afolaraylimited@gmail.com
+              contact@afolaray.com
             </a>
           </div>
         </div>

@@ -50,8 +50,8 @@ const contactItems = [
   {
     Icon: Mail,
     label: "Email",
-    val: "afolaraylimited@gmail.com",
-    href: "mailto:afolaraylimited@gmail.com",
+    val: "contact@afolaray.com",
+    href: "mailto:contact@afolaray.com",
   },
 ];
 
