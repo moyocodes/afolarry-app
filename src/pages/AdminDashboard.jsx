@@ -5602,285 +5602,156 @@ function VehiclesSection({
           )}
         </div>
       ) : (
-        <div
-          style={{
-            background: "#fff",
-            border: "1px solid #dce8f7",
-            borderRadius: 16,
-            overflow: "hidden",
-          }}
-        >
-          <div style={{ overflowX: "auto" }}>
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                fontFamily: "'Sora',sans-serif",
-                minWidth: 860,
-              }}
-            >
-              <thead>
-                <tr>
-                  <th style={{ ...th, borderRadius: "16px 0 0 0" }}>Date</th>
-                  <th style={th}>A / C No.</th>
-                  <th style={th}>Consignee</th>
-                  <th style={th}>Chassis No</th>
-                  <th style={th}>Make / Model</th>
-                  <th style={th}>Duty</th>
-                  <th style={th}>Company</th>
-                  {!readOnly && (
-                    <th
-                      style={{
-                        ...th,
-                        borderRadius: "0 16px 0 0",
-                        textAlign: "right",
-                      }}
-                    >
-                      Actions
-                    </th>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+          {paged.map((v) => {
+            const tracker = trackers.find((t) => t.name === v.company);
+            const accent = tracker?.accent || "#1565c0";
+            const chassis = toDisplayString(v.chassisNo);
+            const duty = toDisplayString(v.duty);
+            return (
+              <div
+                key={v.id}
+                className="bg-white border border-[#dce8f7] rounded-2xl overflow-hidden shadow-[0_2px_10px_rgba(21,101,192,0.05)] flex flex-col"
+              >
+                {/* Image */}
+                <div className="aspect-[16/9] bg-[#f7faff] overflow-hidden relative shrink-0">
+                  {v.image ? (
+                    <img
+                      src={v.image}
+                      alt={v.make || "vehicle"}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 text-[#c7d7f5]">
+                      <Truck size={28} />
+                      <span className="text-[11px] font-medium">No photo</span>
+                    </div>
                   )}
-                </tr>
-              </thead>
-              <tbody>
-                {paged.map((v, idx) => (
-                  <tr
-                    key={v.id}
-                    style={{
-                      background: idx % 2 === 0 ? "#fff" : "#fafcff",
-                    }}
-                  >
-                    <td style={td}>
-                      {v.date ? (
-                        <span
-                          style={{
-                            fontSize: 11,
-                            fontWeight: 600,
-                            color: "#1565c0",
-                            background: "#f0f6ff",
-                            border: "1px solid #dce8f7",
-                            borderRadius: 6,
-                            padding: "2px 8px",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {v.date}
-                        </span>
-                      ) : (
-                        <span style={{ color: "#c7d7f5" }}>—</span>
-                      )}
-                    </td>
-                    <td style={td}>
+                  {v.images?.length > 1 && (
+                    <span className="absolute top-2 right-2 bg-black/50 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+                      {v.images.length} photos
+                    </span>
+                  )}
+                  {v.date && (
+                    <span className="absolute top-2 left-2 bg-white/90 text-[#1565c0] text-[9px] font-bold px-2 py-0.5 rounded-full border border-[#dce8f7]">
+                      {v.date}
+                    </span>
+                  )}
+                </div>
+
+                {/* Body */}
+                <div className="p-4 flex flex-col gap-3 flex-1">
+                  {/* Make + company */}
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-[15px] font-bold text-[#0d1b2e] leading-tight truncate">
+                      {v.make || <span className="text-[#c7d7f5]">Unknown</span>}
+                    </p>
+                    {v.company && (
+                      <span
+                        className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full border"
+                        style={{
+                          background: `${accent}18`,
+                          color: accent,
+                          borderColor: `${accent}33`,
+                        }}
+                      >
+                        {tracker?.short || v.company}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Consignee */}
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-[#e3f2fd] flex items-center justify-center shrink-0">
+                      <span className="text-[#1565c0] text-[10px] font-bold">
+                        {(v.consigneeName || "?")[0].toUpperCase()}
+                      </span>
+                    </div>
+                    <p className="text-[12px] font-semibold text-[#0d1b2e] truncate">
+                      {v.consigneeName || <span className="text-[#c7d7f5] font-normal">No consignee</span>}
+                    </p>
+                  </div>
+
+                  {/* Reference numbers */}
+                  {(v.aNumber || v.cNumber) && (
+                    <div className="flex flex-wrap gap-1.5">
                       {v.aNumber && (
-                        <p
-                          style={{
-                            margin: 0,
-                            fontSize: 11,
-                            fontWeight: 700,
-                            color: "#0d1b2e",
-                          }}
-                        >
+                        <span className="bg-[#f0f6ff] border border-[#dce8f7] text-[#1565c0] text-[10px] font-bold px-2 py-0.5 rounded-md">
                           A: {v.aNumber}
-                        </p>
+                        </span>
                       )}
                       {v.cNumber && (
-                        <p
-                          style={{
-                            margin: "2px 0 0",
-                            fontSize: 11,
-                            color: "#5a7599",
-                          }}
-                        >
+                        <span className="bg-[#f7faff] border border-[#dce8f7] text-[#5a7599] text-[10px] font-semibold px-2 py-0.5 rounded-md">
                           C: {v.cNumber}
-                        </p>
+                        </span>
                       )}
-                      {!v.aNumber && !v.cNumber && (
-                        <span style={{ color: "#c7d7f5" }}>—</span>
-                      )}
-                    </td>
-                    <td style={{ ...td, maxWidth: 180 }}>
-                      <p
-                        style={{
-                          margin: 0,
-                          fontWeight: 600,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {v.consigneeName || "—"}
-                      </p>
-                      <div style={{ marginTop: 6 }}>
-                        <AuditBadge
-                          record={v}
-                          isHardRestricted={isHardRestricted}
-                        />
+                    </div>
+                  )}
+
+                  {/* Chassis + Duty */}
+                  <div className="flex flex-col gap-1 text-[11px]">
+                    {chassis && (
+                      <div className="flex gap-1.5 items-baseline">
+                        <span className="text-[#5a7599] font-medium shrink-0">Chassis:</span>
+                        <span className="font-mono text-[#0d1b2e] truncate" title={chassis}>
+                          {chassis}
+                        </span>
                       </div>
-                    </td>
-                    <td style={{ ...td, maxWidth: 160 }}>
-                      <p
-                        style={{
-                          margin: 0,
-                          fontFamily: "monospace",
-                          fontSize: 11,
-                          color: "#5a7599",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                        title={toDisplayString(v.chassisNo)}
-                      >
-                        {toDisplayString(v.chassisNo)}
-                      </p>
-                    </td>
-                    <td style={td}>
-                      <p style={{ margin: 0, fontWeight: 600 }}>
-                        {v.make || "—"}
-                      </p>
-                    </td>
-                    <td style={{ ...td, maxWidth: 160 }}>
-                      {v.duty ? (
-                        <p
-                          style={{
-                            margin: 0,
-                            fontFamily: "monospace",
-                            fontSize: 11,
-                            color: "#2e7d32",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                          title={toDisplayString(v.duty)}
-                        >
-                          {toDisplayString(v.duty)}
-                        </p>
-                      ) : (
-                        <span style={{ color: "#c7d7f5" }}>—</span>
-                      )}
-                    </td>
-                    <td style={td}>
-                      {v.company ? (
-                        (() => {
-                          const tracker = trackers.find(
-                            (t) => t.name === v.company,
-                          );
-                          const accent = tracker?.accent || "#1565c0";
-                          return (
-                            <span
-                              style={{
-                                fontSize: 10,
-                                fontWeight: 700,
-                                padding: "3px 8px",
-                                borderRadius: 999,
-                                background: `${accent}18`,
-                                color: accent,
-                                border: `1px solid ${accent}33`,
-                              }}
-                            >
-                              {tracker?.short || v.company}
-                            </span>
-                          );
-                        })()
-                      ) : (
-                        <span style={{ color: "#c7d7f5" }}>—</span>
-                      )}
-                    </td>
-                    <td style={{ ...td, textAlign: "right" }}>
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: 6,
-                          justifyContent: "flex-end",
-                        }}
-                      >
+                    )}
+                    {duty && (
+                      <div className="flex gap-1.5 items-baseline">
+                        <span className="text-[#5a7599] font-medium shrink-0">Duty:</span>
+                        <span className="font-mono text-[#2e7d32] truncate" title={duty}>
+                          {duty}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <AuditBadge record={v} isHardRestricted={isHardRestricted} />
+
+                  {/* Actions */}
+                  <div className="flex gap-2 mt-auto pt-1">
+                    <button
+                      onClick={() => setViewingVehicle(v)}
+                      className="flex-1 flex items-center justify-center gap-1.5 bg-[#e3f2fd] hover:bg-[#bbdefb] border-none rounded-lg py-2 text-[#1565c0] text-[12px] font-semibold cursor-pointer transition"
+                    >
+                      <Eye size={12} /> View
+                    </button>
+                    {!readOnly && (
+                      <>
                         <button
-                          onClick={() => setViewingVehicle(v)}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 4,
-                            background: "#f0f6ff",
-                            border: "1px solid #dce8f7",
-                            borderRadius: 8,
-                            padding: "5px 10px",
-                            cursor: "pointer",
-                            fontSize: 11,
-                            fontWeight: 700,
-                            color: "#1565c0",
-                          }}
+                          onClick={() => startEdit(v)}
+                          className="flex-1 flex items-center justify-center gap-1.5 bg-[#f0f6ff] hover:bg-[#dce8f7] border border-[#dce8f7] rounded-lg py-2 text-[#1565c0] text-[12px] font-semibold cursor-pointer transition"
                         >
-                          <Eye size={11} /> View
+                          <Pencil size={12} /> Edit
                         </button>
-                        {!readOnly && (
-                          <>
-                            <button
-                              onClick={() => startEdit(v)}
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 4,
-                                background: "#f0f6ff",
-                                border: "1px solid #dce8f7",
-                                borderRadius: 8,
-                                padding: "5px 10px",
-                                cursor: "pointer",
-                                fontSize: 11,
-                                fontWeight: 700,
-                                color: "#1565c0",
-                              }}
-                            >
-                              <Pencil size={11} /> Edit
-                            </button>
-                            {!isHardRestricted && (
-                              <button
-                                onClick={() => remove(v.id)}
-                                style={{
-                                  background: "#ffebee",
-                                  border: "none",
-                                  borderRadius: 8,
-                                  padding: "5px 8px",
-                                  cursor: "pointer",
-                                  color: "#c62828",
-                                  display: "flex",
-                                  alignItems: "center",
-                                }}
-                              >
-                                <Trash2 size={12} />
-                              </button>
-                            )}
-                          </>
+                        {!isHardRestricted && (
+                          <button
+                            onClick={() => remove(v.id)}
+                            className="flex items-center justify-center bg-[#ffebee] hover:bg-[#ffcdd2] border-none rounded-lg px-3 py-2 text-[#c62828] cursor-pointer transition"
+                          >
+                            <Trash2 size={12} />
+                          </button>
                         )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 mt-6">
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-            className="p-2 rounded-lg border border-[#dce8f7] text-[#5a7599] disabled:opacity-40 hover:border-[#1565c0] hover:text-[#1565c0] transition-colors"
-          >
-            <ChevronLeft size={14} />
-          </button>
-          <span className="text-[12px] font-bold text-[#0d1b2e]">
-            {page} / {totalPages}
-          </span>
-          <button
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
-            className="p-2 rounded-lg border border-[#dce8f7] text-[#5a7599] disabled:opacity-40 hover:border-[#1565c0] hover:text-[#1565c0] transition-colors"
-          >
-            <ChevronRight size={14} />
-          </button>
-        </div>
-      )}
+      <Pagination
+        page={page}
+        total={totalPages}
+        onChange={(p) => {
+          setPage(p);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }}
+      />
     </div>
   );
 }
