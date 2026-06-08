@@ -647,6 +647,7 @@ const BLANK_CAR = {
   price: "",
   status: "preorder",
   image: "",
+  images: [],
   description: "",
   preorderEnds: "",
 };
@@ -657,8 +658,8 @@ function CarsSection({ readOnly = false, currentUser, isHardRestricted }) {
   const [view, setView] = useState("list");
   const [form, setForm] = useState(BLANK_CAR);
   const [editId, setEditId] = useState(null);
-  const [imgFile, setImgFile] = useState(null);
-  const [imgPreview, setImgPreview] = useState(null);
+  const [imgPreviews, setImgPreviews] = useState([]); // [{url, file|null}]
+  const [urlInput, setUrlInput] = useState("");
   const [uploadProgress, setUploadProgress] = useState(null);
   const [saving, setSaving] = useState(false);
   const [saveErr, setSaveErr] = useState(null);
@@ -685,21 +686,33 @@ function CarsSection({ readOnly = false, currentUser, isHardRestricted }) {
   const resetForm = () => {
     setForm(BLANK_CAR);
     setEditId(null);
-    setImgFile(null);
-    setImgPreview(null);
+    setImgPreviews([]);
+    setUrlInput("");
     setSaveErr(null);
   };
-  const pickFile = (e) => {
-    const f = e.target.files[0];
-    if (!f) return;
-    setImgFile(f);
-    setImgPreview(URL.createObjectURL(f));
-    setForm((p) => ({ ...p, image: "" }));
+
+  const pickFiles = (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    setImgPreviews((p) => [
+      ...p,
+      ...files.map((f) => ({ url: URL.createObjectURL(f), file: f })),
+    ]);
+    e.target.value = "";
   };
 
-  const uploadImage = () =>
+  const addUrl = () => {
+    const trimmed = urlInput.trim();
+    if (!trimmed) return;
+    setImgPreviews((p) => [...p, { url: trimmed, file: null }]);
+    setUrlInput("");
+  };
+
+  const removePreview = (i) =>
+    setImgPreviews((p) => p.filter((_, idx) => idx !== i));
+
+  const uploadOneFile = (file, onProgress) =>
     new Promise((resolve, reject) => {
-      if (!imgFile) return resolve(form.image);
       const reader = new FileReader();
       reader.onerror = () => reject(new Error("Failed to read file"));
       reader.onload = (e) => {
@@ -707,8 +720,8 @@ function CarsSection({ readOnly = false, currentUser, isHardRestricted }) {
         xhr.open("POST", "/api/upload");
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.upload.onprogress = (ev) => {
-          if (ev.lengthComputable)
-            setUploadProgress(Math.round((ev.loaded / ev.total) * 100));
+          if (ev.lengthComputable && onProgress)
+            onProgress(Math.round((ev.loaded / ev.total) * 100));
         };
         xhr.onload = () => {
           try {
@@ -721,12 +734,30 @@ function CarsSection({ readOnly = false, currentUser, isHardRestricted }) {
           }
         };
         xhr.onerror = () => reject(new Error("Network error"));
-        xhr.send(
-          JSON.stringify({ file: e.target.result, filename: imgFile.name }),
-        );
+        xhr.send(JSON.stringify({ file: e.target.result, filename: file.name }));
       };
-      reader.readAsDataURL(imgFile);
+      reader.readAsDataURL(file);
     });
+
+  const uploadAllImages = async () => {
+    const results = [];
+    const filePreviews = imgPreviews.filter((p) => p.file);
+    for (let i = 0; i < imgPreviews.length; i++) {
+      const p = imgPreviews[i];
+      if (p.file) {
+        const fileIdx = filePreviews.indexOf(p);
+        const url = await uploadOneFile(p.file, (pct) =>
+          setUploadProgress(
+            Math.round(((fileIdx + pct / 100) / filePreviews.length) * 100),
+          ),
+        );
+        results.push(url);
+      } else {
+        results.push(p.url);
+      }
+    }
+    return results;
+  };
 
   const save = async (e) => {
     e.preventDefault();
@@ -734,11 +765,12 @@ function CarsSection({ readOnly = false, currentUser, isHardRestricted }) {
     setSaveErr(null);
     setUploadProgress(null);
     try {
-      const imageUrl = await uploadImage();
+      const allUrls = await uploadAllImages();
       const base = {
         ...form,
         price: Number(form.price),
-        image: imageUrl,
+        images: allUrls,
+        image: allUrls[0] || "",
         preorderEnds: form.preorderEnds
           ? new Date(form.preorderEnds).getTime()
           : null,
@@ -774,14 +806,20 @@ function CarsSection({ readOnly = false, currentUser, isHardRestricted }) {
       price: car.price,
       status: car.status,
       image: car.image || "",
+      images: car.images || [],
       description: car.description || "",
       preorderEnds: car.preorderEnds
         ? new Date(car.preorderEnds).toISOString().slice(0, 16)
         : "",
     });
     setEditId(car.id);
-    setImgFile(null);
-    setImgPreview(car.image || null);
+    const existingUrls = car.images?.length
+      ? car.images
+      : car.image
+        ? [car.image]
+        : [];
+    setImgPreviews(existingUrls.map((url) => ({ url, file: null })));
+    setUrlInput("");
     setSaveErr(null);
     setView("form");
   };
@@ -914,46 +952,68 @@ function CarsSection({ readOnly = false, currentUser, isHardRestricted }) {
             </div>
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className={lbl}>Image</label>
-            <input
-              type="text"
-              placeholder="Paste image URL (optional)"
-              value={form.image}
-              onChange={(e) => {
-                setForm((p) => ({ ...p, image: e.target.value }));
-                setImgFile(null);
-                setImgPreview(e.target.value || null);
-              }}
-              className={inp}
-            />
+            <label className={lbl}>
+              Images{" "}
+              <span className="text-[#5a7599] font-normal">
+                ({imgPreviews.length} added — first is main)
+              </span>
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Paste image URL…"
+                value={urlInput}
+                onChange={(e) => setUrlInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addUrl();
+                  }
+                }}
+                className={`${inp} flex-1`}
+              />
+              <button
+                type="button"
+                onClick={addUrl}
+                className="bg-[#e3f2fd] hover:bg-[#bbdefb] border-none rounded-lg px-3 text-[#1565c0] text-[12px] font-semibold cursor-pointer transition"
+              >
+                Add
+              </button>
+            </div>
             <label className="flex items-center justify-center gap-2 bg-[#f7faff] border-2 border-dashed border-[#c7d7f5] rounded-lg py-2.5 cursor-pointer text-[12px] text-[#5a7599] font-medium hover:border-[#1565c0] transition">
               <Upload size={14} className="text-[#1565c0]" />
-              {imgFile ? imgFile.name : "Click to upload image"}
+              Click to upload images (multiple allowed)
               <input
                 type="file"
                 accept="image/*"
+                multiple
                 className="hidden"
-                onChange={pickFile}
+                onChange={pickFiles}
               />
             </label>
-            {imgPreview && (
-              <div className="relative">
-                <img
-                  src={imgPreview}
-                  alt="preview"
-                  className="w-full h-[140px] object-cover rounded-lg border border-[#dce8f7]"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setImgFile(null);
-                    setImgPreview(null);
-                    setForm((p) => ({ ...p, image: "" }));
-                  }}
-                  className="absolute top-1.5 right-1.5 bg-black/55 border-none rounded-md p-1 cursor-pointer text-white flex"
-                >
-                  <X size={13} />
-                </button>
+            {imgPreviews.length > 0 && (
+              <div className="grid grid-cols-3 gap-2">
+                {imgPreviews.map((item, i) => (
+                  <div key={i} className="relative aspect-square">
+                    <img
+                      src={item.url}
+                      alt=""
+                      className="w-full h-full object-cover rounded-lg border border-[#dce8f7]"
+                    />
+                    {i === 0 && (
+                      <span className="absolute bottom-1 left-1 bg-[#1565c0] text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
+                        Main
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removePreview(i)}
+                      className="absolute top-1 right-1 bg-black/55 border-none rounded-md p-0.5 cursor-pointer text-white flex"
+                    >
+                      <X size={11} />
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
             {uploadProgress !== null && (
@@ -1104,6 +1164,11 @@ function CarsSection({ readOnly = false, currentUser, isHardRestricted }) {
                       ? "Sold"
                       : "Pre-Order"}
                 </span>
+                {car.images?.length > 1 && (
+                  <span className="absolute top-2 right-2 bg-black/50 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+                    {car.images.length} photos
+                  </span>
+                )}
               </div>
               <div className="p-4">
                 <p className="text-[14px] font-bold text-[#0d1b2e] mb-0.5 truncate">
@@ -4841,8 +4906,8 @@ function VehiclesSection({
   const [editId, setEditId] = useState(null);
   const [chassisInputs, setChassisInputs] = useState([]);
   const [dutyInputs, setDutyInputs] = useState([]);
-  const [imgFile, setImgFile] = useState(null);
-  const [imgPreview, setImgPreview] = useState(null);
+  const [vImgPreviews, setVImgPreviews] = useState([]); // [{url, file|null}]
+  const [vUrlInput, setVUrlInput] = useState("");
   const [uploadProgress, setUploadProgress] = useState(null);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -4873,8 +4938,8 @@ function VehiclesSection({
     setSaveErr(null);
     setChassisInputs([]);
     setDutyInputs([]);
-    setImgFile(null);
-    setImgPreview(null);
+    setVImgPreviews([]);
+    setVUrlInput("");
     setUploadProgress(null);
   };
 
@@ -4892,90 +4957,90 @@ function VehiclesSection({
     });
     setEditId(v.id);
     setView("form");
-    // populate chassisInputs from existing string (comma/newline separated)
     const raw = v.chassisNo || "";
-    const parts = raw
-      .split(/\r?\n|,/) // split on newlines or commas
-      .map((s) => s.trim())
-      .filter(Boolean);
+    const parts = raw.split(/\r?\n|,/).map((s) => s.trim()).filter(Boolean);
     setChassisInputs(parts.length ? parts : []);
-    // populate dutyInputs from existing string
     const rawDuty = v.duty || "";
-    const dutyParts = rawDuty
-      .split(/\r?\n|,/) // split on newlines or commas
-      .map((s) => s.trim())
-      .filter(Boolean);
+    const dutyParts = rawDuty.split(/\r?\n|,/).map((s) => s.trim()).filter(Boolean);
     setDutyInputs(dutyParts.length ? dutyParts : []);
-    // populate image preview if available
-    if (v.image) {
-      setImgPreview(v.image);
-      setImgFile(null);
-    } else {
-      setImgPreview(null);
-    }
+    const existingUrls = v.images?.length ? v.images : v.image ? [v.image] : [];
+    setVImgPreviews(existingUrls.map((url) => ({ url, file: null })));
+    setVUrlInput("");
   };
+
+  const uploadOneVehicleFile = (file, onProgress) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("Failed to read file"));
+      reader.onload = (ev) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/upload");
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.upload.onprogress = (ev2) => {
+          if (ev2.lengthComputable && onProgress)
+            onProgress(Math.round((ev2.loaded / ev2.total) * 100));
+        };
+        xhr.onload = () => {
+          try {
+            const d = JSON.parse(xhr.responseText);
+            xhr.status === 200
+              ? resolve(d.url)
+              : reject(new Error(d.error || "Upload failed"));
+          } catch {
+            reject(new Error("Invalid response"));
+          }
+        };
+        xhr.onerror = () => reject(new Error("Network error"));
+        xhr.send(
+          JSON.stringify({
+            file: ev.target.result,
+            filename: file.name,
+            folder: "afolaray/vehicles",
+          }),
+        );
+      };
+      reader.readAsDataURL(file);
+    });
 
   const save = async (e) => {
     e.preventDefault();
     setSaving(true);
     setSaveErr(null);
     try {
-      // ensure chassis numbers are persisted as a comma-separated string
       const chassisString = (chassisInputs || [])
         .map((s) => (s || "").toString().trim())
         .filter(Boolean)
         .join(", ");
 
-      // ensure duty numbers are persisted as a comma-separated string
       const dutyString = (dutyInputs || [])
         .map((s) => (s || "").toString().trim())
         .filter(Boolean)
         .join(", ");
 
-      // upload image if any
-      const uploadImage = () =>
-        new Promise((resolve, reject) => {
-          if (!imgFile) return resolve(form.image || "");
-          const reader = new FileReader();
-          reader.onerror = () => reject(new Error("Failed to read file"));
-          reader.onload = (ev) => {
-            const xhr = new XMLHttpRequest();
-            xhr.open("POST", "/api/upload");
-            xhr.setRequestHeader("Content-Type", "application/json");
-            xhr.upload.onprogress = (ev2) => {
-              if (ev2.lengthComputable)
-                setUploadProgress(Math.round((ev2.loaded / ev2.total) * 100));
-            };
-            xhr.onload = () => {
-              try {
-                const d = JSON.parse(xhr.responseText);
-                xhr.status === 200
-                  ? resolve(d.url)
-                  : reject(new Error(d.error || "Upload failed"));
-              } catch {
-                reject(new Error("Invalid response"));
-              }
-            };
-            xhr.onerror = () => reject(new Error("Network error"));
-            xhr.send(
-              JSON.stringify({
-                file: ev.target.result,
-                filename: imgFile.name,
-                folder: "afolaray/vehicles",
-              }),
-            );
-          };
-          reader.readAsDataURL(imgFile);
-        });
-
-      const imageUrl = await uploadImage();
+      const filePreviews = vImgPreviews.filter((p) => p.file);
+      const allUrls = [];
+      for (let i = 0; i < vImgPreviews.length; i++) {
+        const p = vImgPreviews[i];
+        if (p.file) {
+          const fileIdx = filePreviews.indexOf(p);
+          const url = await uploadOneVehicleFile(p.file, (pct) =>
+            setUploadProgress(
+              Math.round(((fileIdx + pct / 100) / filePreviews.length) * 100),
+            ),
+          );
+          allUrls.push(url);
+        } else {
+          allUrls.push(p.url);
+        }
+      }
 
       const payload = {
         ...form,
         chassisNo: chassisString,
         duty: dutyString,
         nextItemId: form.nextItemId || "",
-        image: imageUrl || form.image || "",
+        images: allUrls,
+        image: allUrls[0] || "",
         updatedAt: serverTimestamp(),
       };
       if (editId) {
@@ -4994,6 +5059,7 @@ function VehiclesSection({
       setSaveErr("Could not save. Please try again.");
     } finally {
       setSaving(false);
+      setUploadProgress(null);
     }
   };
 
@@ -5313,39 +5379,98 @@ function VehiclesSection({
                 first.
               </p>
             )}
-            {/* Next Item ID removed per request */}
-            {/* Image upload for vehicle (optional) */}
-            <div style={{ marginTop: 10 }}>
-              <label className={lbl}>Vehicle Image (optional)</label>
-              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            {/* Image upload for vehicle (optional, multiple) */}
+            <div className="flex flex-col gap-1.5" style={{ marginTop: 10 }}>
+              <label className={lbl}>
+                Vehicle Images (optional){" "}
+                <span className="text-[#5a7599] font-normal">
+                  ({vImgPreviews.length} added — first is main)
+                </span>
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Paste image URL…"
+                  value={vUrlInput}
+                  onChange={(e) => setVUrlInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      const trimmed = vUrlInput.trim();
+                      if (trimmed) {
+                        setVImgPreviews((p) => [...p, { url: trimmed, file: null }]);
+                        setVUrlInput("");
+                      }
+                    }
+                  }}
+                  className={inp}
+                  style={{ flex: 1 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const trimmed = vUrlInput.trim();
+                    if (!trimmed) return;
+                    setVImgPreviews((p) => [...p, { url: trimmed, file: null }]);
+                    setVUrlInput("");
+                  }}
+                  className="bg-[#e3f2fd] hover:bg-[#bbdefb] border-none rounded-lg px-3 text-[#1565c0] text-[12px] font-semibold cursor-pointer transition"
+                >
+                  Add
+                </button>
+              </div>
+              <label className="flex items-center justify-center gap-2 bg-[#f7faff] border-2 border-dashed border-[#c7d7f5] rounded-lg py-2.5 cursor-pointer text-[12px] text-[#5a7599] font-medium hover:border-[#1565c0] transition">
+                <Upload size={14} className="text-[#1565c0]" />
+                Click to upload images (multiple allowed)
                 <input
                   type="file"
                   accept="image/*"
+                  multiple
+                  className="hidden"
                   onChange={(e) => {
-                    const f = e.target.files[0];
-                    if (!f) return;
-                    setImgFile(f);
-                    setImgPreview(URL.createObjectURL(f));
-                    setForm((p) => ({ ...p, image: "" }));
+                    const files = Array.from(e.target.files);
+                    if (!files.length) return;
+                    setVImgPreviews((p) => [
+                      ...p,
+                      ...files.map((f) => ({ url: URL.createObjectURL(f), file: f })),
+                    ]);
+                    e.target.value = "";
                   }}
                 />
-                {imgPreview && (
-                  <img
-                    src={imgPreview}
-                    alt="preview"
-                    style={{
-                      width: 72,
-                      height: 48,
-                      objectFit: "cover",
-                      borderRadius: 6,
-                      border: "1px solid #eef4ff",
-                    }}
-                  />
-                )}
-              </div>
+              </label>
+              {vImgPreviews.length > 0 && (
+                <div className="grid grid-cols-4 gap-2">
+                  {vImgPreviews.map((item, i) => (
+                    <div key={i} className="relative aspect-square">
+                      <img
+                        src={item.url}
+                        alt=""
+                        className="w-full h-full object-cover rounded-lg border border-[#dce8f7]"
+                      />
+                      {i === 0 && (
+                        <span className="absolute bottom-1 left-1 bg-[#1565c0] text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
+                          Main
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setVImgPreviews((p) => p.filter((_, idx) => idx !== i))
+                        }
+                        className="absolute top-1 right-1 bg-black/55 border-none rounded-md p-0.5 cursor-pointer text-white flex"
+                      >
+                        <X size={11} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
               {uploadProgress !== null && (
-                <div style={{ marginTop: 6, fontSize: 12, color: "#5a7599" }}>
-                  Uploading: {uploadProgress}%
+                <div className="bg-[#e3f2fd] rounded-md overflow-hidden h-1.5">
+                  <div
+                    className="h-full bg-[#1565c0] transition-[width]"
+                    style={{ width: uploadProgress + "%" }}
+                  />
                 </div>
               )}
             </div>
