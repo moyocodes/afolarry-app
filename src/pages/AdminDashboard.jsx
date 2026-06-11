@@ -4697,7 +4697,7 @@ function VehiclesSection({
   const [saving, setSaving] = useState(false);
   const [saveErr, setSaveErr] = useState(null);
   const [viewingVehicle, setViewingVehicle] = useState(null);
-  const [sortOrder, setSortOrder] = useState("oldest");
+  const [sortOrder, setSortOrder] = useState("newest");
 
   const load = async () => {
     setLoading(true);
