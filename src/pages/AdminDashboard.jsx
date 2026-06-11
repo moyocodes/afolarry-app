@@ -50,7 +50,7 @@ import {
   CalendarDays,
   Download,
 } from "lucide-react";
-import { toDisplayString } from "../lib/utils";
+import { toDisplayString, formatNaira } from "../lib/utils";
 
 // ── SHARED CONSTANTS ────────────────────────────────────────────────────────
 const S = { fontFamily: "'Sora',sans-serif" };
@@ -4699,7 +4699,7 @@ function ViewVehicleModal({ vehicle: v, trackers = [], onClose, onEdit }) {
             <Row label="A Number" value={v.aNumber} />
             <Row label="C Number" value={v.cNumber} />
             <Row label="Chassis No(s)" value={toDisplayString(v.chassisNo)} mono />
-            <Row label="Duty" value={toDisplayString(v.duty)} mono />
+            <Row label="Duty" value={formatNaira(v.dutyFee)} mono />
             <Row label="Shipping Company" value={v.company} />
             <Row label="Notes" value={v.note || v.notes} />
           </div>
@@ -4764,7 +4764,7 @@ const BLANK_VEHICLE = {
   cNumber: "",
   consigneeName: "",
   chassisNo: "",
-  duty: "",
+  dutyFee: "",
   make: "",
   company: "",
   nextItemId: "",
@@ -4782,12 +4782,9 @@ function VehiclesSection({
   const [form, setForm] = useState(BLANK_VEHICLE);
   const [editId, setEditId] = useState(null);
   const [chassisInputs, setChassisInputs] = useState([]);
-  const [dutyInputs, setDutyInputs] = useState([]);
-  const [vImgPreviews, setVImgPreviews] = useState([]); // [{url, file|null}]
-  const [vUrlInput, setVUrlInput] = useState("");
-  const [uploadProgress, setUploadProgress] = useState(null);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(20);
   const [saving, setSaving] = useState(false);
   const [saveErr, setSaveErr] = useState(null);
   const [viewingVehicle, setViewingVehicle] = useState(null);
@@ -4814,10 +4811,6 @@ function VehiclesSection({
     setEditId(null);
     setSaveErr(null);
     setChassisInputs([]);
-    setDutyInputs([]);
-    setVImgPreviews([]);
-    setVUrlInput("");
-    setUploadProgress(null);
   };
 
   const startEdit = (v) => {
@@ -4827,7 +4820,7 @@ function VehiclesSection({
       cNumber: v.cNumber || "",
       consigneeName: v.consigneeName || "",
       chassisNo: v.chassisNo || "",
-      duty: v.duty || "",
+      dutyFee: v.dutyFee || "",
       make: v.make || "",
       company: v.company || "PIML",
       nextItemId: v.nextItemId || "",
@@ -4837,47 +4830,7 @@ function VehiclesSection({
     const raw = v.chassisNo || "";
     const parts = raw.split(/\r?\n|,/).map((s) => s.trim()).filter(Boolean);
     setChassisInputs(parts.length ? parts : []);
-    const rawDuty = v.duty || "";
-    const dutyParts = rawDuty.split(/\r?\n|,/).map((s) => s.trim()).filter(Boolean);
-    setDutyInputs(dutyParts.length ? dutyParts : []);
-    const existingUrls = v.images?.length ? v.images : v.image ? [v.image] : [];
-    setVImgPreviews(existingUrls.map((url) => ({ url, file: null })));
-    setVUrlInput("");
   };
-
-  const uploadOneVehicleFile = (file, onProgress) =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onerror = () => reject(new Error("Failed to read file"));
-      reader.onload = (ev) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", "/api/upload");
-        xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.upload.onprogress = (ev2) => {
-          if (ev2.lengthComputable && onProgress)
-            onProgress(Math.round((ev2.loaded / ev2.total) * 100));
-        };
-        xhr.onload = () => {
-          try {
-            const d = JSON.parse(xhr.responseText);
-            xhr.status === 200
-              ? resolve(d.url)
-              : reject(new Error(d.error || "Upload failed"));
-          } catch {
-            reject(new Error("Invalid response"));
-          }
-        };
-        xhr.onerror = () => reject(new Error("Network error"));
-        xhr.send(
-          JSON.stringify({
-            file: ev.target.result,
-            filename: file.name,
-            folder: "afolaray/vehicles",
-          }),
-        );
-      };
-      reader.readAsDataURL(file);
-    });
 
   const save = async (e) => {
     e.preventDefault();
@@ -4889,35 +4842,10 @@ function VehiclesSection({
         .filter(Boolean)
         .join(", ");
 
-      const dutyString = (dutyInputs || [])
-        .map((s) => (s || "").toString().trim())
-        .filter(Boolean)
-        .join(", ");
-
-      const filePreviews = vImgPreviews.filter((p) => p.file);
-      const allUrls = [];
-      for (let i = 0; i < vImgPreviews.length; i++) {
-        const p = vImgPreviews[i];
-        if (p.file) {
-          const fileIdx = filePreviews.indexOf(p);
-          const url = await uploadOneVehicleFile(p.file, (pct) =>
-            setUploadProgress(
-              Math.round(((fileIdx + pct / 100) / filePreviews.length) * 100),
-            ),
-          );
-          allUrls.push(url);
-        } else {
-          allUrls.push(p.url);
-        }
-      }
-
       const payload = {
         ...form,
         chassisNo: chassisString,
-        duty: dutyString,
         nextItemId: form.nextItemId || "",
-        images: allUrls,
-        image: allUrls[0] || "",
         updatedAt: serverTimestamp(),
       };
       if (editId) {
@@ -4936,7 +4864,6 @@ function VehiclesSection({
       setSaveErr("Could not save. Please try again.");
     } finally {
       setSaving(false);
-      setUploadProgress(null);
     }
   };
 
@@ -4957,13 +4884,15 @@ function VehiclesSection({
         v.aNumber,
         v.cNumber,
         v.company,
+        v.dutyFee,
+        v.date,
       ]
         .join(" ")
         .toLowerCase()
         .includes(search.toLowerCase()),
   );
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PER));
-  const paged = filtered.slice((page - 1) * PER, page * PER);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
+  const paged = filtered.slice((page - 1) * perPage, page * perPage);
 
   const th = {
     fontSize: 10,
@@ -5164,60 +5093,15 @@ function VehiclesSection({
 
           {/* Duty */}
           <div>
-            <label className={lbl}>Duty</label>
-            <div className="grid gap-2">
-              {(dutyInputs.length ? dutyInputs : [""]).map((d, idx) => (
-                <div
-                  key={idx}
-                  style={{ display: "flex", gap: 8, alignItems: "center" }}
-                >
-                  <input
-                    type="text"
-                    placeholder={`Duty ${idx + 1}`}
-                    value={d}
-                    onChange={(e) =>
-                      setDutyInputs((prev) =>
-                        prev.map((p, i) => (i === idx ? e.target.value : p)),
-                      )
-                    }
-                    className={inp}
-                    style={{ flex: 1 }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setDutyInputs((prev) => prev.filter((_, i) => i !== idx))
-                    }
-                    className="text-sm px-3 py-1"
-                    style={{
-                      background: "#fff",
-                      border: "1px solid #e6eef9",
-                      borderRadius: 8,
-                      cursor: "pointer",
-                    }}
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
-
-              <div>
-                <button
-                  type="button"
-                  onClick={() => setDutyInputs((prev) => [...prev, ""])}
-                  className="text-sm px-3 py-2"
-                  style={{
-                    background: "#1565c0",
-                    color: "#fff",
-                    borderRadius: 8,
-                    cursor: "pointer",
-                    fontWeight: 700,
-                  }}
-                >
-                  + Add duty
-                </button>
-              </div>
-            </div>
+            <label className={lbl}>Duty (₦)</label>
+            <input
+              type="number"
+              placeholder="e.g. 1500000"
+              value={form.dutyFee}
+              onChange={(e) => setForm((p) => ({ ...p, dutyFee: e.target.value }))}
+              className={inp}
+              min="0"
+            />
           </div>
 
           {/* Make */}
@@ -5256,101 +5140,6 @@ function VehiclesSection({
                 first.
               </p>
             )}
-            {/* Image upload for vehicle (optional, multiple) */}
-            <div className="flex flex-col gap-1.5" style={{ marginTop: 10 }}>
-              <label className={lbl}>
-                Vehicle Images (optional){" "}
-                <span className="text-[#5a7599] font-normal">
-                  ({vImgPreviews.length} added — first is main)
-                </span>
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Paste image URL…"
-                  value={vUrlInput}
-                  onChange={(e) => setVUrlInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      const trimmed = vUrlInput.trim();
-                      if (trimmed) {
-                        setVImgPreviews((p) => [...p, { url: trimmed, file: null }]);
-                        setVUrlInput("");
-                      }
-                    }
-                  }}
-                  className={inp}
-                  style={{ flex: 1 }}
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    const trimmed = vUrlInput.trim();
-                    if (!trimmed) return;
-                    setVImgPreviews((p) => [...p, { url: trimmed, file: null }]);
-                    setVUrlInput("");
-                  }}
-                  className="bg-[#e3f2fd] hover:bg-[#bbdefb] border-none rounded-lg px-3 text-[#1565c0] text-[12px] font-semibold cursor-pointer transition"
-                >
-                  Add
-                </button>
-              </div>
-              <label className="flex items-center justify-center gap-2 bg-[#f7faff] border-2 border-dashed border-[#c7d7f5] rounded-lg py-2.5 cursor-pointer text-[12px] text-[#5a7599] font-medium hover:border-[#1565c0] transition">
-                <Upload size={14} className="text-[#1565c0]" />
-                Click to upload images (multiple allowed)
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => {
-                    const files = Array.from(e.target.files);
-                    if (!files.length) return;
-                    setVImgPreviews((p) => [
-                      ...p,
-                      ...files.map((f) => ({ url: URL.createObjectURL(f), file: f })),
-                    ]);
-                    e.target.value = "";
-                  }}
-                />
-              </label>
-              {vImgPreviews.length > 0 && (
-                <div className="grid grid-cols-4 gap-2">
-                  {vImgPreviews.map((item, i) => (
-                    <div key={i} className="relative aspect-square">
-                      <img
-                        src={item.url}
-                        alt=""
-                        className="w-full h-full object-cover rounded-lg border border-[#dce8f7]"
-                      />
-                      {i === 0 && (
-                        <span className="absolute bottom-1 left-1 bg-[#1565c0] text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
-                          Main
-                        </span>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setVImgPreviews((p) => p.filter((_, idx) => idx !== i))
-                        }
-                        className="absolute top-1 right-1 bg-black/55 border-none rounded-md p-0.5 cursor-pointer text-white flex"
-                      >
-                        <X size={11} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {uploadProgress !== null && (
-                <div className="bg-[#e3f2fd] rounded-md overflow-hidden h-1.5">
-                  <div
-                    className="h-full bg-[#1565c0] transition-[width]"
-                    style={{ width: uploadProgress + "%" }}
-                  />
-                </div>
-              )}
-            </div>
           </div>
 
           {saveErr && (
@@ -5437,7 +5226,7 @@ function VehiclesSection({
                   "C-Number": v.cNumber,
                   Consignee: v.consigneeName,
                   "Chassis No": toDisplayString(v.chassisNo),
-                  Duty: toDisplayString(v.duty),
+                  Duty: formatNaira(v.dutyFee),
                   Make: v.make,
                   Company: v.company,
                 })),
@@ -5462,10 +5251,30 @@ function VehiclesSection({
         </div>
       </div>
 
+      {/* Records per page */}
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-[12px] text-[#5a7599] font-medium">Rows per page:</span>
+        <input
+          type="number"
+          list="veh-per-page-opts"
+          value={perPage}
+          min={1}
+          onChange={(e) => {
+            const v = parseInt(e.target.value, 10);
+            if (v > 0) { setPerPage(v); setPage(1); }
+          }}
+          className="w-20 border border-[#dce8f7] rounded-lg px-2 py-1 text-[12px] text-[#0d1b2e] outline-none focus:border-[#1565c0] font-[Sora,sans-serif] text-center"
+        />
+        <datalist id="veh-per-page-opts">
+          {[10, 20, 25, 50, 100].map((n) => <option key={n} value={n} />)}
+        </datalist>
+        <span className="text-[12px] text-[#9ab2cc]">
+          {filtered.length} total
+        </span>
+      </div>
+
       {loading ? (
-        <div className="text-center py-12 text-[#5a7599] text-[13px]">
-          Loading…
-        </div>
+        <div className="text-center py-12 text-[#5a7599] text-[13px]">Loading…</div>
       ) : paged.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-2xl border border-[#dce8f7]">
           <Truck size={36} className="mx-auto mb-3 text-[#dce8f7]" />
@@ -5473,151 +5282,109 @@ function VehiclesSection({
             {search ? "No records match" : "No vehicle records yet"}
           </p>
           {!readOnly && (
-            <p className="text-[13px] text-[#5a7599]">
-              Click "Add Record" to log the first entry.
-            </p>
+            <p className="text-[13px] text-[#5a7599]">Click "Add Record" to log the first entry.</p>
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-          {paged.map((v) => {
-            const tracker = trackers.find((t) => t.name === v.company);
-            const accent = tracker?.accent || "#1565c0";
-            const chassis = toDisplayString(v.chassisNo);
-            const duty = toDisplayString(v.duty);
-            return (
-              <div
-                key={v.id}
-                className="bg-white border border-[#dce8f7] rounded-2xl overflow-hidden shadow-[0_2px_10px_rgba(21,101,192,0.05)] flex flex-col"
-              >
-                {/* Image */}
-                <div className="aspect-[16/9] bg-[#f7faff] overflow-hidden relative shrink-0">
-                  {v.image ? (
-                    <img
-                      src={v.image}
-                      alt={v.make || "vehicle"}
-                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 text-[#c7d7f5]">
-                      <Truck size={28} />
-                      <span className="text-[11px] font-medium">No photo</span>
-                    </div>
-                  )}
-                  {v.images?.length > 1 && (
-                    <span className="absolute top-2 right-2 bg-black/50 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
-                      {v.images.length} photos
-                    </span>
-                  )}
-                  {v.date && (
-                    <span className="absolute top-2 left-2 bg-white/90 text-[#1565c0] text-[9px] font-bold px-2 py-0.5 rounded-full border border-[#dce8f7]">
-                      {v.date}
-                    </span>
-                  )}
-                </div>
-
-                {/* Body */}
-                <div className="p-4 flex flex-col gap-3 flex-1">
-                  {/* Make + company */}
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="text-[15px] font-bold text-[#0d1b2e] leading-tight truncate">
-                      {v.make || <span className="text-[#c7d7f5]">Unknown</span>}
-                    </p>
-                    {v.company && (
-                      <span
-                        className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full border"
-                        style={{
-                          background: `${accent}18`,
-                          color: accent,
-                          borderColor: `${accent}33`,
-                        }}
-                      >
-                        {tracker?.short || v.company}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Consignee */}
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-[#e3f2fd] flex items-center justify-center shrink-0">
-                      <span className="text-[#1565c0] text-[10px] font-bold">
-                        {(v.consigneeName || "?")[0].toUpperCase()}
-                      </span>
-                    </div>
-                    <p className="text-[12px] font-semibold text-[#0d1b2e] truncate">
-                      {v.consigneeName || <span className="text-[#c7d7f5] font-normal">No consignee</span>}
-                    </p>
-                  </div>
-
-                  {/* Reference numbers */}
-                  {(v.aNumber || v.cNumber) && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {v.aNumber && (
-                        <span className="bg-[#f0f6ff] border border-[#dce8f7] text-[#1565c0] text-[10px] font-bold px-2 py-0.5 rounded-md">
-                          A: {v.aNumber}
-                        </span>
-                      )}
-                      {v.cNumber && (
-                        <span className="bg-[#f7faff] border border-[#dce8f7] text-[#5a7599] text-[10px] font-semibold px-2 py-0.5 rounded-md">
-                          C: {v.cNumber}
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Chassis + Duty */}
-                  <div className="flex flex-col gap-1 text-[11px]">
-                    {chassis && (
-                      <div className="flex gap-1.5 items-baseline">
-                        <span className="text-[#5a7599] font-medium shrink-0">Chassis:</span>
-                        <span className="font-mono text-[#0d1b2e] truncate" title={chassis}>
-                          {chassis}
-                        </span>
-                      </div>
-                    )}
-                    {duty && (
-                      <div className="flex gap-1.5 items-baseline">
-                        <span className="text-[#5a7599] font-medium shrink-0">Duty:</span>
-                        <span className="font-mono text-[#2e7d32] truncate" title={duty}>
-                          {duty}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  <AuditBadge record={v} isHardRestricted={isHardRestricted} />
-
-                  {/* Actions */}
-                  <div className="flex gap-2 mt-auto pt-1">
-                    <button
-                      onClick={() => setViewingVehicle(v)}
-                      className="flex-1 flex items-center justify-center gap-1.5 bg-[#e3f2fd] hover:bg-[#bbdefb] border-none rounded-lg py-2 text-[#1565c0] text-[12px] font-semibold cursor-pointer transition"
+        <div className="bg-white rounded-2xl border border-[#dce8f7] overflow-hidden">
+          <div className="overflow-x-auto">
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+              <thead>
+                <tr>
+                  {["#", "Date", "A-No", "C-No", "Consignee", "Chassis No", "Duty", "Make", "Company", ""].map((h) => (
+                    <th key={h} style={th}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {paged.map((v, idx) => {
+                  const tracker = trackers.find((t) => t.name === v.company);
+                  const accent = tracker?.accent || "#1565c0";
+                  const rowNum = (page - 1) * perPage + idx + 1;
+                  return (
+                    <tr
+                      key={v.id}
+                      style={{ background: idx % 2 === 0 ? "#fff" : "#f9fbff" }}
+                      className="hover:bg-[#eef4ff] transition-colors"
                     >
-                      <Eye size={12} /> View
-                    </button>
-                    {!readOnly && (
-                      <>
-                        <button
-                          onClick={() => startEdit(v)}
-                          className="flex-1 flex items-center justify-center gap-1.5 bg-[#f0f6ff] hover:bg-[#dce8f7] border border-[#dce8f7] rounded-lg py-2 text-[#1565c0] text-[12px] font-semibold cursor-pointer transition"
-                        >
-                          <Pencil size={12} /> Edit
-                        </button>
-                        {!isHardRestricted && (
-                          <button
-                            onClick={() => remove(v.id)}
-                            className="flex items-center justify-center bg-[#ffebee] hover:bg-[#ffcdd2] border-none rounded-lg px-3 py-2 text-[#c62828] cursor-pointer transition"
+                      <td style={{ ...td, color: "#9ab2cc", width: 36, textAlign: "center" }}>{rowNum}</td>
+                      <td style={td}>{v.date || <span style={{ color: "#c7d7f5" }}>—</span>}</td>
+                      <td style={{ ...td, fontFamily: "monospace", color: "#1565c0", fontWeight: 700 }}>{v.aNumber || "—"}</td>
+                      <td style={{ ...td, fontFamily: "monospace", color: "#5a7599" }}>{v.cNumber || "—"}</td>
+                      <td style={{ ...td, fontWeight: 600, maxWidth: 160 }}>
+                        <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={v.consigneeName}>
+                          {v.consigneeName || <span style={{ color: "#c7d7f5" }}>—</span>}
+                        </span>
+                      </td>
+                      <td style={{ ...td, fontFamily: "monospace", maxWidth: 180 }}>
+                        <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={toDisplayString(v.chassisNo)}>
+                          {toDisplayString(v.chassisNo)}
+                        </span>
+                      </td>
+                      <td style={{ ...td, fontFamily: "monospace", color: "#2e7d32", whiteSpace: "nowrap" }}>
+                        {formatNaira(v.dutyFee)}
+                      </td>
+                      <td style={{ ...td, maxWidth: 140 }}>
+                        <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={v.make}>
+                          {v.make || <span style={{ color: "#c7d7f5" }}>—</span>}
+                        </span>
+                      </td>
+                      <td style={td}>
+                        {v.company ? (
+                          <span
+                            style={{
+                              display: "inline-block",
+                              fontSize: 10,
+                              fontWeight: 700,
+                              padding: "2px 8px",
+                              borderRadius: 999,
+                              border: `1px solid ${accent}33`,
+                              background: `${accent}18`,
+                              color: accent,
+                              whiteSpace: "nowrap",
+                            }}
                           >
-                            <Trash2 size={12} />
+                            {tracker?.short || v.company}
+                          </span>
+                        ) : "—"}
+                      </td>
+                      <td style={{ ...td, whiteSpace: "nowrap" }}>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <button
+                            onClick={() => setViewingVehicle(v)}
+                            title="View"
+                            style={{ background: "#e3f2fd", border: "none", borderRadius: 8, padding: "5px 10px", color: "#1565c0", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600 }}
+                          >
+                            <Eye size={11} /> View
                           </button>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+                          {!readOnly && (
+                            <>
+                              <button
+                                onClick={() => startEdit(v)}
+                                title="Edit"
+                                style={{ background: "#f0f6ff", border: "1px solid #dce8f7", borderRadius: 8, padding: "5px 10px", color: "#1565c0", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600 }}
+                              >
+                                <Pencil size={11} /> Edit
+                              </button>
+                              {!isHardRestricted && (
+                                <button
+                                  onClick={() => remove(v.id)}
+                                  title="Delete"
+                                  style={{ background: "#ffebee", border: "none", borderRadius: 8, padding: "5px 8px", color: "#c62828", cursor: "pointer", display: "flex", alignItems: "center" }}
+                                >
+                                  <Trash2 size={11} />
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -5904,7 +5671,7 @@ export default function AdminDashboard() {
         style={{
           flex: 1,
           padding: "2rem 1.5rem",
-          maxWidth: 1100,
+          maxWidth: tab === "vehicles" ? 1600 : 1100,
           width: "100%",
           margin: "0 auto",
           boxSizing: "border-box",

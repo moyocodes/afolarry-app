@@ -28,3 +28,12 @@ export function toDisplayString(value) {
   }
   return String(value);
 }
+
+export function formatNaira(value) {
+  if (value == null || value === "") return "—";
+  const raw = String(value).replace(/[^\d.]/g, "");
+  if (!raw) return "—";
+  const num = parseFloat(raw);
+  if (isNaN(num)) return "—";
+  return "₦" + num.toLocaleString("en-NG");
+}

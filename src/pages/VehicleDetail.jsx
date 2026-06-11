@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
-import { toDisplayString } from "../lib/utils";
+import { toDisplayString, formatNaira } from "../lib/utils";
 
 const drawerWidth = 500;
 
@@ -44,7 +44,6 @@ export default function VehicleDetail({ id: propId, onClose: propOnClose, tracke
   const [vehicle, setVehicle] = useState(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
-  const [imgIdx, setImgIdx] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -66,9 +65,6 @@ export default function VehicleDetail({ id: propId, onClose: propOnClose, tracke
     return () => { mounted = false; };
   }, [id]);
 
-  // reset carousel index when vehicle changes
-  useEffect(() => { setImgIdx(0); }, [vehicle?.id]);
-
   const close = () => {
     if (typeof propOnClose === "function") return propOnClose();
     if (window.history.length > 1) navigate(-1);
@@ -79,14 +75,6 @@ export default function VehicleDetail({ id: propId, onClose: propOnClose, tracke
   const accentColor = tracker?.accent || "#1565c0";
   const sc = vehicle?.status ? statusColor(vehicle.status) : null;
 
-  const imgs = vehicle?.images?.length
-    ? vehicle.images
-    : vehicle?.image
-    ? [vehicle.image]
-    : [];
-
-  const hasImages = imgs.length > 0;
-
   return (
     <>
       {/* Backdrop */}
@@ -95,91 +83,12 @@ export default function VehicleDetail({ id: propId, onClose: propOnClose, tracke
       {/* Drawer */}
       <aside role="dialog" aria-label="Vehicle details" style={styles.drawer}>
 
-        {/* ── Carousel ──────────────────────────────────────────────────────── */}
-        {hasImages && (
-          <div style={styles.carousel}>
-            {/* sliding track */}
-            <div
-              style={{
-                display: "flex",
-                width: `${imgs.length * 100}%`,
-                height: "100%",
-                transform: `translateX(-${(imgIdx * 100) / imgs.length}%)`,
-                transition: "transform 0.35s cubic-bezier(0.4,0,0.2,1)",
-              }}
-            >
-              {imgs.map((src, i) => (
-                <div
-                  key={i}
-                  style={{
-                    width: `${100 / imgs.length}%`,
-                    flexShrink: 0,
-                    height: "100%",
-                    overflow: "hidden",
-                  }}
-                >
-                  <img
-                    src={src}
-                    alt={`${vehicle?.make || "vehicle"} ${i + 1}`}
-                    style={styles.carouselImg}
-                  />
-                </div>
-              ))}
-            </div>
-
-            {/* gradient overlay at bottom */}
-            <div style={styles.carouselGradient} />
-
-            {/* Close button */}
-            <button onClick={close} aria-label="Close" style={styles.carouselClose}>
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-            </button>
-
-            {imgs.length > 1 && (
-              <>
-                {/* Prev */}
-                <button
-                  onClick={() => setImgIdx((i) => (i - 1 + imgs.length) % imgs.length)}
-                  aria-label="Previous image"
-                  style={styles.carouselArrow}
-                >
-                  ‹
-                </button>
-                {/* Next */}
-                <button
-                  onClick={() => setImgIdx((i) => (i + 1) % imgs.length)}
-                  aria-label="Next image"
-                  style={{ ...styles.carouselArrow, left: "auto", right: 12 }}
-                >
-                  ›
-                </button>
-                {/* Dots */}
-                <div style={styles.carouselDots}>
-                  {imgs.map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setImgIdx(i)}
-                      aria-label={`Go to image ${i + 1}`}
-                      style={{
-                        ...styles.carouselDot,
-                        background: i === imgIdx ? "#fff" : "rgba(255,255,255,0.4)",
-                        transform: i === imgIdx ? "scale(1.3)" : "scale(1)",
-                      }}
-                    />
-                  ))}
-                </div>
-                {/* Counter */}
-                <div style={styles.carouselCounter}>
-                  {imgIdx + 1} / {imgs.length}
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-   
+        {/* Close button */}
+        <button onClick={close} aria-label="Close" style={styles.closeBtn}>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        </button>
 
         {/* ── Body ───────────────────────────────────────────────────────────── */}
         <div style={styles.body}>
@@ -217,7 +126,7 @@ export default function VehicleDetail({ id: propId, onClose: propOnClose, tracke
 
               <Divider />
 
-              {toDisplayString(vehicle.duty) && (
+              {vehicle.dutyFee && (
                 <>
                   <SectionHeading label="Duty" />
                   <div style={styles.dutyBox}>
@@ -227,7 +136,7 @@ export default function VehicleDetail({ id: propId, onClose: propOnClose, tracke
                         <path d="M5 5h6M5 8h6M5 11h4" stroke="#16a34a" strokeWidth="1.5" strokeLinecap="round"/>
                       </svg>
                     </span>
-                    <p style={styles.dutyValue}>{toDisplayString(vehicle.duty)}</p>
+                    <p style={styles.dutyValue}>{formatNaira(vehicle.dutyFee)}</p>
                   </div>
                   <Divider />
                 </>
@@ -300,96 +209,6 @@ const styles = {
     overflowY: "auto",
   },
 
-  // ── carousel ──
-  carousel: {
-    position: "relative",
-    width: "100%",
-    height: 220,
-    overflow: "hidden",
-    flexShrink: 0,
-    background: "#0d1b2a",
-  },
-  carouselImg: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-    display: "block",
-  },
-  carouselGradient: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 60,
-    background: "linear-gradient(to top, rgba(13,71,161,0.55), transparent)",
-    pointerEvents: "none",
-  },
-  carouselClose: {
-    position: "absolute",
-    top: 12,
-    right: 12,
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    border: "none",
-    background: "rgba(0,0,0,0.45)",
-    color: "#fff",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 10,
-    backdropFilter: "blur(4px)",
-  },
-  carouselArrow: {
-    position: "absolute",
-    top: "50%",
-    left: 12,
-    transform: "translateY(-50%)",
-    background: "rgba(0,0,0,0.45)",
-    border: "none",
-    borderRadius: 8,
-    color: "#fff",
-    fontSize: 22,
-    lineHeight: 1,
-    padding: "4px 10px",
-    cursor: "pointer",
-    zIndex: 10,
-    backdropFilter: "blur(4px)",
-    transition: "background 0.15s",
-  },
-  carouselDots: {
-    position: "absolute",
-    bottom: 10,
-    left: "50%",
-    transform: "translateX(-50%)",
-    display: "flex",
-    gap: 6,
-    zIndex: 10,
-  },
-  carouselDot: {
-    width: 7,
-    height: 7,
-    borderRadius: "50%",
-    border: "none",
-    cursor: "pointer",
-    padding: 0,
-    transition: "background 0.2s, transform 0.2s",
-  },
-  carouselCounter: {
-    position: "absolute",
-    bottom: 10,
-    right: 12,
-    fontSize: 11,
-    fontWeight: 700,
-    color: "rgba(255,255,255,0.8)",
-    background: "rgba(0,0,0,0.35)",
-    padding: "2px 8px",
-    borderRadius: 999,
-    backdropFilter: "blur(4px)",
-    zIndex: 10,
-  },
-
   // ── banner ──
   banner: {
     padding: "28px 28px 22px",
@@ -399,18 +218,19 @@ const styles = {
   },
   closeBtn: {
     position: "absolute",
-    top: 16,
-    right: 16,
+    top: 14,
+    right: 14,
     width: 32,
     height: 32,
     borderRadius: 8,
-    border: "none",
-    background: "rgba(255,255,255,0.15)",
-    color: "#fff",
+    border: "1px solid #dce8f7",
+    background: "#f7faff",
+    color: "#5a7599",
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    zIndex: 10,
   },
   eyebrow: {
     margin: "0 0 6px",
