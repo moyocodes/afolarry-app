@@ -4697,6 +4697,7 @@ function VehiclesSection({
   const [saving, setSaving] = useState(false);
   const [saveErr, setSaveErr] = useState(null);
   const [viewingVehicle, setViewingVehicle] = useState(null);
+  const [sortOrder, setSortOrder] = useState("oldest");
 
   const load = async () => {
     setLoading(true);
@@ -4857,10 +4858,12 @@ function VehiclesSection({
   );
 
   const sorted = [...filtered].sort((a, b) => {
-    const aOld = isOldRecord(a);
-    const bOld = isOldRecord(b);
-    if (aOld === bOld) return 0;
-    return aOld ? 1 : -1;
+    const da = getRecordDate(a);
+    const db_ = getRecordDate(b);
+    if (!da && !db_) return 0;
+    if (!da) return 1;
+    if (!db_) return -1;
+    return sortOrder === "newest" ? db_ - da : da - db_;
   });
 
   const totalPages = Math.max(1, Math.ceil(sorted.length / perPage));
@@ -5172,6 +5175,23 @@ function VehiclesSection({
           padding: "12px 18px", borderBottom: "1px solid #f0f4fa", gap: 12, flexWrap: "wrap",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ display: "flex", border: "1px solid #dce8f7", borderRadius: 8, overflow: "hidden", marginRight: 4 }}>
+              {["newest", "oldest"].map((order) => (
+                <button
+                  key={order}
+                  onClick={() => { setSortOrder(order); setPage(1); }}
+                  style={{
+                    padding: "5px 12px", border: "none", cursor: "pointer",
+                    fontSize: 11, fontWeight: 700, fontFamily: "Sora,sans-serif",
+                    background: sortOrder === order ? "#1565c0" : "#f7faff",
+                    color: sortOrder === order ? "#fff" : "#5a7599",
+                    transition: "background 0.15s, color 0.15s",
+                  }}
+                >
+                  {order === "newest" ? "Newest" : "Oldest"}
+                </button>
+              ))}
+            </div>
             <span style={{ fontSize: 12, color: "#9ab2cc", fontWeight: 500 }}>Show</span>
             <select
               value={perPage}
