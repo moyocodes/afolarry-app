@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   collection,
@@ -4563,197 +4563,104 @@ function ScheduleSection({ readOnly = false, currentUser, isHardRestricted }) {
 }
 
 // ── VIEW VEHICLE MODAL ──────────────────────────────────────────────────────
-function ViewVehicleModal({ vehicle: v, trackers = [], onClose, onEdit }) {
+function VehicleRowDrawer({ v, trackers = [], colSpan, onClose, onEdit }) {
   const tracker = trackers.find((t) => t.name === v.company);
   const accent = tracker?.accent || "#1565c0";
 
-  const Row = ({ label, value, mono }) =>
+  const Field = ({ label, value, mono }) =>
     value ? (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 2,
-          padding: "10px 0",
-          borderBottom: "1px solid #f0f4ff",
-        }}
-      >
-        <span
-          style={{
-            fontSize: 10,
-            fontWeight: 700,
-            color: "#9ab2cc",
-            textTransform: "uppercase",
-            letterSpacing: "0.08em",
-          }}
-        >
+      <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+        <span style={{ fontSize: 10, fontWeight: 700, color: "#9ab2cc", textTransform: "uppercase", letterSpacing: "0.09em" }}>
           {label}
         </span>
-        <span
-          style={{
-            fontSize: 13,
-            color: "#0d1b2e",
-            fontFamily: mono ? "monospace" : "'Sora',sans-serif",
-            whiteSpace: "pre-wrap",
-            wordBreak: "break-all",
-          }}
-        >
+        <span style={{ fontSize: 13, color: "#0d1b2e", fontFamily: mono ? "monospace" : "'Sora',sans-serif", lineHeight: 1.55, wordBreak: "break-word" }}>
           {value}
         </span>
       </div>
     ) : null;
 
-  const images = v.images?.length ? v.images : v.image ? [v.image] : [];
-  const [imgIdx, setImgIdx] = useState(0);
-
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4"
-      style={{ background: "rgba(6,14,26,0.75)", backdropFilter: "blur(10px)", fontFamily: "'Sora',sans-serif" }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-    >
-      <motion.div
-        initial={{ y: 40, opacity: 0, scale: 0.98 }}
-        animate={{ y: 0, opacity: 1, scale: 1 }}
-        exit={{ y: 20, opacity: 0 }}
-        className="bg-white w-full sm:max-w-2xl sm:rounded-[18px] rounded-t-[22px] shadow-[0_30px_80px_rgba(0,0,0,0.25)] flex flex-col overflow-hidden"
-        style={{ maxHeight: "92dvh" }}
-      >
-        {/* Banner */}
-        <div
-          className="flex items-center justify-between gap-3 px-4 py-3.5 shrink-0"
-          style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)` }}
+    <tr>
+      <td colSpan={colSpan} style={{ padding: 0, borderBottom: "2px solid #1565c0" }}>
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.18, ease: "easeOut" }}
+          style={{
+            background: "#f5f9ff",
+            borderLeft: "4px solid #1565c0",
+            padding: "20px 24px",
+            fontFamily: "'Sora',sans-serif",
+          }}
         >
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="bg-white/20 rounded-xl p-2 flex shrink-0">
-              <Truck size={18} color="#fff" />
+          {/* Drawer header */}
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, marginBottom: 18 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: `${accent}18`, border: `1px solid ${accent}33`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Truck size={18} style={{ color: accent }} />
+              </div>
+              <div>
+                <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#0d1b2e", lineHeight: 1.2 }}>
+                  {v.make || v.consigneeName || "Vehicle Record"}
+                </p>
+                {v.company && (
+                  <span style={{ fontSize: 11, fontWeight: 700, color: accent, background: `${accent}15`, border: `1px solid ${accent}30`, borderRadius: 999, padding: "2px 10px", display: "inline-block", marginTop: 4 }}>
+                    {tracker?.short || v.company}
+                  </span>
+                )}
+              </div>
             </div>
-            <div className="min-w-0">
-              <p className="text-[9px] font-bold text-white/80 uppercase tracking-[0.08em] m-0">
-                Vehicle Record
-              </p>
-              <p className="text-[16px] font-extrabold text-white m-0 truncate leading-tight mt-0.5">
-                {v.make || v.consigneeName || "Unknown"}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="text-right hidden sm:block">
-              {v.date && <p className="text-[11px] text-white/90 font-bold m-0">{v.date}</p>}
-              {v.company && <p className="text-[11px] text-white/90 font-bold m-0">{tracker?.short || v.company}</p>}
-            </div>
-            <button
-              onClick={onClose}
-              className="bg-white/10 hover:bg-white/20 border-none rounded-lg p-2 cursor-pointer text-white flex transition"
-            >
-              <X size={16} />
-            </button>
-          </div>
-        </div>
-
-        {/* Image gallery */}
-        {images.length > 0 && (
-          <div className="relative bg-[#0d1b2e] shrink-0">
-            <img
-              src={images[imgIdx]}
-              alt={v.make || "vehicle"}
-              className="w-full object-cover block"
-              style={{ maxHeight: 240 }}
-            />
-            {images.length > 1 && (
-              <>
+            <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+              {onEdit && (
                 <button
-                  onClick={() => setImgIdx((i) => (i - 1 + images.length) % images.length)}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 border-none rounded-full p-1.5 cursor-pointer text-white flex transition"
+                  onClick={() => onEdit(v)}
+                  style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 16px", border: "1px solid #dce8f7", borderRadius: 9, background: "#fff", color: "#1565c0", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Sora',sans-serif" }}
                 >
-                  <ChevronLeft size={16} />
+                  <Pencil size={12} /> Edit
                 </button>
-                <button
-                  onClick={() => setImgIdx((i) => (i + 1) % images.length)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 border-none rounded-full p-1.5 cursor-pointer text-white flex transition"
-                >
-                  <ChevronRight size={16} />
-                </button>
-                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-                  {images.map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setImgIdx(i)}
-                      className={`w-1.5 h-1.5 rounded-full border-none cursor-pointer transition ${i === imgIdx ? "bg-white" : "bg-white/40"}`}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* Body — scrollable */}
-        <div className="flex-1 overflow-y-auto px-4 py-4 grid grid-cols-1 sm:grid-cols-[1fr_220px] gap-4 sm:gap-5">
-          <div>
-            <Row label="Consignee Name" value={v.consigneeName} />
-            <Row label="Make / Model" value={v.make} />
-            <Row label="A Number" value={v.aNumber} />
-            <Row label="C Number" value={v.cNumber} />
-            <Row label="Chassis No(s)" value={toDisplayString(v.chassisNo)} mono />
-            <Row label="Duty" value={formatNaira(v.dutyFee)} mono />
-            <Row label="Shipping Company" value={v.company} />
-            <Row label="Notes" value={v.note || v.notes} />
-          </div>
-          <div className="sm:border-l sm:border-[#f0f4ff] sm:pl-4 flex flex-col gap-4">
-            {v.date && (
-              <div>
-                <p className="text-[10px] font-bold text-[#9ab2cc] uppercase tracking-[0.08em] mb-1">Date</p>
-                <span className="bg-[#f0f6ff] border border-[#dce8f7] text-[#1565c0] text-[12px] font-bold px-2.5 py-1 rounded-md">
-                  {v.date}
-                </span>
-              </div>
-            )}
-            {v.company && (
-              <div>
-                <p className="text-[10px] font-bold text-[#9ab2cc] uppercase tracking-[0.08em] mb-1">Company</p>
-                <span
-                  className="text-[11px] font-bold px-2.5 py-1 rounded-full border"
-                  style={{ background: `${accent}18`, color: accent, borderColor: `${accent}33` }}
-                >
-                  {tracker?.short || v.company}
-                </span>
-              </div>
-            )}
-            {v.status && (
-              <div>
-                <p className="text-[10px] font-bold text-[#9ab2cc] uppercase tracking-[0.08em] mb-1">Status</p>
-                <p className="text-[13px] font-extrabold text-[#0d1b2e]">{v.status}</p>
-              </div>
-            )}
-            <div className="mt-auto">
-              <AuditBadge record={v} isHardRestricted={false} />
+              )}
+              <button
+                onClick={onClose}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, border: "1px solid #dce8f7", borderRadius: 8, background: "#fff", color: "#9ab2cc", cursor: "pointer" }}
+              >
+                <X size={14} />
+              </button>
             </div>
           </div>
-        </div>
 
-        {/* Footer */}
-        <div className="px-4 py-3 border-t border-[#f0f4ff] flex gap-2 justify-end shrink-0">
-          {onEdit && (
-            <button
-              onClick={() => onEdit(v)}
-              className="flex items-center gap-1.5 bg-[#e3f2fd] hover:bg-[#bbdefb] border border-[#bbdefb] rounded-lg px-4 py-2 cursor-pointer text-[13px] font-bold text-[#1565c0] transition"
-            >
-              <Pencil size={13} /> Edit
-            </button>
+          {/* Fields grid */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: "16px 24px" }}>
+            <Field label="Consignee" value={v.consigneeName} />
+            <Field label="Date" value={v.date} />
+            <Field label="A Number" value={v.aNumber} mono />
+            <Field label="C Number" value={v.cNumber} mono />
+            <Field label="Make / Model" value={v.make} />
+            <Field label="Duty" value={v.dutyFee ? formatNaira(v.dutyFee) : null} mono />
+            <Field label="Shipping Company" value={v.company} />
+          </div>
+
+          {/* Chassis — full width below if present */}
+          {toDisplayString(v.chassisNo) !== "—" && (
+            <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid #e8f0fb" }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: "#9ab2cc", textTransform: "uppercase", letterSpacing: "0.09em", display: "block", marginBottom: 6 }}>
+                Chassis No(s)
+              </span>
+              <span style={{ fontSize: 13, fontFamily: "monospace", color: "#0d1b2e", lineHeight: 1.7, wordBreak: "break-word" }}>
+                {toDisplayString(v.chassisNo)}
+              </span>
+            </div>
           )}
-          <button
-            onClick={onClose}
-            className="bg-[#f7faff] hover:bg-[#eef4ff] border border-[#dce8f7] rounded-lg px-4 py-2 cursor-pointer text-[13px] font-semibold text-[#5a7599] transition"
-          >
-            Close
-          </button>
-        </div>
-      </motion.div>
-    </motion.div>
+
+          {(v.note || v.notes) && (
+            <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid #e8f0fb" }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: "#9ab2cc", textTransform: "uppercase", letterSpacing: "0.09em", display: "block", marginBottom: 6 }}>Notes</span>
+              <span style={{ fontSize: 13, color: "#475569", lineHeight: 1.65, wordBreak: "break-word" }}>{v.note || v.notes}</span>
+            </div>
+          )}
+        </motion.div>
+      </td>
+    </tr>
   );
 }
 
@@ -5162,20 +5069,6 @@ function VehiclesSection({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-      <AnimatePresence>
-        {viewingVehicle && (
-          <ViewVehicleModal
-            vehicle={viewingVehicle}
-            trackers={trackers}
-            onClose={() => setViewingVehicle(null)}
-            onEdit={
-              !readOnly
-                ? (v) => { setViewingVehicle(null); startEdit(v); }
-                : null
-            }
-          />
-        )}
-      </AnimatePresence>
 
       {/* ── Page header ── */}
       <div style={{
@@ -5333,99 +5226,109 @@ function VehiclesSection({
                 </tr>
               </thead>
               <tbody>
+                <AnimatePresence>
                 {paged.map((v, idx) => {
                   const tracker = trackers.find((t) => t.name === v.company);
                   const accent = tracker?.accent || "#1565c0";
                   const rowNum = rangeStart + idx;
+                  const isOpen = viewingVehicle?.id === v.id;
+                  const COL_COUNT = 10;
                   return (
-                    <tr
-                      key={v.id}
-                      style={{ borderLeft: "3px solid transparent", transition: "background 0.12s, border-color 0.12s" }}
-                      className="group hover:bg-[#f5f8ff] hover:border-l-[#1565c0]"
-                      onMouseEnter={(e) => { e.currentTarget.style.borderLeftColor = "#1565c0"; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.borderLeftColor = "transparent"; }}
-                    >
-                      <td style={{ ...TD, color: "#c7d7f5", textAlign: "center", fontWeight: 600, fontSize: 11 }}>{rowNum}</td>
-                      <td style={{ ...TD }}>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                          <span style={{ fontSize: 12, color: "#5a7599" }}>{v.date || <span style={{ color: "#dce8f7" }}>—</span>}</span>
-                          {isOldRecord(v) ? (
-                            <span style={{ display: "inline-flex", alignSelf: "flex-start", fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", background: "#fff7ed", color: "#c2410c", border: "1px solid #fed7aa", borderRadius: 4, padding: "1px 6px" }}>Old</span>
-                          ) : (
-                            <span style={{ display: "inline-flex", alignSelf: "flex-start", fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", background: "#f0fdf4", color: "#15803d", border: "1px solid #bbf7d0", borderRadius: 4, padding: "1px 6px" }}>New</span>
-                          )}
-                        </div>
-                      </td>
-                      <td style={{ ...TD }}>
-                        {v.aNumber
-                          ? <span style={{ fontFamily: "monospace", fontWeight: 700, color: "#1565c0", background: "#e8f0ff", borderRadius: 5, padding: "2px 6px", fontSize: 12 }}>{v.aNumber}</span>
-                          : <span style={{ color: "#dce8f7" }}>—</span>}
-                      </td>
-                      <td style={{ ...TD }}>
-                        {v.cNumber
-                          ? <span style={{ fontFamily: "monospace", color: "#5a7599", background: "#f4f7fc", borderRadius: 5, padding: "2px 6px", fontSize: 12 }}>{v.cNumber}</span>
-                          : <span style={{ color: "#dce8f7" }}>—</span>}
-                      </td>
-                      <td style={{ ...TD, fontWeight: 600, maxWidth: 0 }}>
-                        <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={v.consigneeName}>
+                    <React.Fragment key={v.id}>
+                      <tr
+                        onClick={() => setViewingVehicle(isOpen ? null : v)}
+                        style={{
+                          borderLeft: isOpen ? "4px solid #1565c0" : "4px solid transparent",
+                          background: isOpen ? "#eef4ff" : "transparent",
+                          transition: "background 0.12s, border-color 0.12s",
+                          cursor: "pointer",
+                        }}
+                        className="hover:bg-[#f5f8ff]"
+                      >
+                        <td style={{ ...TD, color: "#c7d7f5", textAlign: "center", fontWeight: 600, fontSize: 11 }}>{rowNum}</td>
+                        <td style={{ ...TD }}>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                            <span style={{ fontSize: 12, color: "#5a7599" }}>{v.date || <span style={{ color: "#dce8f7" }}>—</span>}</span>
+                            {isOldRecord(v) ? (
+                              <span style={{ display: "inline-flex", alignSelf: "flex-start", fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", background: "#fff7ed", color: "#c2410c", border: "1px solid #fed7aa", borderRadius: 4, padding: "1px 6px" }}>Old</span>
+                            ) : (
+                              <span style={{ display: "inline-flex", alignSelf: "flex-start", fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", background: "#f0fdf4", color: "#15803d", border: "1px solid #bbf7d0", borderRadius: 4, padding: "1px 6px" }}>New</span>
+                            )}
+                          </div>
+                        </td>
+                        <td style={{ ...TD }}>
+                          {v.aNumber
+                            ? <span style={{ fontFamily: "monospace", fontWeight: 700, color: "#1565c0", background: "#e8f0ff", borderRadius: 5, padding: "2px 6px", fontSize: 12 }}>{v.aNumber}</span>
+                            : <span style={{ color: "#dce8f7" }}>—</span>}
+                        </td>
+                        <td style={{ ...TD }}>
+                          {v.cNumber
+                            ? <span style={{ fontFamily: "monospace", color: "#5a7599", background: "#f4f7fc", borderRadius: 5, padding: "2px 6px", fontSize: 12 }}>{v.cNumber}</span>
+                            : <span style={{ color: "#dce8f7" }}>—</span>}
+                        </td>
+                        <td style={{ ...TD, fontWeight: 600 }}>
                           {v.consigneeName || <span style={{ color: "#dce8f7", fontWeight: 400 }}>—</span>}
-                        </span>
-                      </td>
-                      <td style={{ ...TD, maxWidth: 160 }}>
-                        <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "monospace", fontSize: 12, color: "#475569" }} title={toDisplayString(v.chassisNo)}>
+                        </td>
+                        <td style={{ ...TD, fontFamily: "monospace", fontSize: 12, color: "#475569" }}>
                           {toDisplayString(v.chassisNo)}
-                        </span>
-                      </td>
-                      <td style={{ ...TD }}>
-                        {v.dutyFee
-                          ? <span style={{ fontFamily: "monospace", fontWeight: 700, color: "#15803d", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 6, padding: "3px 8px", fontSize: 12, whiteSpace: "nowrap" }}>{formatNaira(v.dutyFee)}</span>
-                          : <span style={{ color: "#dce8f7" }}>—</span>}
-                      </td>
-                      <td style={{ ...TD, maxWidth: 140 }}>
-                        <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={v.make}>
+                        </td>
+                        <td style={{ ...TD }}>
+                          {v.dutyFee
+                            ? <span style={{ fontFamily: "monospace", fontWeight: 700, color: "#15803d", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 6, padding: "3px 8px", fontSize: 12, whiteSpace: "nowrap" }}>{formatNaira(v.dutyFee)}</span>
+                            : <span style={{ color: "#dce8f7" }}>—</span>}
+                        </td>
+                        <td style={{ ...TD }}>
                           {v.make || <span style={{ color: "#dce8f7" }}>—</span>}
-                        </span>
-                      </td>
-                      <td style={{ ...TD }}>
-                        {v.company ? (
-                          <span style={{
-                            display: "inline-flex", alignItems: "center",
-                            fontSize: 11, fontWeight: 700, padding: "3px 10px",
-                            borderRadius: 999, border: `1px solid ${accent}33`,
-                            background: `${accent}15`, color: accent, whiteSpace: "nowrap",
-                          }}>
-                            {tracker?.short || v.company}
-                          </span>
-                        ) : <span style={{ color: "#dce8f7" }}>—</span>}
-                      </td>
-                      <td style={{ ...TD, whiteSpace: "nowrap" }}>
-                        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                          <button onClick={() => setViewingVehicle(v)} title="View details"
-                            style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 30, height: 30, border: "none", borderRadius: 8, background: "#e3f2fd", color: "#1565c0", cursor: "pointer" }}
-                            className="hover:bg-[#bbdefb] transition-colors">
-                            <Eye size={13} />
-                          </button>
-                          {!readOnly && (
-                            <>
-                              <button onClick={() => startEdit(v)} title="Edit"
-                                style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 30, height: 30, border: "1px solid #dce8f7", borderRadius: 8, background: "#f7faff", color: "#1565c0", cursor: "pointer" }}
-                                className="hover:bg-[#dce8f7] transition-colors">
-                                <Pencil size={13} />
-                              </button>
-                              {!isHardRestricted && (
-                                <button onClick={() => remove(v.id)} title="Delete"
-                                  style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 30, height: 30, border: "none", borderRadius: 8, background: "#fff0f0", color: "#c62828", cursor: "pointer" }}
-                                  className="hover:bg-[#ffcdd2] transition-colors">
-                                  <Trash2 size={13} />
+                        </td>
+                        <td style={{ ...TD }}>
+                          {v.company ? (
+                            <span style={{ display: "inline-flex", alignItems: "center", fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 999, border: `1px solid ${accent}33`, background: `${accent}15`, color: accent, whiteSpace: "nowrap" }}>
+                              {tracker?.short || v.company}
+                            </span>
+                          ) : <span style={{ color: "#dce8f7" }}>—</span>}
+                        </td>
+                        <td style={{ ...TD, whiteSpace: "nowrap" }} onClick={(e) => e.stopPropagation()}>
+                          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setViewingVehicle(isOpen ? null : v); }}
+                              title={isOpen ? "Close" : "View details"}
+                              style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 30, height: 30, border: "none", borderRadius: 8, background: isOpen ? "#1565c0" : "#e3f2fd", color: isOpen ? "#fff" : "#1565c0", cursor: "pointer" }}
+                              className="transition-colors"
+                            >
+                              {isOpen ? <X size={13} /> : <Eye size={13} />}
+                            </button>
+                            {!readOnly && (
+                              <>
+                                <button onClick={() => startEdit(v)} title="Edit"
+                                  style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 30, height: 30, border: "1px solid #dce8f7", borderRadius: 8, background: "#f7faff", color: "#1565c0", cursor: "pointer" }}
+                                  className="hover:bg-[#dce8f7] transition-colors">
+                                  <Pencil size={13} />
                                 </button>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
+                                {!isHardRestricted && (
+                                  <button onClick={() => remove(v.id)} title="Delete"
+                                    style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 30, height: 30, border: "none", borderRadius: 8, background: "#fff0f0", color: "#c62828", cursor: "pointer" }}
+                                    className="hover:bg-[#ffcdd2] transition-colors">
+                                    <Trash2 size={13} />
+                                  </button>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                      {isOpen && (
+                        <VehicleRowDrawer
+                          v={v}
+                          trackers={trackers}
+                          colSpan={COL_COUNT}
+                          onClose={() => setViewingVehicle(null)}
+                          onEdit={!readOnly ? (rec) => { setViewingVehicle(null); startEdit(rec); } : null}
+                        />
+                      )}
+                    </React.Fragment>
                   );
                 })}
+                </AnimatePresence>
               </tbody>
             </table>
           </div>
