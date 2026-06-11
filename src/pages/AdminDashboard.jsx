@@ -4916,6 +4916,21 @@ function VehiclesSection({
     return results;
   })();
 
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+  const getRecordDate = (v) => {
+    if (v.date) { const d = new Date(v.date); if (!isNaN(d)) return d; }
+    if (v.createdAt?.toDate) return v.createdAt.toDate();
+    if (v.createdAt?.seconds) return new Date(v.createdAt.seconds * 1000);
+    return null;
+  };
+
+  const isOldRecord = (v) => {
+    const d = getRecordDate(v);
+    return d ? d < sixMonthsAgo : false;
+  };
+
   const filtered = vehicles.filter(
     (v) =>
       !search ||
@@ -4933,199 +4948,170 @@ function VehiclesSection({
         .toLowerCase()
         .includes(search.toLowerCase()),
   );
-  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
-  const paged = filtered.slice((page - 1) * perPage, page * perPage);
 
-  const th = {
-    fontSize: 10,
+  const sorted = [...filtered].sort((a, b) => {
+    const aOld = isOldRecord(a);
+    const bOld = isOldRecord(b);
+    if (aOld === bOld) return 0;
+    return aOld ? 1 : -1;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / perPage));
+  const paged = sorted.slice((page - 1) * perPage, page * perPage);
+
+  const TH = {
+    fontSize: 11,
     fontWeight: 700,
-    color: "#9ab2cc",
+    color: "rgba(255,255,255,0.7)",
     textTransform: "uppercase",
-    letterSpacing: "0.08em",
-    padding: "10px 14px",
-    background: "#f7faff",
-    borderBottom: "1px solid #dce8f7",
-    whiteSpace: "nowrap",
-  };
-  const td = {
+    letterSpacing: "0.07em",
     padding: "11px 14px",
-    borderBottom: "1px solid #eef4ff",
+    background: "#0d1b2e",
+    borderBottom: "none",
+    whiteSpace: "nowrap",
+    textAlign: "left",
+  };
+  const TD = {
+    padding: "12px 14px",
+    borderBottom: "1px solid #f0f4fa",
     verticalAlign: "middle",
-    fontSize: 12,
-    color: "#0d1b2e",
+    fontSize: 13,
+    color: "#1e2d3d",
+    background: "transparent",
   };
 
   // ── FORM VIEW ──
-  if (view === "form")
+  if (view === "form") {
+    const formSection = (title) => (
+      <div style={{
+        fontSize: 10, fontWeight: 800, textTransform: "uppercase",
+        letterSpacing: "0.1em", color: "#9ab2cc", marginBottom: 12, marginTop: 4,
+        display: "flex", alignItems: "center", gap: 8,
+      }}>
+        <span>{title}</span>
+        <span style={{ flex: 1, height: 1, background: "#eef4ff" }} />
+      </div>
+    );
+    const editIdx = editId ? vehicles.findIndex((x) => x.id === editId) : -1;
     return (
-      <div>
-        <div className="flex items-center gap-3 mb-6">
+      <div style={{ maxWidth: 860, margin: "0 auto" }}>
+        {/* Top bar */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
           <button
-            onClick={() => {
-              resetForm();
-              setView("list");
-            }}
-            className="flex items-center gap-2 text-[13px] font-bold text-[#5a7599] hover:text-[#0d1b2e] transition-colors"
+            onClick={() => { resetForm(); setView("list"); }}
+            style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", color: "#5a7599", fontSize: 13, fontWeight: 700, fontFamily: "Sora,sans-serif", padding: "6px 10px", borderRadius: 8, transition: "background 0.15s" }}
+            className="hover:bg-[#eef4ff]"
           >
-            <ChevronLeft size={16} />
-            Back
+            <ChevronLeft size={15} /> Back
           </button>
-          <h2
-            className="text-[20px] font-bold text-[#0d1b2e]"
-            style={{ flex: 1 }}
-          >
-            {editId ? "Edit Vehicle Record" : "New Vehicle Record"}
-          </h2>
-          {editId &&
-            (() => {
-              const current = vehicles.find((x) => x.id === editId);
-              return current ? (
-                <div style={{ marginLeft: 12 }}>
-                  <AuditBadge
-                    record={current}
-                    isHardRestricted={isHardRestricted}
-                  />
-                </div>
-              ) : null;
-            })()}
-          {/* Prev/Next quick nav */}
+          <div style={{ flex: 1 }}>
+            <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: "#0d1b2e", lineHeight: 1.2 }}>
+              {editId ? "Edit Vehicle Record" : "New Vehicle Record"}
+            </h2>
+            {editId && <p style={{ margin: "2px 0 0", fontSize: 12, color: "#9ab2cc" }}>Record {editIdx + 1} of {vehicles.length}</p>}
+          </div>
+          {editId && (() => {
+            const cur = vehicles.find((x) => x.id === editId);
+            return cur ? <AuditBadge record={cur} isHardRestricted={isHardRestricted} /> : null;
+          })()}
           {editId && (
-            <div style={{ display: "flex", gap: 8 }}>
-              <button
-                type="button"
-                onClick={() => {
-                  const idx = vehicles.findIndex((x) => x.id === editId);
-                  if (idx > 0) startEdit(vehicles[idx - 1]);
-                }}
-                className="px-3 py-2 rounded-xl border border-[#dce8f7] bg-white"
-              >
-                Prev
+            <div style={{ display: "flex", gap: 6 }}>
+              <button type="button" onClick={() => { if (editIdx > 0) startEdit(vehicles[editIdx - 1]); }}
+                disabled={editIdx <= 0}
+                style={{ padding: "6px 14px", border: "1px solid #dce8f7", borderRadius: 8, background: "#fff", cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#5a7599", fontFamily: "Sora,sans-serif", opacity: editIdx <= 0 ? 0.4 : 1 }}>
+                ← Prev
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  const idx = vehicles.findIndex((x) => x.id === editId);
-                  if (idx >= 0 && idx < vehicles.length - 1)
-                    startEdit(vehicles[idx + 1]);
-                }}
-                className="px-3 py-2 rounded-xl border border-[#dce8f7] bg-white"
-              >
-                Next
+              <button type="button" onClick={() => { if (editIdx < vehicles.length - 1) startEdit(vehicles[editIdx + 1]); }}
+                disabled={editIdx >= vehicles.length - 1}
+                style={{ padding: "6px 14px", border: "1px solid #dce8f7", borderRadius: 8, background: "#fff", cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#5a7599", fontFamily: "Sora,sans-serif", opacity: editIdx >= vehicles.length - 1 ? 0.4 : 1 }}>
+                Next →
               </button>
             </div>
           )}
         </div>
-        <form
-          onSubmit={save}
-          className="bg-white rounded-2xl border border-[#dce8f7] p-6 grid grid-cols-1 md:grid-cols-2 gap-5"
-        >
-          {/* Date */}
-          <div>
-            <label className={lbl}>Date</label>
-            <input
-              type="date"
-              value={form.date}
-              onChange={(e) => setForm((p) => ({ ...p, date: e.target.value }))}
-              className={inp}
-            />
-          </div>
 
-          {/* A Number */}
-          <div>
-            <label className={lbl}>A Number</label>
-            <input
-              type="text"
-              placeholder="e.g. 118452"
-              value={form.aNumber}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, aNumber: e.target.value }))
-              }
-              className={inp}
-            />
-          </div>
-
-          {/* C Number */}
-          <div>
-            <label className={lbl}>C Number</label>
-            <input
-              type="text"
-              placeholder="e.g. 115599"
-              value={form.cNumber}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, cNumber: e.target.value }))
-              }
-              className={inp}
-            />
-          </div>
-
-          {/* Consignee Name */}
-          <div>
-            <label className={lbl}>Consignee Name</label>
-            <input
-              type="text"
-              placeholder="e.g. T LAW NIG ENT"
-              value={form.consigneeName}
-              required
-              onChange={(e) =>
-                setForm((p) => ({ ...p, consigneeName: e.target.value }))
-              }
-              className={inp}
-            />
-          </div>
-
-          {/* Chassis No — full width, supports multiple */}
-          <div className="md:col-span-2">
-            <label className={lbl}>Chassis No(s)</label>
-            <div className="grid gap-2">
-              {(chassisInputs.length ? chassisInputs : [""]).map((c, idx) => (
-                <div
-                  key={idx}
-                  style={{ display: "flex", gap: 8, alignItems: "center" }}
-                >
-                  <input
-                    type="text"
-                    placeholder={`Chassis ${idx + 1}`}
-                    value={c}
-                    onChange={(e) =>
-                      setChassisInputs((prev) =>
-                        prev.map((p, i) => (i === idx ? e.target.value : p)),
-                      )
-                    }
-                    className={inp}
-                    style={{ flex: 1 }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setChassisInputs((prev) =>
-                        prev.filter((_, i) => i !== idx),
-                      )
-                    }
-                    className="text-sm px-3 py-1"
-                    style={{
-                      background: "#fff",
-                      border: "1px solid #e6eef9",
-                      borderRadius: 8,
-                      cursor: "pointer",
-                    }}
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
-
+        <form onSubmit={save} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          {/* Reference section */}
+          <div style={{ background: "#fff", border: "1px solid #e8f0fb", borderRadius: 16, padding: "22px 24px" }}>
+            {formSection("Reference")}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
               <div>
+                <label className={lbl}>Date</label>
+                <input type="date" value={form.date} onChange={(e) => setForm((p) => ({ ...p, date: e.target.value }))} className={inp} />
+              </div>
+              <div>
+                <label className={lbl}>A Number</label>
+                <input type="text" placeholder="e.g. 118452" value={form.aNumber} onChange={(e) => setForm((p) => ({ ...p, aNumber: e.target.value }))} className={inp} />
+              </div>
+              <div>
+                <label className={lbl}>C Number</label>
+                <input type="text" placeholder="e.g. 115599" value={form.cNumber} onChange={(e) => setForm((p) => ({ ...p, cNumber: e.target.value }))} className={inp} />
+              </div>
+            </div>
+          </div>
+
+          {/* Consignee section */}
+          <div style={{ background: "#fff", border: "1px solid #e8f0fb", borderRadius: 16, padding: "22px 24px" }}>
+            {formSection("Consignee")}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <div>
+                <label className={lbl}>Consignee Name</label>
+                <input type="text" placeholder="e.g. T LAW NIG ENT" value={form.consigneeName} required onChange={(e) => setForm((p) => ({ ...p, consigneeName: e.target.value }))} className={inp} />
+              </div>
+              <div>
+                <label className={lbl}>Shipping Company</label>
+                <select value={form.company} onChange={(e) => setForm((p) => ({ ...p, company: e.target.value }))} className={inp}>
+                  <option value="">— Select company —</option>
+                  {trackers.map((t) => (
+                    <option key={t.id} value={t.name}>{t.name}{t.short ? ` (${t.short})` : ""}</option>
+                  ))}
+                </select>
+                {trackers.length === 0 && (
+                  <p style={{ fontSize: 11, color: "#e65100", marginTop: 4 }}>No trackers found — add shipping companies in the Trackers tab first.</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Vehicle section */}
+          <div style={{ background: "#fff", border: "1px solid #e8f0fb", borderRadius: 16, padding: "22px 24px" }}>
+            {formSection("Vehicle")}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+              <div>
+                <label className={lbl}>Make / Model</label>
+                <input type="text" placeholder="e.g. Used Toyota Camry" value={form.make} onChange={(e) => setForm((p) => ({ ...p, make: e.target.value }))} className={inp} />
+              </div>
+              <div>
+                <label className={lbl}>Duty (₦)</label>
+                <input type="number" placeholder="e.g. 1500000" value={form.dutyFee} onChange={(e) => setForm((p) => ({ ...p, dutyFee: e.target.value }))} className={inp} min="0" />
+              </div>
+            </div>
+            <div>
+              <label className={lbl}>Chassis No(s)</label>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {(chassisInputs.length ? chassisInputs : [""]).map((c, idx) => (
+                  <div key={idx} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <input
+                      type="text"
+                      placeholder={`Chassis ${idx + 1}`}
+                      value={c}
+                      onChange={(e) => setChassisInputs((prev) => prev.map((p, i) => (i === idx ? e.target.value : p)))}
+                      className={inp}
+                      style={{ flex: 1 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setChassisInputs((prev) => prev.filter((_, i) => i !== idx))}
+                      style={{ padding: "6px 12px", border: "1px solid #fecdd3", borderRadius: 8, background: "#fff", cursor: "pointer", color: "#e11d48", fontSize: 12, fontFamily: "Sora,sans-serif", fontWeight: 600 }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
                 <button
                   type="button"
                   onClick={() => setChassisInputs((prev) => [...prev, ""])}
-                  className="text-sm px-3 py-2"
-                  style={{
-                    background: "#1565c0",
-                    color: "#fff",
-                    borderRadius: 8,
-                    cursor: "pointer",
-                    fontWeight: 700,
-                  }}
+                  style={{ alignSelf: "flex-start", padding: "7px 16px", border: "1px dashed #b0c8f5", borderRadius: 8, background: "#f0f6ff", cursor: "pointer", color: "#1565c0", fontSize: 12, fontFamily: "Sora,sans-serif", fontWeight: 700 }}
                 >
                   + Add chassis
                 </button>
@@ -5133,77 +5119,23 @@ function VehiclesSection({
             </div>
           </div>
 
-          {/* Duty */}
-          <div>
-            <label className={lbl}>Duty (₦)</label>
-            <input
-              type="number"
-              placeholder="e.g. 1500000"
-              value={form.dutyFee}
-              onChange={(e) => setForm((p) => ({ ...p, dutyFee: e.target.value }))}
-              className={inp}
-              min="0"
-            />
-          </div>
-
-          {/* Make */}
-          <div>
-            <label className={lbl}>Make / Model</label>
-            <input
-              type="text"
-              placeholder="e.g. Used Toyota Camry"
-              value={form.make}
-              onChange={(e) => setForm((p) => ({ ...p, make: e.target.value }))}
-              className={inp}
-            />
-          </div>
-
-          {/* Company — pulled from trackingPortals */}
-          <div>
-            <label className={lbl}>Shipping Company</label>
-            <select
-              value={form.company}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, company: e.target.value }))
-              }
-              className={inp}
-            >
-              <option value="">— Select company —</option>
-              {trackers.map((t) => (
-                <option key={t.id} value={t.name}>
-                  {t.name}
-                  {t.short ? ` (${t.short})` : ""}
-                </option>
-              ))}
-            </select>
-            {trackers.length === 0 && (
-              <p className="text-[11px] text-[#e65100] mt-1">
-                No trackers found — add shipping companies in the Trackers tab
-                first.
-              </p>
-            )}
-          </div>
-
           {saveErr && (
-            <p className="md:col-span-2 text-[12px] text-red-600">{saveErr}</p>
+            <div style={{ background: "#fef2f2", border: "1px solid #fecdd3", borderRadius: 10, padding: "10px 16px", color: "#c62828", fontSize: 13 }}>{saveErr}</div>
           )}
 
-          <div className="md:col-span-2 flex gap-3 pt-2">
+          <div style={{ display: "flex", gap: 10 }}>
             <button
               type="submit"
               disabled={saving}
-              className="flex items-center gap-2 bg-[#1565c0] hover:bg-[#0d47a1] text-white text-[13px] font-bold px-5 py-2.5 rounded-xl transition-colors disabled:opacity-60"
+              style={{ display: "flex", alignItems: "center", gap: 8, background: "#1565c0", color: "#fff", border: "none", borderRadius: 12, padding: "11px 24px", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "Sora,sans-serif", opacity: saving ? 0.7 : 1 }}
             >
               <Save size={14} />
               {saving ? "Saving…" : editId ? "Update Record" : "Save Record"}
             </button>
             <button
               type="button"
-              onClick={() => {
-                resetForm();
-                setView("list");
-              }}
-              className="text-[13px] font-bold text-[#5a7599] hover:text-[#0d1b2e] px-4 py-2.5 rounded-xl border border-[#dce8f7] transition-colors"
+              onClick={() => { resetForm(); setView("list"); }}
+              style={{ padding: "11px 20px", border: "1px solid #dce8f7", borderRadius: 12, background: "#fff", cursor: "pointer", fontSize: 14, fontWeight: 600, color: "#5a7599", fontFamily: "Sora,sans-serif" }}
             >
               Cancel
             </button>
@@ -5211,10 +5143,25 @@ function VehiclesSection({
         </form>
       </div>
     );
+  }
 
   // ── LIST VIEW ──
+  const perPageOptions = (() => {
+    const base = [10, 20, 25, 50, 100];
+    const total = vehicles.length;
+    if (total > 100) {
+      let n = 150;
+      while (n <= total) { base.push(n); n += 50; }
+      if (base[base.length - 1] < total) base.push(total);
+    }
+    return base;
+  })();
+
+  const rangeStart = sorted.length === 0 ? 0 : (page - 1) * perPage + 1;
+  const rangeEnd = Math.min(page * perPage, sorted.length);
+
   return (
-    <div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
       <AnimatePresence>
         {viewingVehicle && (
           <ViewVehicleModal
@@ -5223,200 +5170,165 @@ function VehiclesSection({
             onClose={() => setViewingVehicle(null)}
             onEdit={
               !readOnly
-                ? (v) => {
-                    setViewingVehicle(null);
-                    startEdit(v);
-                  }
+                ? (v) => { setViewingVehicle(null); startEdit(v); }
                 : null
             }
           />
         )}
       </AnimatePresence>
 
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+      {/* ── Page header ── */}
+      <div style={{
+        display: "flex", alignItems: "flex-start", justifyContent: "space-between",
+        flexWrap: "wrap", gap: 16, marginBottom: 20,
+      }}>
         <div>
-          <h2 className="text-[20px] font-bold text-[#0d1b2e]">Vehicles</h2>
-          <p className="text-[13px] text-[#5a7599] font-light">
-            {vehicles.length} record{vehicles.length !== 1 ? "s" : ""}
+          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: "#0d1b2e", letterSpacing: "-0.01em" }}>
+            Vehicle Records
+          </h2>
+          <p style={{ margin: "4px 0 0", fontSize: 13, color: "#9ab2cc", fontWeight: 500 }}>
+            {vehicles.length} record{vehicles.length !== 1 ? "s" : ""} in database
           </p>
         </div>
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="relative" ref={searchRef}>
-            <Search
-              size={14}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5a7599] pointer-events-none"
-            />
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          {/* Search */}
+          <div className="relative" ref={searchRef} style={{ flex: 1, minWidth: 300 }}>
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9ab2cc] pointer-events-none" />
             <input
               type="text"
-              placeholder="Search consignee, make, chassis…"
+              placeholder="Search consignee, make, chassis, A-No…"
               value={search}
               autoComplete="off"
               onFocus={() => setSearchOpen(true)}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-                setSearchOpen(true);
+              onChange={(e) => { setSearch(e.target.value); setPage(1); setSearchOpen(true); }}
+              onKeyDown={(e) => { if (e.key === "Escape" || e.key === "Enter") setSearchOpen(false); }}
+              style={{
+                width: "100%", paddingLeft: 38, paddingRight: search ? 32 : 14, paddingTop: 10, paddingBottom: 10,
+                border: "1px solid #dce8f7", borderRadius: 12, fontSize: 13, color: "#0d1b2e",
+                fontFamily: "Sora,sans-serif", outline: "none", background: "#fff",
+                boxSizing: "border-box",
               }}
-              onKeyDown={(e) => {
-                if (e.key === "Escape") { setSearchOpen(false); }
-                if (e.key === "Enter") { setSearchOpen(false); }
-              }}
-              className="pl-9 pr-8 py-2.5 rounded-xl border border-[#dce8f7] text-[14px] text-[#0d1b2e] outline-none focus:border-[#1565c0] w-full min-w-[340px] font-[Sora,sans-serif]"
+              className="focus:border-[#1565c0]"
             />
             {search && (
-              <button
-                type="button"
-                onClick={() => { setSearch(""); setPage(1); setSearchOpen(false); }}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9ab2cc] hover:text-[#0d1b2e] transition-colors"
-                style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}
-              >
+              <button type="button" onClick={() => { setSearch(""); setPage(1); setSearchOpen(false); }}
+                style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#9ab2cc", display: "flex", padding: 0 }}>
                 <X size={13} />
               </button>
             )}
             {searchOpen && searchSuggestions.length > 0 && (
-              <div
-                style={{
-                  position: "absolute",
-                  top: "calc(100% + 6px)",
-                  left: 0,
-                  minWidth: "100%",
-                  background: "#fff",
-                  border: "1px solid #dce8f7",
-                  borderRadius: 12,
-                  boxShadow: "0 8px 32px rgba(21,101,192,0.13)",
-                  zIndex: 200,
-                  overflow: "hidden",
-                }}
-              >
+              <div style={{
+                position: "absolute", top: "calc(100% + 6px)", left: 0, minWidth: "100%",
+                background: "#fff", border: "1px solid #dce8f7", borderRadius: 12,
+                boxShadow: "0 8px 32px rgba(21,101,192,0.13)", zIndex: 200, overflow: "hidden",
+              }}>
                 {searchSuggestions.map((s, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      setSearch(s.label);
-                      setPage(1);
-                      setSearchOpen(false);
-                    }}
+                  <button key={i} type="button"
+                    onMouseDown={(e) => { e.preventDefault(); setSearch(s.label); setPage(1); setSearchOpen(false); }}
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
-                      width: "100%",
-                      padding: "9px 14px",
-                      border: "none",
+                      display: "flex", alignItems: "center", gap: 10, width: "100%",
+                      padding: "9px 14px", border: "none",
                       borderBottom: i < searchSuggestions.length - 1 ? "1px solid #f0f4fc" : "none",
-                      background: "transparent",
-                      cursor: "pointer",
-                      textAlign: "left",
-                      fontFamily: "Sora,sans-serif",
+                      background: "transparent", cursor: "pointer", textAlign: "left", fontFamily: "Sora,sans-serif",
                     }}
-                    className="hover:bg-[#f0f6ff] transition-colors"
+                    className="hover:bg-[#f0f6ff]"
                   >
-                    <span
-                      style={{
-                        fontSize: 9,
-                        fontWeight: 700,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.08em",
-                        color: "#fff",
-                        background: "#1565c0",
-                        padding: "2px 6px",
-                        borderRadius: 4,
-                        whiteSpace: "nowrap",
-                        flexShrink: 0,
-                      }}
-                    >
+                    <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#fff", background: "#1565c0", padding: "2px 7px", borderRadius: 4, whiteSpace: "nowrap", flexShrink: 0 }}>
                       {s.tag}
                     </span>
-                    <span style={{ fontSize: 13, color: "#0d1b2e", fontWeight: 500 }}>
-                      {s.label}
-                    </span>
+                    <span style={{ fontSize: 13, color: "#0d1b2e", fontWeight: 500 }}>{s.label}</span>
                   </button>
                 ))}
               </div>
             )}
           </div>
+
+          {/* CSV */}
           <button
-            onClick={() =>
-              downloadCSV(
-                "vehicles.csv",
-                filtered.map((v) => ({
-                  Date: v.date,
-                  "A-Number": v.aNumber,
-                  "C-Number": v.cNumber,
-                  Consignee: v.consigneeName,
-                  "Chassis No": toDisplayString(v.chassisNo),
-                  Duty: formatNaira(v.dutyFee),
-                  Make: v.make,
-                  Company: v.company,
-                })),
-              )
-            }
-            className="flex items-center gap-2 bg-[#f0f6ff] hover:bg-[#dce8f7] border border-[#dce8f7] text-[#1565c0] px-3 py-2.5 rounded-xl text-[13px] font-bold cursor-pointer transition"
+            onClick={() => downloadCSV("vehicles.csv", sorted.map((v) => ({
+              Date: v.date, "A-Number": v.aNumber, "C-Number": v.cNumber,
+              Consignee: v.consigneeName, "Chassis No": toDisplayString(v.chassisNo),
+              Duty: formatNaira(v.dutyFee), Make: v.make, Company: v.company,
+            })))}
             title="Download CSV"
+            style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 16px", border: "1px solid #dce8f7", borderRadius: 12, background: "#fff", color: "#5a7599", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Sora,sans-serif", whiteSpace: "nowrap" }}
+            className="hover:bg-[#f0f6ff] hover:text-[#1565c0] transition-colors"
           >
-            <Download size={14} /> CSV
+            <Download size={14} /> Export CSV
           </button>
+
+          {/* Add */}
           {!readOnly && (
             <button
-              onClick={() => {
-                resetForm();
-                setView("form");
-              }}
-              className="flex items-center gap-2 bg-[#1565c0] hover:bg-[#0d47a1] text-white text-[13px] font-bold px-4 py-2.5 rounded-xl transition-colors"
+              onClick={() => { resetForm(); setView("form"); }}
+              style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 20px", border: "none", borderRadius: 12, background: "#1565c0", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "Sora,sans-serif", whiteSpace: "nowrap", boxShadow: "0 2px 12px rgba(21,101,192,0.25)" }}
+              className="hover:bg-[#0d47a1] transition-colors"
             >
-              <Plus size={14} /> Add Record
+              <Plus size={14} /> New Record
             </button>
           )}
         </div>
       </div>
 
-      {/* Records per page */}
-      <div className="flex items-center gap-2 mb-3">
-        <span className="text-[12px] text-[#5a7599] font-medium">Rows per page:</span>
-        <select
-          value={perPage}
-          onChange={(e) => { setPerPage(Number(e.target.value)); setPage(1); }}
-          className="border border-[#dce8f7] rounded-lg px-2 py-1 text-[12px] text-[#0d1b2e] outline-none focus:border-[#1565c0] font-[Sora,sans-serif] bg-white cursor-pointer"
-        >
-          {(() => {
-            const base = [10, 20, 25, 50, 100];
-            const total = vehicles.length;
-            if (total > 100) {
-              let n = 150;
-              while (n <= total) { base.push(n); n += 50; }
-              if (base[base.length - 1] < total) base.push(total);
-            }
-            return base.map((n) => <option key={n} value={n}>{n} rows</option>);
-          })()}
-        </select>
-        <span className="text-[12px] text-[#9ab2cc]">
-          {filtered.length} total
-        </span>
-      </div>
+      {/* ── Table card ── */}
+      <div style={{ background: "#fff", border: "1px solid #e8f0fb", borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 16px rgba(21,101,192,0.06)" }}>
 
-      {loading ? (
-        <div className="text-center py-12 text-[#5a7599] text-[13px]">Loading…</div>
-      ) : paged.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-2xl border border-[#dce8f7]">
-          <Truck size={36} className="mx-auto mb-3 text-[#dce8f7]" />
-          <p className="text-[15px] font-bold text-[#0d1b2e] mb-1">
-            {search ? "No records match" : "No vehicle records yet"}
-          </p>
-          {!readOnly && (
-            <p className="text-[13px] text-[#5a7599]">Click "Add Record" to log the first entry.</p>
-          )}
+        {/* Toolbar inside card */}
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "12px 18px", borderBottom: "1px solid #f0f4fa", gap: 12, flexWrap: "wrap",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 12, color: "#9ab2cc", fontWeight: 500 }}>Show</span>
+            <select
+              value={perPage}
+              onChange={(e) => { setPerPage(Number(e.target.value)); setPage(1); }}
+              style={{ border: "1px solid #dce8f7", borderRadius: 8, padding: "4px 10px", fontSize: 12, color: "#0d1b2e", fontFamily: "Sora,sans-serif", background: "#f7faff", cursor: "pointer", outline: "none" }}
+            >
+              {perPageOptions.map((n) => <option key={n} value={n}>{n}</option>)}
+            </select>
+            <span style={{ fontSize: 12, color: "#9ab2cc", fontWeight: 500 }}>rows</span>
+          </div>
+          <span style={{ fontSize: 12, color: "#9ab2cc" }}>
+            {sorted.length === 0
+              ? "No results"
+              : `Showing ${rangeStart}–${rangeEnd} of ${sorted.length}`}
+            {search && sorted.length !== vehicles.length && ` (filtered from ${vehicles.length})`}
+          </span>
         </div>
-      ) : (
-        <div className="bg-white rounded-2xl border border-[#dce8f7] overflow-hidden">
-          <div className="overflow-x-auto">
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+
+        {loading ? (
+          <div style={{ textAlign: "center", padding: "60px 0", color: "#9ab2cc", fontSize: 13 }}>Loading records…</div>
+        ) : paged.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "60px 0" }}>
+            <Truck size={40} style={{ margin: "0 auto 12px", color: "#dce8f7" }} />
+            <p style={{ fontWeight: 700, color: "#0d1b2e", fontSize: 15, margin: "0 0 4px" }}>
+              {search ? "No records match your search" : "No vehicle records yet"}
+            </p>
+            {!readOnly && !search && (
+              <p style={{ color: "#9ab2cc", fontSize: 13, margin: 0 }}>Click "New Record" to add the first entry.</p>
+            )}
+          </div>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
                 <tr>
-                  {["#", "Date", "A-No", "C-No", "Consignee", "Chassis No", "Duty", "Make", "Company", "Actions"].map((h) => (
-                    <th key={h} style={th}>{h}</th>
+                  {[
+                    { label: "#",          w: 44  },
+                    { label: "Date",       w: 110 },
+                    { label: "A-No",       w: 90  },
+                    { label: "C-No",       w: 90  },
+                    { label: "Consignee",  w: null },
+                    { label: "Chassis No", w: 160 },
+                    { label: "Duty",       w: 130 },
+                    { label: "Make",       w: 140 },
+                    { label: "Company",    w: 110 },
+                    { label: "Actions",    w: 130 },
+                  ].map(({ label, w }) => (
+                    <th key={label} style={{ ...TH, width: w || undefined, minWidth: w || undefined }}>
+                      {label}
+                    </th>
                   ))}
                 </tr>
               </thead>
@@ -5424,79 +5336,87 @@ function VehiclesSection({
                 {paged.map((v, idx) => {
                   const tracker = trackers.find((t) => t.name === v.company);
                   const accent = tracker?.accent || "#1565c0";
-                  const rowNum = (page - 1) * perPage + idx + 1;
+                  const rowNum = rangeStart + idx;
                   return (
                     <tr
                       key={v.id}
-                      style={{ background: idx % 2 === 0 ? "#fff" : "#f9fbff" }}
-                      className="hover:bg-[#eef4ff] transition-colors"
+                      style={{ borderLeft: "3px solid transparent", transition: "background 0.12s, border-color 0.12s" }}
+                      className="group hover:bg-[#f5f8ff] hover:border-l-[#1565c0]"
+                      onMouseEnter={(e) => { e.currentTarget.style.borderLeftColor = "#1565c0"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.borderLeftColor = "transparent"; }}
                     >
-                      <td style={{ ...td, color: "#9ab2cc", width: 36, textAlign: "center" }}>{rowNum}</td>
-                      <td style={td}>{v.date || <span style={{ color: "#c7d7f5" }}>—</span>}</td>
-                      <td style={{ ...td, fontFamily: "monospace", color: "#1565c0", fontWeight: 700 }}>{v.aNumber || "—"}</td>
-                      <td style={{ ...td, fontFamily: "monospace", color: "#5a7599" }}>{v.cNumber || "—"}</td>
-                      <td style={{ ...td, fontWeight: 600, maxWidth: 160 }}>
+                      <td style={{ ...TD, color: "#c7d7f5", textAlign: "center", fontWeight: 600, fontSize: 11 }}>{rowNum}</td>
+                      <td style={{ ...TD }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                          <span style={{ fontSize: 12, color: "#5a7599" }}>{v.date || <span style={{ color: "#dce8f7" }}>—</span>}</span>
+                          {isOldRecord(v) ? (
+                            <span style={{ display: "inline-flex", alignSelf: "flex-start", fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", background: "#fff7ed", color: "#c2410c", border: "1px solid #fed7aa", borderRadius: 4, padding: "1px 6px" }}>Old</span>
+                          ) : (
+                            <span style={{ display: "inline-flex", alignSelf: "flex-start", fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", background: "#f0fdf4", color: "#15803d", border: "1px solid #bbf7d0", borderRadius: 4, padding: "1px 6px" }}>New</span>
+                          )}
+                        </div>
+                      </td>
+                      <td style={{ ...TD }}>
+                        {v.aNumber
+                          ? <span style={{ fontFamily: "monospace", fontWeight: 700, color: "#1565c0", background: "#e8f0ff", borderRadius: 5, padding: "2px 6px", fontSize: 12 }}>{v.aNumber}</span>
+                          : <span style={{ color: "#dce8f7" }}>—</span>}
+                      </td>
+                      <td style={{ ...TD }}>
+                        {v.cNumber
+                          ? <span style={{ fontFamily: "monospace", color: "#5a7599", background: "#f4f7fc", borderRadius: 5, padding: "2px 6px", fontSize: 12 }}>{v.cNumber}</span>
+                          : <span style={{ color: "#dce8f7" }}>—</span>}
+                      </td>
+                      <td style={{ ...TD, fontWeight: 600, maxWidth: 0 }}>
                         <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={v.consigneeName}>
-                          {v.consigneeName || <span style={{ color: "#c7d7f5" }}>—</span>}
+                          {v.consigneeName || <span style={{ color: "#dce8f7", fontWeight: 400 }}>—</span>}
                         </span>
                       </td>
-                      <td style={{ ...td, fontFamily: "monospace", maxWidth: 180 }}>
-                        <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={toDisplayString(v.chassisNo)}>
+                      <td style={{ ...TD, maxWidth: 160 }}>
+                        <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "monospace", fontSize: 12, color: "#475569" }} title={toDisplayString(v.chassisNo)}>
                           {toDisplayString(v.chassisNo)}
                         </span>
                       </td>
-                      <td style={{ ...td, fontFamily: "monospace", color: "#2e7d32", whiteSpace: "nowrap" }}>
-                        {formatNaira(v.dutyFee)}
+                      <td style={{ ...TD }}>
+                        {v.dutyFee
+                          ? <span style={{ fontFamily: "monospace", fontWeight: 700, color: "#15803d", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 6, padding: "3px 8px", fontSize: 12, whiteSpace: "nowrap" }}>{formatNaira(v.dutyFee)}</span>
+                          : <span style={{ color: "#dce8f7" }}>—</span>}
                       </td>
-                      <td style={{ ...td, maxWidth: 140 }}>
+                      <td style={{ ...TD, maxWidth: 140 }}>
                         <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={v.make}>
-                          {v.make || <span style={{ color: "#c7d7f5" }}>—</span>}
+                          {v.make || <span style={{ color: "#dce8f7" }}>—</span>}
                         </span>
                       </td>
-                      <td style={td}>
+                      <td style={{ ...TD }}>
                         {v.company ? (
-                          <span
-                            style={{
-                              display: "inline-block",
-                              fontSize: 10,
-                              fontWeight: 700,
-                              padding: "2px 8px",
-                              borderRadius: 999,
-                              border: `1px solid ${accent}33`,
-                              background: `${accent}18`,
-                              color: accent,
-                              whiteSpace: "nowrap",
-                            }}
-                          >
+                          <span style={{
+                            display: "inline-flex", alignItems: "center",
+                            fontSize: 11, fontWeight: 700, padding: "3px 10px",
+                            borderRadius: 999, border: `1px solid ${accent}33`,
+                            background: `${accent}15`, color: accent, whiteSpace: "nowrap",
+                          }}>
                             {tracker?.short || v.company}
                           </span>
-                        ) : "—"}
+                        ) : <span style={{ color: "#dce8f7" }}>—</span>}
                       </td>
-                      <td style={{ ...td, whiteSpace: "nowrap" }}>
-                        <div style={{ display: "flex", gap: 6 }}>
-                          <button
-                            onClick={() => setViewingVehicle(v)}
-                            title="View"
-                            style={{ background: "#e3f2fd", border: "none", borderRadius: 8, padding: "5px 10px", color: "#1565c0", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600 }}
-                          >
-                            <Eye size={11} /> View
+                      <td style={{ ...TD, whiteSpace: "nowrap" }}>
+                        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                          <button onClick={() => setViewingVehicle(v)} title="View details"
+                            style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 30, height: 30, border: "none", borderRadius: 8, background: "#e3f2fd", color: "#1565c0", cursor: "pointer" }}
+                            className="hover:bg-[#bbdefb] transition-colors">
+                            <Eye size={13} />
                           </button>
                           {!readOnly && (
                             <>
-                              <button
-                                onClick={() => startEdit(v)}
-                                title="Edit"
-                                style={{ background: "#f0f6ff", border: "1px solid #dce8f7", borderRadius: 8, padding: "5px 10px", color: "#1565c0", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600 }}
-                              >
-                                <Pencil size={11} /> Edit
+                              <button onClick={() => startEdit(v)} title="Edit"
+                                style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 30, height: 30, border: "1px solid #dce8f7", borderRadius: 8, background: "#f7faff", color: "#1565c0", cursor: "pointer" }}
+                                className="hover:bg-[#dce8f7] transition-colors">
+                                <Pencil size={13} />
                               </button>
                               {!isHardRestricted && (
-                                <button
-                                  onClick={() => remove(v.id)}
-                                  title="Delete"
-                                  style={{ background: "#ffebee", border: "none", borderRadius: 8, padding: "5px 8px", color: "#c62828", cursor: "pointer", display: "flex", alignItems: "center" }}
-                                >
-                                  <Trash2 size={11} />
+                                <button onClick={() => remove(v.id)} title="Delete"
+                                  style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 30, height: 30, border: "none", borderRadius: 8, background: "#fff0f0", color: "#c62828", cursor: "pointer" }}
+                                  className="hover:bg-[#ffcdd2] transition-colors">
+                                  <Trash2 size={13} />
                                 </button>
                               )}
                             </>
@@ -5509,17 +5429,17 @@ function VehiclesSection({
               </tbody>
             </table>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      <Pagination
-        page={page}
-        total={totalPages}
-        onChange={(p) => {
-          setPage(p);
-          window.scrollTo({ top: 0, behavior: "smooth" });
-        }}
-      />
+      {/* Pagination */}
+      <div style={{ marginTop: 16 }}>
+        <Pagination
+          page={page}
+          total={totalPages}
+          onChange={(p) => { setPage(p); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+        />
+      </div>
     </div>
   );
 }
