@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   collection,
@@ -4783,6 +4783,8 @@ function VehiclesSection({
   const [editId, setEditId] = useState(null);
   const [chassisInputs, setChassisInputs] = useState([]);
   const [search, setSearch] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchRef = useRef(null);
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(20);
   const [saving, setSaving] = useState(false);
@@ -4873,6 +4875,46 @@ function VehiclesSection({
     setVehicles((p) => p.filter((v) => v.id !== id));
     await deleteDoc(doc(db, "vehicles", id)).catch(() => {});
   };
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target))
+        setSearchOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const searchSuggestions = (() => {
+    if (!search.trim()) return [];
+    const q = search.toLowerCase();
+    const seen = new Set();
+    const results = [];
+    for (const v of vehicles) {
+      const candidates = [
+        v.consigneeName && { label: v.consigneeName, tag: "Consignee" },
+        v.make && { label: v.make, tag: "Make" },
+        v.aNumber && { label: v.aNumber, tag: "A-No" },
+        v.cNumber && { label: v.cNumber, tag: "C-No" },
+        v.company && { label: v.company, tag: "Company" },
+        v.date && { label: v.date, tag: "Date" },
+        ...(toDisplayString(v.chassisNo) !== "—"
+          ? toDisplayString(v.chassisNo)
+              .split(", ")
+              .map((c) => ({ label: c, tag: "Chassis" }))
+          : []),
+      ].filter(Boolean);
+      for (const c of candidates) {
+        const key = c.tag + "::" + c.label;
+        if (!seen.has(key) && c.label.toLowerCase().includes(q)) {
+          seen.add(key);
+          results.push(c);
+          if (results.length >= 10) return results;
+        }
+      }
+    }
+    return results;
+  })();
 
   const filtered = vehicles.filter(
     (v) =>
@@ -5200,7 +5242,7 @@ function VehiclesSection({
           </p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="relative">
+          <div className="relative" ref={searchRef}>
             <Search
               size={14}
               className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5a7599] pointer-events-none"
@@ -5209,12 +5251,92 @@ function VehiclesSection({
               type="text"
               placeholder="Search consignee, make, chassis…"
               value={search}
+              autoComplete="off"
+              onFocus={() => setSearchOpen(true)}
               onChange={(e) => {
                 setSearch(e.target.value);
                 setPage(1);
+                setSearchOpen(true);
               }}
-              className="pl-9 pr-3 py-2 rounded-xl border border-[#dce8f7] text-[13px] text-[#0d1b2e] outline-none focus:border-[#1565c0] min-w-[220px] font-[Sora,sans-serif]"
+              onKeyDown={(e) => {
+                if (e.key === "Escape") { setSearchOpen(false); }
+                if (e.key === "Enter") { setSearchOpen(false); }
+              }}
+              className="pl-9 pr-8 py-2.5 rounded-xl border border-[#dce8f7] text-[14px] text-[#0d1b2e] outline-none focus:border-[#1565c0] w-full min-w-[340px] font-[Sora,sans-serif]"
             />
+            {search && (
+              <button
+                type="button"
+                onClick={() => { setSearch(""); setPage(1); setSearchOpen(false); }}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9ab2cc] hover:text-[#0d1b2e] transition-colors"
+                style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}
+              >
+                <X size={13} />
+              </button>
+            )}
+            {searchOpen && searchSuggestions.length > 0 && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "calc(100% + 6px)",
+                  left: 0,
+                  minWidth: "100%",
+                  background: "#fff",
+                  border: "1px solid #dce8f7",
+                  borderRadius: 12,
+                  boxShadow: "0 8px 32px rgba(21,101,192,0.13)",
+                  zIndex: 200,
+                  overflow: "hidden",
+                }}
+              >
+                {searchSuggestions.map((s, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      setSearch(s.label);
+                      setPage(1);
+                      setSearchOpen(false);
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      width: "100%",
+                      padding: "9px 14px",
+                      border: "none",
+                      borderBottom: i < searchSuggestions.length - 1 ? "1px solid #f0f4fc" : "none",
+                      background: "transparent",
+                      cursor: "pointer",
+                      textAlign: "left",
+                      fontFamily: "Sora,sans-serif",
+                    }}
+                    className="hover:bg-[#f0f6ff] transition-colors"
+                  >
+                    <span
+                      style={{
+                        fontSize: 9,
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.08em",
+                        color: "#fff",
+                        background: "#1565c0",
+                        padding: "2px 6px",
+                        borderRadius: 4,
+                        whiteSpace: "nowrap",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {s.tag}
+                    </span>
+                    <span style={{ fontSize: 13, color: "#0d1b2e", fontWeight: 500 }}>
+                      {s.label}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <button
             onClick={() =>
@@ -5254,20 +5376,22 @@ function VehiclesSection({
       {/* Records per page */}
       <div className="flex items-center gap-2 mb-3">
         <span className="text-[12px] text-[#5a7599] font-medium">Rows per page:</span>
-        <input
-          type="number"
-          list="veh-per-page-opts"
+        <select
           value={perPage}
-          min={1}
-          onChange={(e) => {
-            const v = parseInt(e.target.value, 10);
-            if (v > 0) { setPerPage(v); setPage(1); }
-          }}
-          className="w-20 border border-[#dce8f7] rounded-lg px-2 py-1 text-[12px] text-[#0d1b2e] outline-none focus:border-[#1565c0] font-[Sora,sans-serif] text-center"
-        />
-        <datalist id="veh-per-page-opts">
-          {[10, 20, 25, 50, 100].map((n) => <option key={n} value={n} />)}
-        </datalist>
+          onChange={(e) => { setPerPage(Number(e.target.value)); setPage(1); }}
+          className="border border-[#dce8f7] rounded-lg px-2 py-1 text-[12px] text-[#0d1b2e] outline-none focus:border-[#1565c0] font-[Sora,sans-serif] bg-white cursor-pointer"
+        >
+          {(() => {
+            const base = [10, 20, 25, 50, 100];
+            const total = vehicles.length;
+            if (total > 100) {
+              let n = 150;
+              while (n <= total) { base.push(n); n += 50; }
+              if (base[base.length - 1] < total) base.push(total);
+            }
+            return base.map((n) => <option key={n} value={n}>{n} rows</option>);
+          })()}
+        </select>
         <span className="text-[12px] text-[#9ab2cc]">
           {filtered.length} total
         </span>
@@ -5291,7 +5415,7 @@ function VehiclesSection({
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
               <thead>
                 <tr>
-                  {["#", "Date", "A-No", "C-No", "Consignee", "Chassis No", "Duty", "Make", "Company", ""].map((h) => (
+                  {["#", "Date", "A-No", "C-No", "Consignee", "Chassis No", "Duty", "Make", "Company", "Actions"].map((h) => (
                     <th key={h} style={th}>{h}</th>
                   ))}
                 </tr>
@@ -5423,6 +5547,12 @@ export default function AdminDashboard() {
     setTab(id);
     window.localStorage.setItem("adminTab", id);
   };
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 640);
+  useEffect(() => {
+    const h = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
+  }, []);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -5633,45 +5763,79 @@ export default function AdminDashboard() {
         style={{
           background: "#fff",
           borderBottom: "1px solid #dce8f7",
-          padding: "0 1.5rem",
-          display: "flex",
-          gap: 0,
           flexShrink: 0,
         }}
       >
-        {visibleTabs.map(({ id, label, Icon }) => (
-          <button
-            key={id}
-            onClick={() => handleSetTab(id)}
+        {isMobile ? (
+          <div style={{ padding: "10px 16px" }}>
+            <select
+              value={tab}
+              onChange={(e) => handleSetTab(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "10px 14px",
+                border: "1px solid #dce8f7",
+                borderRadius: 10,
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#1565c0",
+                background: "#f0f6ff",
+                fontFamily: "Sora,sans-serif",
+                cursor: "pointer",
+                outline: "none",
+              }}
+            >
+              {visibleTabs.map(({ id, label }) => (
+                <option key={id} value={id}>{label}</option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <div
             style={{
               display: "flex",
-              alignItems: "center",
-              gap: 7,
-              padding: "14px 20px",
-              border: "none",
-              borderBottom:
-                tab === id ? "2px solid #1565c0" : "2px solid transparent",
-              background: "transparent",
-              color: tab === id ? "#1565c0" : "#5a7599",
-              fontSize: 13,
-              fontWeight: tab === id ? 700 : 500,
-              cursor: "pointer",
-              fontFamily: "Sora,sans-serif",
-              transition: "all 0.15s",
+              gap: 0,
+              overflowX: "auto",
+              padding: "0 1.5rem",
+              scrollbarWidth: "none",
             }}
           >
-            <Icon size={16} />
-            {label}
-          </button>
-        ))}
+            {visibleTabs.map(({ id, label, Icon }) => (
+              <button
+                key={id}
+                onClick={() => handleSetTab(id)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 7,
+                  padding: "14px 18px",
+                  border: "none",
+                  borderBottom: tab === id ? "2px solid #1565c0" : "2px solid transparent",
+                  background: "transparent",
+                  color: tab === id ? "#1565c0" : "#5a7599",
+                  fontSize: 13,
+                  fontWeight: tab === id ? 700 : 500,
+                  cursor: "pointer",
+                  fontFamily: "Sora,sans-serif",
+                  transition: "all 0.15s",
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
+                }}
+              >
+                <Icon size={16} />
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
       </nav>
 
       {/* Main content */}
       <main
         style={{
           flex: 1,
-          padding: "2rem 1.5rem",
-          maxWidth: tab === "vehicles" ? 1600 : 1100,
+          padding: "1.5rem 1.25rem",
+          maxWidth: tab === "vehicles" ? "100%" : 1100,
           width: "100%",
           margin: "0 auto",
           boxSizing: "border-box",
