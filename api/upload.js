@@ -27,7 +27,7 @@ export default async function handler(req, res) {
     const result = await cloudinary.uploader.upload(file, {
       folder,
       public_id: `${Date.now()}_${slug}`,
-      resource_type: "image",
+      resource_type: "auto",
       overwrite: false,
     });
 
