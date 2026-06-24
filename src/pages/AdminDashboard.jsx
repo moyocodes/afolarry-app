@@ -110,9 +110,18 @@ const downloadCSV = (filename, rows) => {
 const isImageUrl = (url) =>
   /\.(jpg|jpeg|png|gif|webp|svg|avif)(\?|$)/i.test(url || "");
 
-const idCardHref = (url) => {
-  if (!url || isImageUrl(url)) return url;
-  return url.replace("/upload/", "/upload/fl_attachment/");
+const downloadIdCard = async (url) => {
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = url.split("/").pop() || "id-card";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  } catch {
+    window.open(url, "_blank");
+  }
 };
 
 const auditMeta = (user, action) => ({
@@ -487,28 +496,50 @@ function ViewProfileModal({ user: u, onClose }) {
               </div>
             )}
             {u.idCard && (
-              <a
-                href={idCardHref(u.idCard)}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  background: "#f0f6ff",
-                  border: "1px solid #dce8f7",
-                  borderRadius: 10,
-                  padding: "10px 14px",
-                  textDecoration: "none",
-                  color: "#1565c0",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  marginTop: 4,
-                }}
-              >
-                <CreditCard size={14} />{" "}
-                {isImageUrl(u.idCard) ? "View ID Card" : "Download ID Card"}
-              </a>
+              isImageUrl(u.idCard) ? (
+                <a
+                  href={u.idCard}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    background: "#f0f6ff",
+                    border: "1px solid #dce8f7",
+                    borderRadius: 10,
+                    padding: "10px 14px",
+                    textDecoration: "none",
+                    color: "#1565c0",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    marginTop: 4,
+                  }}
+                >
+                  <CreditCard size={14} /> View ID Card
+                </a>
+              ) : (
+                <button
+                  onClick={() => downloadIdCard(u.idCard)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    background: "#f0f6ff",
+                    border: "1px solid #dce8f7",
+                    borderRadius: 10,
+                    padding: "10px 14px",
+                    color: "#1565c0",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    marginTop: 4,
+                    cursor: "pointer",
+                    fontFamily: "'Sora',sans-serif",
+                  }}
+                >
+                  <CreditCard size={14} /> Download ID Card
+                </button>
+              )
             )}
           </div>
         </div>
@@ -3014,24 +3045,45 @@ function UsersSection({
                         </span>
                       </div>
                       {u.idCard && (
-                        <a
-                          href={idCardHref(u.idCard)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 4,
-                            marginTop: 4,
-                            fontSize: 10,
-                            color: "#2e7d32",
-                            fontWeight: 700,
-                            textDecoration: "none",
-                          }}
-                        >
-                          <CreditCard size={10} />{" "}
-                          {isImageUrl(u.idCard) ? "View ID" : "Download ID"}
-                        </a>
+                        isImageUrl(u.idCard) ? (
+                          <a
+                            href={u.idCard}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 4,
+                              marginTop: 4,
+                              fontSize: 10,
+                              color: "#2e7d32",
+                              fontWeight: 700,
+                              textDecoration: "none",
+                            }}
+                          >
+                            <CreditCard size={10} /> View ID
+                          </a>
+                        ) : (
+                          <button
+                            onClick={() => downloadIdCard(u.idCard)}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 4,
+                              marginTop: 4,
+                              fontSize: 10,
+                              color: "#2e7d32",
+                              fontWeight: 700,
+                              background: "none",
+                              border: "none",
+                              padding: 0,
+                              cursor: "pointer",
+                              fontFamily: "'Sora',sans-serif",
+                            }}
+                          >
+                            <CreditCard size={10} /> Download ID
+                          </button>
+                        )
                       )}
                     </td>
 
@@ -3721,21 +3773,42 @@ function ProfileModal({ uid, email, existingData, onComplete, onClose }) {
               ID Card{" "}
               {!isEditing && <span style={{ color: "#ef5350" }}>*</span>}
               {isEditing && existingData?.idCard && (
-                <a
-                  href={idCardHref(existingData.idCard)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    fontSize: 10,
-                    color: "#42a5f5",
-                    fontWeight: 600,
-                    textTransform: "none",
-                    letterSpacing: 0,
-                    marginLeft: 6,
-                  }}
-                >
-                  {isImageUrl(existingData.idCard) ? "View current ↗" : "Download current ↓"}
-                </a>
+                isImageUrl(existingData.idCard) ? (
+                  <a
+                    href={existingData.idCard}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      fontSize: 10,
+                      color: "#42a5f5",
+                      fontWeight: 600,
+                      textTransform: "none",
+                      letterSpacing: 0,
+                      marginLeft: 6,
+                    }}
+                  >
+                    View current ↗
+                  </a>
+                ) : (
+                  <button
+                    onClick={() => downloadIdCard(existingData.idCard)}
+                    style={{
+                      fontSize: 10,
+                      color: "#42a5f5",
+                      fontWeight: 600,
+                      textTransform: "none",
+                      letterSpacing: 0,
+                      marginLeft: 6,
+                      background: "none",
+                      border: "none",
+                      padding: 0,
+                      cursor: "pointer",
+                      fontFamily: "'Sora',sans-serif",
+                    }}
+                  >
+                    Download current ↓
+                  </button>
+                )
               )}
             </label>
             <label
