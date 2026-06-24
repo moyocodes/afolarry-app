@@ -3344,6 +3344,30 @@ function ProfileModal({ uid, email, existingData, onComplete, onClose }) {
     setIdFileName(f.name);
   };
 
+  const uploadFile = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("Failed to read file"));
+      reader.onload = (ev) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/upload");
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.onload = () => {
+          try {
+            const d = JSON.parse(xhr.responseText);
+            xhr.status === 200
+              ? resolve(d.url)
+              : reject(new Error(d.error || "Upload failed"));
+          } catch {
+            reject(new Error("Invalid response"));
+          }
+        };
+        xhr.onerror = () => reject(new Error("Network error"));
+        xhr.send(JSON.stringify({ file: ev.target.result, filename: file.name, folder: "afolaray/profiles" }));
+      };
+      reader.readAsDataURL(file);
+    });
+
   const submit = async (e) => {
     e.preventDefault();
     if (!isEditing && !idFile) {
