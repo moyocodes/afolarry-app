@@ -110,24 +110,52 @@ const downloadCSV = (filename, rows) => {
 const isImageUrl = (url) =>
   /\.(jpg|jpeg|png|gif|webp|svg|avif)(\?|$)/i.test(url || "");
 
-const downloadIdCard = async (url) => {
-  try {
-    const res = await fetch(url);
-    const blob = await res.blob();
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = url.split("/").pop() || "id-card";
-    a.click();
-    URL.revokeObjectURL(a.href);
-  } catch {
-    window.open(url, "_blank");
-  }
+const downloadIdCard = (url) => {
+  const filename = decodeURIComponent(url.split("/").pop() || "id-card");
+  const a = document.createElement("a");
+  a.href = `/api/download?url=${encodeURIComponent(url)}`;
+  a.download = filename;
+  a.click();
 };
 
 const auditMeta = (user, action) => ({
   [`${action}By`]: user?.email || user?.uid || "unknown",
   [`${action}At`]: serverTimestamp(),
 });
+
+// ── TOAST ────────────────────────────────────────────────────────────────────
+function useToast() {
+  const [toast, setToast] = useState(null);
+  const showToast = (msg, type = "success") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  };
+  const ToastEl = toast ? (
+    <div
+      style={{
+        position: "fixed",
+        bottom: 28,
+        left: "50%",
+        transform: "translateX(-50%)",
+        background: toast.type === "error" ? "#c62828" : "#1b5e20",
+        color: "#fff",
+        padding: "12px 22px",
+        borderRadius: 12,
+        fontSize: 13,
+        fontFamily: "'Sora',sans-serif",
+        fontWeight: 600,
+        zIndex: 99999,
+        boxShadow: "0 8px 32px rgba(0,0,0,0.22)",
+        whiteSpace: "nowrap",
+        pointerEvents: "none",
+      }}
+    >
+      {toast.type === "error" ? "✕ " : "✓ "}
+      {toast.msg}
+    </div>
+  ) : null;
+  return { showToast, ToastEl };
+}
 
 // ── SHARED TAILWIND CLASS STRINGS ───────────────────────────────────────────
 const inp =
@@ -693,6 +721,7 @@ const BLANK_CAR = {
 };
 
 function CarsSection({ readOnly = false, currentUser, isHardRestricted }) {
+  const { showToast, ToastEl } = useToast();
   const [cars, setCars] = useState([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState("list");
@@ -827,6 +856,7 @@ function CarsSection({ readOnly = false, currentUser, isHardRestricted }) {
       resetForm();
       setView("list");
       load();
+      showToast(editId ? "Car updated successfully" : "Car added successfully");
     } catch (err) {
       setSaveErr(err.message || "Save failed");
     } finally {
@@ -1103,6 +1133,7 @@ function CarsSection({ readOnly = false, currentUser, isHardRestricted }) {
 
   return (
     <div>
+      {ToastEl}
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div>
           <h2 className="text-[20px] font-bold text-[#0d1b2e]">Cars</h2>
@@ -1294,6 +1325,7 @@ const BLANK_SHIP = {
 };
 
 function ShipmentsSection({ readOnly = false, currentUser, isHardRestricted }) {
+  const { showToast, ToastEl } = useToast();
   const [shipments, setShipments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState("list");
@@ -1395,6 +1427,7 @@ function ShipmentsSection({ readOnly = false, currentUser, isHardRestricted }) {
       resetForm();
       setView("list");
       load();
+      showToast(editId ? "Shipment updated successfully" : "Shipment added successfully");
     } catch (err) {
       setSaveErr(err.message || "Save failed");
     } finally {
@@ -1657,6 +1690,7 @@ function ShipmentsSection({ readOnly = false, currentUser, isHardRestricted }) {
 
   return (
     <div>
+      {ToastEl}
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div>
           <h2 className="text-[20px] font-bold text-[#0d1b2e]">Shipments</h2>
@@ -3376,6 +3410,7 @@ function UsersSection({
 // ── PROFILE COMPLETION MODAL ───────────────────────────────────────────────
 // ── PROFILE DRAWER ─────────────────────────────────────────────────────────
 function ProfileModal({ uid, email, existingData, onComplete, onClose }) {
+  const { showToast, ToastEl } = useToast();
   const isEditing = !!existingData?.idCard;
 
   const [name, setName] = useState(existingData?.name || "");
@@ -3437,6 +3472,7 @@ function ProfileModal({ uid, email, existingData, onComplete, onClose }) {
       else if (existingData?.idCard) updates.idCard = existingData.idCard;
       if (profileUrl) updates.profileImage = profileUrl;
       await setDoc(doc(db, "adminUsers", uid), updates, { merge: true });
+      showToast("Profile saved successfully");
       onComplete(updates);
     } catch (ex) {
       setErr(ex.message || "Upload failed. Try again.");
@@ -3447,6 +3483,7 @@ function ProfileModal({ uid, email, existingData, onComplete, onClose }) {
 
   return (
     <>
+      {ToastEl}
       {/* Backdrop */}
       <div
         onClick={onClose}
