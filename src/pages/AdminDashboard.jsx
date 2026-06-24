@@ -722,30 +722,27 @@ function CarsSection({ readOnly = false, currentUser, isHardRestricted }) {
 
   const uploadOneFile = (file, onProgress) =>
     new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onerror = () => reject(new Error("Failed to read file"));
-      reader.onload = (e) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", "/api/upload");
-        xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.upload.onprogress = (ev) => {
-          if (ev.lengthComputable && onProgress)
-            onProgress(Math.round((ev.loaded / ev.total) * 100));
-        };
-        xhr.onload = () => {
-          try {
-            const d = JSON.parse(xhr.responseText);
-            xhr.status === 200
-              ? resolve(d.url)
-              : reject(new Error(d.error || "Upload failed"));
-          } catch {
-            reject(new Error("Invalid response"));
-          }
-        };
-        xhr.onerror = () => reject(new Error("Network error"));
-        xhr.send(JSON.stringify({ file: e.target.result, filename: file.name }));
+      const xhr = new XMLHttpRequest();
+      const form = new FormData();
+      form.append("file", file);
+      form.append("folder", "afolaray/cars");
+      xhr.open("POST", "/api/upload");
+      xhr.upload.onprogress = (ev) => {
+        if (ev.lengthComputable && onProgress)
+          onProgress(Math.round((ev.loaded / ev.total) * 100));
       };
-      reader.readAsDataURL(file);
+      xhr.onload = () => {
+        try {
+          const d = JSON.parse(xhr.responseText);
+          xhr.status === 200
+            ? resolve(d.url)
+            : reject(new Error(d.error || "Upload failed"));
+        } catch {
+          reject(new Error("Invalid response"));
+        }
+      };
+      xhr.onerror = () => reject(new Error("Network error"));
+      xhr.send(form);
     });
 
   const uploadAllImages = async () => {
@@ -3354,29 +3351,15 @@ function ProfileModal({ uid, email, existingData, onComplete, onClose }) {
     setIdFileName(f.name);
   };
 
-  const uploadFile = (file) =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onerror = () => reject(new Error("Failed to read file"));
-      reader.onload = (ev) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", "/api/upload");
-        xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.onload = () => {
-          try {
-            const d = JSON.parse(xhr.responseText);
-            xhr.status === 200
-              ? resolve(d.url)
-              : reject(new Error(d.error || "Upload failed"));
-          } catch {
-            reject(new Error("Invalid response"));
-          }
-        };
-        xhr.onerror = () => reject(new Error("Network error"));
-        xhr.send(JSON.stringify({ file: ev.target.result, filename: file.name, folder: "afolaray/profiles" }));
-      };
-      reader.readAsDataURL(file);
-    });
+  const uploadFile = async (file) => {
+    const form = new FormData();
+    form.append("file", file);
+    form.append("folder", "afolaray/profiles");
+    const res = await fetch("/api/upload", { method: "POST", body: form });
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.error || "Upload failed");
+    return d.url;
+  };
 
   const submit = async (e) => {
     e.preventDefault();

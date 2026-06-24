@@ -1,4 +1,5 @@
 import { v2 as cloudinary } from "cloudinary";
+import formidable from "formidable";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -6,31 +7,31 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+export const config = { api: { bodyParser: false } };
+
 export default async function handler(req, res) {
   if (req.method !== "POST")
     return res.status(405).json({ error: "Method not allowed" });
 
-  const { file, filename } = req.body ?? {};
+  const form = formidable({ maxFileSize: 20 * 1024 * 1024 });
+  let fields, files;
+  try {
+    [fields, files] = await form.parse(req);
+  } catch (err) {
+    return res.status(400).json({ error: "Failed to parse upload" });
+  }
+
+  const file = files.file?.[0];
   if (!file) return res.status(400).json({ error: "No file provided" });
 
+  const folder = fields.folder?.[0] || "afolaray/cars";
+
   try {
-    const slug = filename
-      ? filename
-          .replace(/\.[^/.]+$/, "")
-          .replace(/[^a-z0-9_-]/gi, "_")
-          .slice(0, 60)
-      : String(Date.now());
-
-    // allow caller to specify folder (useful for vehicles vs cars)
-    const folder = req.body?.folder || "afolaray/cars";
-
-    const result = await cloudinary.uploader.upload(file, {
+    const result = await cloudinary.uploader.upload(file.filepath, {
       folder,
-      public_id: `${Date.now()}_${slug}`,
       resource_type: "auto",
       overwrite: false,
     });
-
     res.json({ url: result.secure_url });
   } catch (err) {
     res.status(500).json({ error: err.message || "Cloudinary upload failed" });
