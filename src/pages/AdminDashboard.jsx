@@ -107,6 +107,14 @@ const downloadCSV = (filename, rows) => {
   URL.revokeObjectURL(a.href);
 };
 
+const isImageUrl = (url) =>
+  /\.(jpg|jpeg|png|gif|webp|svg|avif)(\?|$)/i.test(url || "");
+
+const idCardHref = (url) => {
+  if (!url || isImageUrl(url)) return url;
+  return url.replace("/upload/", "/upload/fl_attachment/");
+};
+
 const auditMeta = (user, action) => ({
   [`${action}By`]: user?.email || user?.uid || "unknown",
   [`${action}At`]: serverTimestamp(),
@@ -480,7 +488,7 @@ function ViewProfileModal({ user: u, onClose }) {
             )}
             {u.idCard && (
               <a
-                href={u.idCard}
+                href={idCardHref(u.idCard)}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
@@ -498,7 +506,8 @@ function ViewProfileModal({ user: u, onClose }) {
                   marginTop: 4,
                 }}
               >
-                <CreditCard size={14} /> View ID Card
+                <CreditCard size={14} />{" "}
+                {isImageUrl(u.idCard) ? "View ID Card" : "Download ID Card"}
               </a>
             )}
           </div>
@@ -3009,7 +3018,7 @@ function UsersSection({
                       </div>
                       {u.idCard && (
                         <a
-                          href={u.idCard}
+                          href={idCardHref(u.idCard)}
                           target="_blank"
                           rel="noopener noreferrer"
                           style={{
@@ -3023,7 +3032,8 @@ function UsersSection({
                             textDecoration: "none",
                           }}
                         >
-                          <CreditCard size={10} /> View ID
+                          <CreditCard size={10} />{" "}
+                          {isImageUrl(u.idCard) ? "View ID" : "Download ID"}
                         </a>
                       )}
                     </td>
@@ -3729,7 +3739,7 @@ function ProfileModal({ uid, email, existingData, onComplete, onClose }) {
               {!isEditing && <span style={{ color: "#ef5350" }}>*</span>}
               {isEditing && existingData?.idCard && (
                 <a
-                  href={existingData.idCard}
+                  href={idCardHref(existingData.idCard)}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
@@ -3741,7 +3751,7 @@ function ProfileModal({ uid, email, existingData, onComplete, onClose }) {
                     marginLeft: 6,
                   }}
                 >
-                  View current ↗
+                  {isImageUrl(existingData.idCard) ? "View current ↗" : "Download current ↓"}
                 </a>
               )}
             </label>
