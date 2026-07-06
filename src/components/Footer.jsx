@@ -15,6 +15,40 @@ const navLinks = [
   { to: "/solutions", l: "Solutions" },
 ];
 
+const XIcon = (props) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
+
+const InstagramIcon = (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
+    <rect x="3" y="3" width="18" height="18" rx="5" />
+    <circle cx="12" cy="12" r="4" />
+    <circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none" />
+  </svg>
+);
+
+const FacebookIcon = (props) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+    <path d="M14 13.5h2.5l1-4H14V7.5c0-1.03 0-2 2-2h1.5V2.14C17.17 2.1 15.9 2 14.6 2 11.9 2 10 3.66 10 6.7V9.5H7v4h3V22h4z" />
+  </svg>
+);
+
+const socialLinks = [
+  { href: "https://x.com/officalafolaray?s=21", label: "X (Twitter)", Icon: XIcon },
+  {
+    href: "https://www.instagram.com/afolaray?igsh=MWRjbW90cnlkejc5dw==",
+    label: "Instagram",
+    Icon: InstagramIcon,
+  },
+  {
+    href: "https://www.facebook.com/share/1BV6GWHZ79/",
+    label: "Facebook",
+    Icon: FacebookIcon,
+  },
+];
+
 export default function Footer() {
   return (
     <footer
@@ -116,6 +150,29 @@ export default function Footer() {
               >
                 Sea freight specialists
               </span>
+            </div>
+            <div style={{ display: "flex", gap: "0.6rem", marginTop: "1rem" }}>
+              {socialLinks.map(({ href, label, Icon }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: "30px",
+                    height: "30px",
+                    borderRadius: "50%",
+                    background: "#eaf2fc",
+                    color: "#1565c0",
+                  }}
+                >
+                  <Icon width={14} height={14} />
+                </a>
+              ))}
             </div>
           </div>
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import {
   Anchor,
@@ -20,7 +20,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import PageHeader from "../components/PageHeader";
 import VehicleDetail from "./VehicleDetail";
-import { toDisplayString } from "../lib/utils";
+import { toDisplayString, getVehicleEntries } from "../lib/utils";
 
 /* ─── tokens ──────────────────────────────────────────────────── */
 const NAVY = "#03112A";
@@ -112,9 +112,10 @@ export default function TrackShipment() {
   const [selectedVehicleId, setSelectedVehicleId] = useState(null);
   const [trackers, setTrackers] = useState(DEFAULT_TRACKERS);
   const [loadingTrackers, setLoadingTrackers] = useState(true);
-  const [vehicles, setVehicles] = useState([]);
-  const [loadingVehicles, setLoadingVehicles] = useState(true);
-  const [vehicleSearch, setVehicleSearch] = useState("");
+  const [vehicleQuery, setVehicleQuery] = useState("");
+  const [vehicleResults, setVehicleResults] = useState([]);
+  const [loadingVehicles, setLoadingVehicles] = useState(false);
+  const [vehicleSearched, setVehicleSearched] = useState(false);
   const [hoveredTracker, setHoveredTracker] = useState(null);
 
   /* load trackers */
@@ -145,23 +146,50 @@ export default function TrackShipment() {
     return () => { mounted = false; };
   }, []);
 
-  /* load vehicles */
-  useEffect(() => {
-    let mounted = true;
-    const load = async () => {
-      setLoadingVehicles(true);
-      try {
-        const snap = await getDocs(collection(db, "vehicles"));
-        if (mounted) setVehicles(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-      } catch {
-        if (mounted) setVehicles([]);
-      } finally {
-        if (mounted) setLoadingVehicles(false);
-      }
-    };
-    load();
-    return () => { mounted = false; };
-  }, []);
+  /* look up a vehicle by chassis no, A-number, or C-number — never fetches the full collection */
+  const searchVehicles = async (raw) => {
+    const term = raw.trim();
+    if (!term) return;
+    setLoadingVehicles(true);
+    setVehicleSearched(true);
+    try {
+      const variants = [...new Set([term, term.toUpperCase()])];
+      // "chassisNo" is queried for legacy records that still store it as a flat
+      // scalar; "chassisNumbers" is the flattened array new multi-vehicle
+      // records store, matched via array-contains.
+      const equalityFields = ["chassisNo", "aNumber", "cNumber"];
+      const snaps = await Promise.all([
+        ...equalityFields.flatMap((field) =>
+          variants.map((value) =>
+            getDocs(query(collection(db, "vehicles"), where(field, "==", value))),
+          ),
+        ),
+        ...variants.map((value) =>
+          getDocs(query(collection(db, "vehicles"), where("chassisNumbers", "array-contains", value))),
+        ),
+      ]);
+      const byId = new Map();
+      snaps.forEach((snap) =>
+        snap.docs.forEach((d) => byId.set(d.id, { id: d.id, ...d.data() })),
+      );
+      setVehicleResults(Array.from(byId.values()));
+    } catch {
+      setVehicleResults([]);
+    } finally {
+      setLoadingVehicles(false);
+    }
+  };
+
+  const handleVehicleSearch = (e) => {
+    e.preventDefault();
+    searchVehicles(vehicleQuery);
+  };
+
+  const clearVehicleSearch = () => {
+    setVehicleQuery("");
+    setVehicleResults([]);
+    setVehicleSearched(false);
+  };
 
   const openTracker = (tracker) => {
     if (!tracker) return;
@@ -173,18 +201,6 @@ export default function TrackShipment() {
     }
     window.location.assign(tracker.url);
   };
-
-  /* filter vehicles */
-  const q = vehicleSearch.trim().toLowerCase();
-  const filteredVehicles = q
-    ? vehicles.filter((v) =>
-        [toDisplayString(v.chassisNo), v.make, v.company, v.aNumber, v.cNumber, v.consigneeName]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase()
-          .includes(q),
-      )
-    : vehicles;
 
   return (
     <div style={{ fontFamily: "'DM Sans', 'Sora', sans-serif", background: "#F4F7FC", minHeight: "100vh" }}>
@@ -323,9 +339,11 @@ export default function TrackShipment() {
                 <Truck size={16} strokeWidth={2} color={WHITE} />
               </div>
               <div>
-                <h3 style={styles.sidebarTitle}>Vehicle Records</h3>
+                <h3 style={styles.sidebarTitle}>Vehicle Lookup</h3>
                 <p style={styles.sidebarSub}>
-                  {!loadingVehicles && `${filteredVehicles.length} vehicle${filteredVehicles.length !== 1 ? "s" : ""}${q ? " found" : " on record"}`}
+                  {vehicleSearched && !loadingVehicles
+                    ? `${vehicleResults.length} vehicle${vehicleResults.length !== 1 ? "s" : ""} found`
+                    : "Look up your vehicle by its own reference"}
                 </p>
               </div>
             </div>
@@ -333,49 +351,79 @@ export default function TrackShipment() {
             <div style={styles.sidebarDivider} />
 
             {/* search */}
-            <div style={styles.searchRow}>
+            <form onSubmit={handleVehicleSearch} style={styles.searchRow}>
               <div style={styles.searchWrap}>
                 <Search size={14} color={SLATE} style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
                 <input
-                  aria-label="Search vehicles"
-                  value={vehicleSearch}
-                  onChange={(e) => setVehicleSearch(e.target.value)}
-                  placeholder="Search make, chassis…"
+                  aria-label="Search by chassis no, A-number, or C-number"
+                  value={vehicleQuery}
+                  onChange={(e) => setVehicleQuery(e.target.value)}
+                  placeholder="Chassis No, A-Number, or C-Number"
                   style={styles.searchInput}
                 />
               </div>
-              {vehicleSearch && (
+              {vehicleQuery && (
                 <motion.button
+                  type="button"
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
-                  onClick={() => setVehicleSearch("")}
+                  onClick={clearVehicleSearch}
                   style={styles.clearBtn}
                   title="Clear"
                 >
                   <X size={14} />
                 </motion.button>
               )}
-            </div>
+              <motion.button
+                type="submit"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                disabled={loadingVehicles || !vehicleQuery.trim()}
+                style={{
+                  ...styles.searchBtn,
+                  cursor: loadingVehicles || !vehicleQuery.trim() ? "not-allowed" : "pointer",
+                  opacity: loadingVehicles || !vehicleQuery.trim() ? 0.55 : 1,
+                }}
+              >
+                {loadingVehicles ? "…" : "Search"}
+              </motion.button>
+            </form>
 
             {/* vehicle list */}
             <div style={styles.vehicleList}>
               {loadingVehicles ? (
                 <div style={styles.loadingWrap}>
-                  {[...Array(3)].map((_, i) => (
+                  {[...Array(2)].map((_, i) => (
                     <div key={i} style={{ ...styles.skeletonCard, animationDelay: `${i * 0.12}s` }} />
                   ))}
                 </div>
-              ) : filteredVehicles.length === 0 ? (
+              ) : !vehicleSearched ? (
                 <div style={styles.emptyState}>
                   <Truck size={28} color={BLUE_DIM} strokeWidth={1.5} />
-                  <p style={{ color: SLATE, fontSize: 13, marginTop: 8 }}>
-                    {q ? "No vehicles match your search" : "No vehicle records yet"}
+                  <p style={{ color: SLATE, fontSize: 13, marginTop: 8, textAlign: "center" }}>
+                    Enter your chassis number, A-Number, or C-Number to view your vehicle.
+                  </p>
+                </div>
+              ) : vehicleResults.length === 0 ? (
+                <div style={styles.emptyState}>
+                  <Truck size={28} color={BLUE_DIM} strokeWidth={1.5} />
+                  <p style={{ color: SLATE, fontSize: 13, marginTop: 8, textAlign: "center" }}>
+                    No vehicle matches "{vehicleQuery.trim()}"
                   </p>
                 </div>
               ) : (
-                filteredVehicles.map((v, i) => {
+                vehicleResults.map((v, i) => {
                   const { color: stColor, label: stLabel } = statusMeta(v.status);
+                  const entries = getVehicleEntries(v);
+                  const primary = entries[0];
+                  const makeLabel = [primary?.make || "Unknown", entries.length > 1 ? `+${entries.length - 1} more` : null]
+                    .filter(Boolean)
+                    .join(" ");
+                  const chassisLabel = entries
+                    .map((e) => toDisplayString(e.chassisNo))
+                    .filter((s) => s !== "—")
+                    .join(" | ") || "—";
                   return (
                     <motion.div
                       key={v.id}
@@ -390,7 +438,7 @@ export default function TrackShipment() {
                         {v.image ? (
                           <img
                             src={v.image}
-                            alt={v.make || "vehicle"}
+                            alt={primary?.make || "vehicle"}
                             style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 10 }}
                           />
                         ) : (
@@ -401,7 +449,7 @@ export default function TrackShipment() {
                       {/* info */}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 6 }}>
-                          <span style={styles.vehicleMake}>{(v.make || "Unknown").toString()}</span>
+                          <span style={styles.vehicleMake}>{makeLabel}</span>
                           <span
                             style={styles.vehicleViewBtn}
                             role="button"
@@ -412,7 +460,7 @@ export default function TrackShipment() {
                             View <ChevronRight size={11} strokeWidth={2.5} style={{ verticalAlign: -1 }} />
                           </span>
                         </div>
-                        <p style={styles.vehicleChassis}>{toDisplayString(v.chassisNo)}</p>
+                        <p style={styles.vehicleChassis}>{chassisLabel}</p>
                         <p style={styles.vehicleConsignee}>{v.company || "—"}</p>
                       </div>
 
@@ -580,6 +628,11 @@ const styles = {
     border: `1px solid ${BORDER}`, background: WHITE,
     color: SLATE, cursor: "pointer", display: "flex",
     alignItems: "center",
+  },
+  searchBtn: {
+    padding: "0 16px", borderRadius: 12, border: "none",
+    background: BLUE, color: WHITE, fontSize: 13, fontWeight: 700,
+    fontFamily: "inherit", flexShrink: 0,
   },
   vehicleList: {
     maxHeight: 560, overflowY: "auto", paddingRight: 2,

@@ -1,0 +1,43 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"const icons = require\\('lucide-react'\\); console.log\\(Object.keys\\(icons\\).filter\\(k => /twitter|instagram|facebook|^X$/i.test\\(k\\)\\)\\)\")",
+      "Bash(node -e \"const icons = require\\('lucide-react'\\); console.log\\(Object.keys\\(icons\\).length\\)\")",
+      "Skill(run)",
+      "Skill(run:*)",
+      "Bash(curl -sf http://localhost:5173)",
+      "Bash(node -e \"require.resolve\\('playwright'\\)\")",
+      "Bash(npx --yes playwright --version)",
+      "Bash(npm init *)",
+      "Bash(npx playwright *)",
+      "Bash(rm -rf /private/tmp/claude-501/-Users-tizetimoyosore-Desktop-moyo-AFOLARRY-afolarry-app/7deeedbf-2a5a-4cb4-93fb-0098c393a7d4/scratchpad/node_modules /private/tmp/claude-501/-Users-tizetimoyosore-Desktop-moyo-AFOLARRY-afolarry-app/7deeedbf-2a5a-4cb4-93fb-0098c393a7d4/scratchpad/package*.json 2>/dev/null; echo cleaned)",
+      "Bash(find /Users/tizetimoyosore/Desktop/moyo/AFOLARRY/afolarry-app -maxdepth 2 -iname \"firestore.rules\" -o -iname \"firestore*.rules\" | head; find /Users/tizetimoyosore/Desktop/moyo/AFOLARRY -maxdepth 3 -iname \"*.rules\")",
+      "Read(//Users/tizetimoyosore/Desktop/moyo/AFOLARRY/**)",
+      "Bash(npx eslint *)",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(break)",
+      "Read(//private/tmp/**)",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(curl -s http://localhost:5174)",
+      "Bash(npx --no-install playwright --version)",
+      "Bash(node -e ' *)",
+      "Bash(node check.js)",
+      "Bash(node drive.js)",
+      "Bash(pkill -f \"vite\")",
+      "Bash(lsof -ti:5174)",
+      "Bash(xargs -r kill)",
+      "Bash(lsof -ti:5173)",
+      "Bash(rm -f /private/tmp/claude-501/-Users-tizetimoyosore-Desktop-moyo-AFOLARRY-afolarry-app/6061ce5f-0948-4d8d-a684-57357a31c810/scratchpad/shot-*.png /private/tmp/claude-501/-Users-tizetimoyosore-Desktop-moyo-AFOLARRY-afolarry-app/6061ce5f-0948-4d8d-a684-57357a31c810/scratchpad/drive*.js /private/tmp/claude-501/-Users-tizetimoyosore-Desktop-moyo-AFOLARRY-afolarry-app/6061ce5f-0948-4d8d-a684-57357a31c810/scratchpad/check.js; echo cleaned)",
+      "Bash(git stash *)",
+      "Bash(lsof -i :5173 -sTCP:LISTEN)",
+      "Bash(chromium-cli --help)",
+      "Bash(pkill -f \"vite$\")",
+      "Bash(pkill -f \"npm run dev\")",
+      "Bash(lsof -i :5174 -sTCP:LISTEN)"
+    ],
+    "additionalDirectories": [
+      "/private/tmp/claude-501/-Users-tizetimoyosore-Desktop-moyo-AFOLARRY-afolarry-app/7deeedbf-2a5a-4cb4-93fb-0098c393a7d4/scratchpad/node_modules",
+      "/private/tmp/claude-501/-Users-tizetimoyosore-Desktop-moyo-AFOLARRY-afolarry-app/6061ce5f-0948-4d8d-a684-57357a31c810/scratchpad"
+    ]
+  }
+}

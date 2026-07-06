@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
-import { toDisplayString, formatNaira } from "../lib/utils";
+import { toDisplayString, formatNaira, getVehicleEntries } from "../lib/utils";
 
 const drawerWidth = 500;
 
@@ -105,42 +105,42 @@ export default function VehicleDetail({ id: propId, onClose: propOnClose, tracke
           ) : vehicle ? (
             <div style={styles.grid}>
 
-              <SectionHeading label="Vehicle" />
+              <SectionHeading label="Reference Numbers" />
               <div style={styles.twoCol}>
-                <Field label="Make / Model" value={vehicle.make} />
+                <Field label="A-Number" value={vehicle.aNumber} accent />
+                <Field label="C-Number" value={vehicle.cNumber} accent />
                 <Field label="Date" value={vehicle.date} />
               </div>
 
               <Divider />
 
-              <SectionHeading label="Reference Numbers" />
-              <div style={styles.twoCol}>
-                <Field label="A-Number" value={vehicle.aNumber} accent />
-                <Field label="C-Number" value={vehicle.cNumber} accent />
+              <SectionHeading label={`Vehicle${getVehicleEntries(vehicle).length > 1 ? "s" : ""}`} />
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {getVehicleEntries(vehicle).map((e, i) => (
+                  <div key={i} style={styles.vehicleCard}>
+                    {getVehicleEntries(vehicle).length > 1 && (
+                      <p style={styles.vehicleCardLabel}>Vehicle {i + 1}</p>
+                    )}
+                    <div style={styles.twoCol}>
+                      <Field label="Make / Model" value={e.make} />
+                      <Field label="Chassis No(s)" value={toDisplayString(e.chassisNo)} mono />
+                    </div>
+                    {e.dutyFee && (
+                      <div style={{ ...styles.dutyBox, marginTop: 10 }}>
+                        <span style={styles.dutyIcon}>
+                          <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                            <rect x="2" y="1" width="12" height="14" rx="2" stroke="#16a34a" strokeWidth="1.5"/>
+                            <path d="M5 5h6M5 8h6M5 11h4" stroke="#16a34a" strokeWidth="1.5" strokeLinecap="round"/>
+                          </svg>
+                        </span>
+                        <p style={styles.dutyValue}>{formatNaira(e.dutyFee)}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
 
               <Divider />
-
-              <SectionHeading label="Chassis Details" />
-              <Field label="Chassis No(s)" value={toDisplayString(vehicle.chassisNo)} mono />
-
-              <Divider />
-
-              {vehicle.dutyFee && (
-                <>
-                  <SectionHeading label="Duty" />
-                  <div style={styles.dutyBox}>
-                    <span style={styles.dutyIcon}>
-                      <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-                        <rect x="2" y="1" width="12" height="14" rx="2" stroke="#16a34a" strokeWidth="1.5"/>
-                        <path d="M5 5h6M5 8h6M5 11h4" stroke="#16a34a" strokeWidth="1.5" strokeLinecap="round"/>
-                      </svg>
-                    </span>
-                    <p style={styles.dutyValue}>{formatNaira(vehicle.dutyFee)}</p>
-                  </div>
-                  <Divider />
-                </>
-              )}
 
               <SectionHeading label="Consignee" />
               <div style={styles.twoCol}>
@@ -281,6 +281,20 @@ const styles = {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
     gap: 14,
+  },
+  vehicleCard: {
+    background: "#f8fafc",
+    border: "1px solid #f1f5f9",
+    borderRadius: 10,
+    padding: "12px 14px",
+  },
+  vehicleCardLabel: {
+    margin: "0 0 8px",
+    fontSize: 10,
+    fontWeight: 800,
+    color: "#94a3b8",
+    textTransform: "uppercase",
+    letterSpacing: "0.08em",
   },
   dutyBox: {
     display: "flex",

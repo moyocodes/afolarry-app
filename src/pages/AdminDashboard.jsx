@@ -15,6 +15,7 @@ import {
 } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { db, auth } from "../lib/firebase";
+import { useIdleLogout } from "../hooks/useIdleLogout";
 import { useNavigate } from "react-router-dom";
 import {
   Car,
@@ -50,7 +51,7 @@ import {
   CalendarDays,
   Download,
 } from "lucide-react";
-import { toDisplayString, formatNaira } from "../lib/utils";
+import { toDisplayString, formatNaira, getVehicleEntries, toArray } from "../lib/utils";
 
 // ── SHARED CONSTANTS ────────────────────────────────────────────────────────
 const S = { fontFamily: "'Sora',sans-serif" };
@@ -4693,6 +4694,7 @@ function ScheduleSection({ readOnly = false, currentUser, isHardRestricted }) {
 function VehicleRowDrawer({ v, trackers = [], colSpan, onClose, onEdit }) {
   const tracker = trackers.find((t) => t.name === v.company);
   const accent = tracker?.accent || "#1565c0";
+  const entries = getVehicleEntries(v);
 
   const Field = ({ label, value, mono }) =>
     value ? (
@@ -4729,7 +4731,7 @@ function VehicleRowDrawer({ v, trackers = [], colSpan, onClose, onEdit }) {
               </div>
               <div>
                 <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#0d1b2e", lineHeight: 1.2 }}>
-                  {v.make || v.consigneeName || "Vehicle Record"}
+                  {entries[0]?.make || v.consigneeName || "Vehicle Record"}
                 </p>
                 {v.company && (
                   <span style={{ fontSize: 11, fontWeight: 700, color: accent, background: `${accent}15`, border: `1px solid ${accent}30`, borderRadius: 999, padding: "2px 10px", display: "inline-block", marginTop: 4 }}>
@@ -4762,20 +4764,35 @@ function VehicleRowDrawer({ v, trackers = [], colSpan, onClose, onEdit }) {
             <Field label="Date" value={v.date} />
             <Field label="A Number" value={v.aNumber} mono />
             <Field label="C Number" value={v.cNumber} mono />
-            <Field label="Make / Model" value={v.make} />
-            <Field label="Duty" value={v.dutyFee ? formatNaira(v.dutyFee) : null} mono />
             <Field label="Shipping Company" value={v.company} />
           </div>
 
-          {/* Chassis — full width below if present */}
-          {toDisplayString(v.chassisNo) !== "—" && (
+          {/* Vehicles — one card per vehicle in the record */}
+          {entries.length > 0 && (
             <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid #e8f0fb" }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: "#9ab2cc", textTransform: "uppercase", letterSpacing: "0.09em", display: "block", marginBottom: 6 }}>
-                Chassis No(s)
+              <span style={{ fontSize: 10, fontWeight: 700, color: "#9ab2cc", textTransform: "uppercase", letterSpacing: "0.09em", display: "block", marginBottom: 10 }}>
+                Vehicles ({entries.length})
               </span>
-              <span style={{ fontSize: 13, fontFamily: "monospace", color: "#0d1b2e", lineHeight: 1.7, wordBreak: "break-word" }}>
-                {toDisplayString(v.chassisNo)}
-              </span>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {entries.map((e, i) => (
+                  <div key={i} style={{ background: "#fff", border: "1px solid #e8f0fb", borderRadius: 10, padding: "12px 14px" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "12px 20px" }}>
+                      <Field label="Make / Model" value={e.make} />
+                      <Field label="Duty" value={e.dutyFee ? formatNaira(e.dutyFee) : null} mono />
+                    </div>
+                    {toDisplayString(e.chassisNo) !== "—" && (
+                      <div style={{ marginTop: 10 }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: "#9ab2cc", textTransform: "uppercase", letterSpacing: "0.09em", display: "block", marginBottom: 4 }}>
+                          Chassis No(s)
+                        </span>
+                        <span style={{ fontSize: 13, fontFamily: "monospace", color: "#0d1b2e", lineHeight: 1.7, wordBreak: "break-word" }}>
+                          {toDisplayString(e.chassisNo)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
@@ -4797,12 +4814,24 @@ const BLANK_VEHICLE = {
   aNumber: "",
   cNumber: "",
   consigneeName: "",
-  chassisNo: "",
-  dutyFee: "",
-  make: "",
   company: "",
   nextItemId: "",
 };
+const blankVehicleEntry = () => ({ make: "", dutyFee: "", chassisInputs: [""] });
+
+// Renders one line per vehicle entry, stacked, for table cells backing an array field.
+function VehicleStack({ entries, render }) {
+  if (!entries.length) return <span style={{ color: "#dce8f7" }}>—</span>;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      {entries.map((e, i) => (
+        <div key={i} style={i > 0 ? { paddingTop: 6, borderTop: "1px dashed #eef2f7" } : undefined}>
+          {render(e)}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function VehiclesSection({
   readOnly = false,
@@ -4815,7 +4844,7 @@ function VehiclesSection({
   const [view, setView] = useState("list");
   const [form, setForm] = useState(BLANK_VEHICLE);
   const [editId, setEditId] = useState(null);
-  const [chassisInputs, setChassisInputs] = useState([]);
+  const [vehicleEntries, setVehicleEntries] = useState([blankVehicleEntry()]);
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const searchRef = useRef(null);
@@ -4847,7 +4876,7 @@ function VehiclesSection({
     setForm(BLANK_VEHICLE);
     setEditId(null);
     setSaveErr(null);
-    setChassisInputs([]);
+    setVehicleEntries([blankVehicleEntry()]);
   };
 
   const startEdit = (v) => {
@@ -4856,17 +4885,19 @@ function VehiclesSection({
       aNumber: v.aNumber || "",
       cNumber: v.cNumber || "",
       consigneeName: v.consigneeName || "",
-      chassisNo: v.chassisNo || "",
-      dutyFee: v.dutyFee || "",
-      make: v.make || "",
       company: v.company || "PIML",
       nextItemId: v.nextItemId || "",
     });
     setEditId(v.id);
     setView("form");
-    const raw = v.chassisNo || "";
-    const parts = raw.split(/\r?\n|,/).map((s) => s.trim()).filter(Boolean);
-    setChassisInputs(parts.length ? parts : []);
+    const entries = getVehicleEntries(v);
+    setVehicleEntries(
+      (entries.length ? entries : [{ make: "", chassisNo: "", dutyFee: "" }]).map((e) => {
+        const raw = e.chassisNo || "";
+        const parts = raw.split(/\r?\n|,/).map((s) => s.trim()).filter(Boolean);
+        return { make: e.make || "", dutyFee: e.dutyFee || "", chassisInputs: parts.length ? parts : [""] };
+      }),
+    );
   };
 
   const save = async (e) => {
@@ -4874,14 +4905,28 @@ function VehiclesSection({
     setSaving(true);
     setSaveErr(null);
     try {
-      const chassisString = (chassisInputs || [])
-        .map((s) => (s || "").toString().trim())
-        .filter(Boolean)
-        .join(", ");
+      const vehiclesPayload = vehicleEntries
+        .map((entry) => ({
+          make: (entry.make || "").trim(),
+          dutyFee: entry.dutyFee || "",
+          chassisNo: (entry.chassisInputs || [])
+            .map((s) => (s || "").toString().trim())
+            .filter(Boolean)
+            .join(", "),
+        }))
+        .filter((entry) => entry.make || entry.chassisNo || entry.dutyFee);
+
+      // Flat, top-level list of every individual chassis number across all
+      // vehicles in this record — lets Firestore find it via array-contains,
+      // since chassis numbers now live nested inside the `vehicles` array.
+      const chassisNumbers = [
+        ...new Set(vehiclesPayload.flatMap((entry) => toArray(entry.chassisNo))),
+      ];
 
       const payload = {
         ...form,
-        chassisNo: chassisString,
+        vehicles: vehiclesPayload,
+        chassisNumbers,
         nextItemId: form.nextItemId || "",
         updatedAt: serverTimestamp(),
       };
@@ -4926,18 +4971,21 @@ function VehiclesSection({
     const seen = new Set();
     const results = [];
     for (const v of vehicles) {
+      const vEntries = getVehicleEntries(v);
       const candidates = [
         v.consigneeName && { label: v.consigneeName, tag: "Consignee" },
-        v.make && { label: v.make, tag: "Make" },
         v.aNumber && { label: v.aNumber, tag: "A-No" },
         v.cNumber && { label: v.cNumber, tag: "C-No" },
         v.company && { label: v.company, tag: "Company" },
         v.date && { label: v.date, tag: "Date" },
-        ...(toDisplayString(v.chassisNo) !== "—"
-          ? toDisplayString(v.chassisNo)
-              .split(", ")
-              .map((c) => ({ label: c, tag: "Chassis" }))
-          : []),
+        ...vEntries.flatMap((e) => [
+          e.make && { label: e.make, tag: "Make" },
+          ...(toDisplayString(e.chassisNo) !== "—"
+            ? toDisplayString(e.chassisNo)
+                .split(", ")
+                .map((c) => ({ label: c, tag: "Chassis" }))
+            : []),
+        ]),
       ].filter(Boolean);
       for (const c of candidates) {
         const key = c.tag + "::" + c.label;
@@ -4966,23 +5014,16 @@ function VehiclesSection({
     return d ? d < sixMonthsAgo : false;
   };
 
-  const filtered = vehicles.filter(
-    (v) =>
-      !search ||
-      [
-        v.consigneeName,
-        v.make,
-        toDisplayString(v.chassisNo),
-        v.aNumber,
-        v.cNumber,
-        v.company,
-        v.dutyFee,
-        v.date,
-      ]
-        .join(" ")
-        .toLowerCase()
-        .includes(search.toLowerCase()),
-  );
+  const filtered = vehicles.filter((v) => {
+    if (!search) return true;
+    const vehicleText = getVehicleEntries(v)
+      .map((e) => `${e.make || ""} ${toDisplayString(e.chassisNo)} ${e.dutyFee || ""}`)
+      .join(" ");
+    return [v.consigneeName, vehicleText, v.aNumber, v.cNumber, v.company, v.date]
+      .join(" ")
+      .toLowerCase()
+      .includes(search.toLowerCase());
+  });
 
   const sorted = [...filtered].sort((a, b) => {
     const da = getRecordDate(a);
@@ -5110,49 +5151,89 @@ function VehiclesSection({
             </div>
           </div>
 
-          {/* Vehicle section */}
+          {/* Vehicles section — one or more vehicles per record */}
           <div style={{ background: "#fff", border: "1px solid #e8f0fb", borderRadius: 16, padding: "22px 24px" }}>
-            {formSection("Vehicle")}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
-              <div>
-                <label className={lbl}>Make / Model</label>
-                <input type="text" placeholder="e.g. Used Toyota Camry" value={form.make} onChange={(e) => setForm((p) => ({ ...p, make: e.target.value }))} className={inp} />
-              </div>
-              <div>
-                <label className={lbl}>Duty (₦)</label>
-                <input type="number" placeholder="e.g. 1500000" value={form.dutyFee} onChange={(e) => setForm((p) => ({ ...p, dutyFee: e.target.value }))} className={inp} min="0" />
-              </div>
-            </div>
-            <div>
-              <label className={lbl}>Chassis No(s)</label>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {(chassisInputs.length ? chassisInputs : [""]).map((c, idx) => (
-                  <div key={idx} style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    <input
-                      type="text"
-                      placeholder={`Chassis ${idx + 1}`}
-                      value={c}
-                      onChange={(e) => setChassisInputs((prev) => prev.map((p, i) => (i === idx ? e.target.value : p)))}
-                      className={inp}
-                      style={{ flex: 1 }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setChassisInputs((prev) => prev.filter((_, i) => i !== idx))}
-                      style={{ padding: "6px 12px", border: "1px solid #fecdd3", borderRadius: 8, background: "#fff", cursor: "pointer", color: "#e11d48", fontSize: 12, fontFamily: "Sora,sans-serif", fontWeight: 600 }}
-                    >
-                      Remove
-                    </button>
+            {formSection("Vehicles")}
+            <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+              {vehicleEntries.map((entry, vIdx) => (
+                <div key={vIdx} style={{ border: "1px solid #eef4ff", borderRadius: 12, padding: 16 }}>
+                  {vehicleEntries.length > 1 && (
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                      <span style={{ fontSize: 11, fontWeight: 800, color: "#9ab2cc", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                        Vehicle {vIdx + 1}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setVehicleEntries((prev) => prev.filter((_, i) => i !== vIdx))}
+                        style={{ padding: "4px 10px", border: "1px solid #fecdd3", borderRadius: 8, background: "#fff", cursor: "pointer", color: "#e11d48", fontSize: 11, fontFamily: "Sora,sans-serif", fontWeight: 700 }}
+                      >
+                        Remove vehicle
+                      </button>
+                    </div>
+                  )}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+                    <div>
+                      <label className={lbl}>Make / Model</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Used Toyota Camry"
+                        value={entry.make}
+                        onChange={(e) => setVehicleEntries((prev) => prev.map((p, i) => (i === vIdx ? { ...p, make: e.target.value } : p)))}
+                        className={inp}
+                      />
+                    </div>
+                    <div>
+                      <label className={lbl}>Duty (₦)</label>
+                      <input
+                        type="number"
+                        placeholder="e.g. 1500000"
+                        value={entry.dutyFee}
+                        onChange={(e) => setVehicleEntries((prev) => prev.map((p, i) => (i === vIdx ? { ...p, dutyFee: e.target.value } : p)))}
+                        className={inp}
+                        min="0"
+                      />
+                    </div>
                   </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => setChassisInputs((prev) => [...prev, ""])}
-                  style={{ alignSelf: "flex-start", padding: "7px 16px", border: "1px dashed #b0c8f5", borderRadius: 8, background: "#f0f6ff", cursor: "pointer", color: "#1565c0", fontSize: 12, fontFamily: "Sora,sans-serif", fontWeight: 700 }}
-                >
-                  + Add chassis
-                </button>
-              </div>
+                  <div>
+                    <label className={lbl}>Chassis No(s)</label>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {(entry.chassisInputs.length ? entry.chassisInputs : [""]).map((c, cIdx) => (
+                        <div key={cIdx} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                          <input
+                            type="text"
+                            placeholder={`Chassis ${cIdx + 1}`}
+                            value={c}
+                            onChange={(e) => setVehicleEntries((prev) => prev.map((p, i) => (i === vIdx ? { ...p, chassisInputs: p.chassisInputs.map((cc, ci) => (ci === cIdx ? e.target.value : cc)) } : p)))}
+                            className={inp}
+                            style={{ flex: 1 }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setVehicleEntries((prev) => prev.map((p, i) => (i === vIdx ? { ...p, chassisInputs: p.chassisInputs.filter((_, ci) => ci !== cIdx) } : p)))}
+                            style={{ padding: "6px 12px", border: "1px solid #fecdd3", borderRadius: 8, background: "#fff", cursor: "pointer", color: "#e11d48", fontSize: 12, fontFamily: "Sora,sans-serif", fontWeight: 600 }}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setVehicleEntries((prev) => prev.map((p, i) => (i === vIdx ? { ...p, chassisInputs: [...p.chassisInputs, ""] } : p)))}
+                        style={{ alignSelf: "flex-start", padding: "7px 16px", border: "1px dashed #b0c8f5", borderRadius: 8, background: "#f0f6ff", cursor: "pointer", color: "#1565c0", fontSize: 12, fontFamily: "Sora,sans-serif", fontWeight: 700 }}
+                      >
+                        + Add chassis
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => setVehicleEntries((prev) => [...prev, blankVehicleEntry()])}
+                style={{ alignSelf: "flex-start", padding: "9px 18px", border: "1px dashed #1565c0", borderRadius: 10, background: "#eef4ff", cursor: "pointer", color: "#1565c0", fontSize: 13, fontFamily: "Sora,sans-serif", fontWeight: 700 }}
+              >
+                + Add another vehicle
+              </button>
             </div>
           </div>
 
@@ -5268,11 +5349,17 @@ function VehiclesSection({
 
           {/* CSV */}
           <button
-            onClick={() => downloadCSV("vehicles.csv", sorted.map((v) => ({
-              Date: v.date, "A-Number": v.aNumber, "C-Number": v.cNumber,
-              Consignee: v.consigneeName, "Chassis No": toDisplayString(v.chassisNo),
-              Duty: formatNaira(v.dutyFee), Make: v.make, Company: v.company,
-            })))}
+            onClick={() => downloadCSV("vehicles.csv", sorted.map((v) => {
+              const entries = getVehicleEntries(v);
+              return {
+                Date: v.date, "A-Number": v.aNumber, "C-Number": v.cNumber,
+                Consignee: v.consigneeName,
+                Make: entries.map((e) => e.make || "—").join(" | "),
+                "Chassis No": entries.map((e) => toDisplayString(e.chassisNo)).join(" | "),
+                Duty: entries.map((e) => formatNaira(e.dutyFee)).join(" | "),
+                Company: v.company,
+              };
+            }))}
             title="Download CSV"
             style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 16px", border: "1px solid #dce8f7", borderRadius: 12, background: "#fff", color: "#5a7599", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Sora,sans-serif", whiteSpace: "nowrap" }}
             className="hover:bg-[#f0f6ff] hover:text-[#1565c0] transition-colors"
@@ -5379,6 +5466,7 @@ function VehiclesSection({
                   const accent = tracker?.accent || "#1565c0";
                   const rowNum = rangeStart + idx;
                   const isOpen = viewingVehicle?.id === v.id;
+                  const rowEntries = getVehicleEntries(v);
                   const COL_COUNT = 10;
                   return (
                     <React.Fragment key={v.id}>
@@ -5417,15 +5505,20 @@ function VehiclesSection({
                           {v.consigneeName || <span style={{ color: "#dce8f7", fontWeight: 400 }}>—</span>}
                         </td>
                         <td style={{ ...TD, fontFamily: "monospace", fontSize: 12, color: "#475569" }}>
-                          {toDisplayString(v.chassisNo)}
+                          <VehicleStack entries={rowEntries} render={(e) => toDisplayString(e.chassisNo)} />
                         </td>
                         <td style={{ ...TD }}>
-                          {v.dutyFee
-                            ? <span style={{ fontFamily: "monospace", fontWeight: 700, color: "#15803d", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 6, padding: "3px 8px", fontSize: 12, whiteSpace: "nowrap" }}>{formatNaira(v.dutyFee)}</span>
-                            : <span style={{ color: "#dce8f7" }}>—</span>}
+                          <VehicleStack
+                            entries={rowEntries}
+                            render={(e) =>
+                              e.dutyFee
+                                ? <span style={{ fontFamily: "monospace", fontWeight: 700, color: "#15803d", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 6, padding: "3px 8px", fontSize: 12, whiteSpace: "nowrap" }}>{formatNaira(e.dutyFee)}</span>
+                                : <span style={{ color: "#dce8f7" }}>—</span>
+                            }
+                          />
                         </td>
                         <td style={{ ...TD }}>
-                          {v.make || <span style={{ color: "#dce8f7" }}>—</span>}
+                          <VehicleStack entries={rowEntries} render={(e) => e.make || <span style={{ color: "#dce8f7" }}>—</span>} />
                         </td>
                         <td style={{ ...TD }}>
                           {v.company ? (
@@ -5562,6 +5655,8 @@ export default function AdminDashboard() {
     });
     return unsub;
   }, []);
+
+  useIdleLogout(auth, 10 * 60 * 1000);
 
   const isReadOnly = currentUserData?.isAdmin === false;
   const isHardRestricted = currentUserData?.role !== "admin";

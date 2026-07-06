@@ -29,6 +29,18 @@ export function toDisplayString(value) {
   return String(value);
 }
 
+// Normalize a vehicle record into an array of vehicle entries ({ make, chassisNo, dutyFee }).
+// Supports both the newer `vehicles: [...]` array shape and the legacy flat
+// (single make/chassisNo/dutyFee per record) shape used by older documents.
+export function getVehicleEntries(record) {
+  if (!record) return [];
+  if (Array.isArray(record.vehicles) && record.vehicles.length) return record.vehicles;
+  if (record.make || record.chassisNo || record.dutyFee) {
+    return [{ make: record.make, chassisNo: record.chassisNo, dutyFee: record.dutyFee }];
+  }
+  return [];
+}
+
 export function formatNaira(value) {
   if (value == null || value === "") return "—";
   const raw = String(value).replace(/[^\d.]/g, "");

@@ -74,7 +74,7 @@ function Layout() {
 
 function AppContent() {
   const { pathname } = useLocation();
-  // if (pathname.startsWith("/mail"))      return <MailDashboard token={pathname.split('/')[2] || null} />;
+  if (pathname.startsWith("/mail"))      return <MailDashboard token={pathname.split('/')[2] || null} />;
   if (pathname.startsWith("/shield")) return <AdminShield />;
   if (pathname.startsWith("/admin")) return <AdminDashboard />;
   // if (pathname.startsWith("/shipments")) return <ShipmentsAdmin />;
