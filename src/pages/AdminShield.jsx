@@ -9,6 +9,7 @@ import {
 } from "firebase/auth";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../lib/firebase";
+import { clearIdleActivity } from "../hooks/useIdleLogout";
 import {
   ShieldCheck,
   CheckCircle,
@@ -164,6 +165,7 @@ export default function AdminShield() {
 
         // Sign them out immediately — they need approval first
         await signOut(auth);
+        clearIdleActivity();
 
         setStatus("pending"); // show "awaiting approval" UI
       } else {
@@ -177,6 +179,7 @@ export default function AdminShield() {
         if (data.approved === false) {
           // Not approved yet — sign them out and block access
           await signOut(auth);
+          clearIdleActivity();
           setStatus("not-approved");
           setTimeout(() => setStatus(null), 6000);
           return;
@@ -190,6 +193,9 @@ export default function AdminShield() {
           merge: true,
         });
 
+        // Fresh session — reset idle-activity baseline so a stale
+        // timestamp from a previous session can't trigger an instant logout.
+        clearIdleActivity();
         setStatus("ok");
         navigate("/admin", { replace: true });
       }

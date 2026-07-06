@@ -15,7 +15,7 @@ import {
 } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { db, auth } from "../lib/firebase";
-import { useIdleLogout } from "../hooks/useIdleLogout";
+import { useIdleLogout, clearIdleActivity } from "../hooks/useIdleLogout";
 import { useNavigate } from "react-router-dom";
 import {
   Car,
@@ -2724,6 +2724,7 @@ function UsersSection({
     // If an admin revokes their OWN access, sign them out immediately
     if (!approved && currentUser?.uid === id) {
       await signOut(auth).catch(() => {});
+      clearIdleActivity();
     }
   };
 
@@ -5795,7 +5796,12 @@ export default function AdminDashboard() {
           <motion.button
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
-            onClick={() => signOut(auth).then(() => navigate("/shield"))}
+            onClick={() =>
+              signOut(auth).then(() => {
+                clearIdleActivity();
+                navigate("/shield");
+              })
+            }
             style={{
               display: "flex",
               alignItems: "center",

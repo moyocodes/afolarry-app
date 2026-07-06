@@ -4,6 +4,12 @@ import { signOut } from "firebase/auth";
 const ACTIVITY_EVENTS = ["mousemove", "mousedown", "keydown", "scroll", "touchstart"];
 const STORAGE_KEY = "afl_lastActivity";
 
+// Call on every sign-in/sign-out so a stale timestamp from a previous
+// session can't immediately trip the idle check on the next login.
+export function clearIdleActivity() {
+  localStorage.removeItem(STORAGE_KEY);
+}
+
 // Signs the user out after `timeoutMs` of no mouse/keyboard/scroll activity.
 // Last-activity timestamp is stored in localStorage so idle time keeps counting
 // across tabs and across a closed/reopened browser.
