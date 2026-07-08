@@ -23,12 +23,14 @@ export function useIdleLogout(auth, timeoutMs) {
       localStorage.setItem(STORAGE_KEY, String(Date.now()));
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => {
+        clearIdleActivity();
         signOut(auth).catch(() => {});
       }, timeoutMs);
     };
 
     const lastActivity = Number(localStorage.getItem(STORAGE_KEY));
     if (lastActivity && Date.now() - lastActivity >= timeoutMs) {
+      clearIdleActivity();
       signOut(auth).catch(() => {});
       return;
     }

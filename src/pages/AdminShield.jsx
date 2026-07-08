@@ -154,7 +154,6 @@ export default function AdminShield() {
             uid: cred.user.uid,
             email: cred.user.email,
             createdAt: serverTimestamp(),
-            lastLogin: serverTimestamp(),
             isAdmin: role !== "viewer",
             approved: false, // ← must be set to true by an existing admin
             role,
@@ -805,6 +804,25 @@ export default function AdminShield() {
                         ? "Enter your email above first"
                         : "Forgot password?"}
               </button>
+            </div>
+          )}
+
+          {mode === "login" && (
+            <div style={{ textAlign: "center", marginTop: 4 }}>
+              <a
+                href="https://mail.zoho.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  fontSize: 12,
+                  fontWeight: 600,
+                  fontFamily: "Sora,sans-serif",
+                  color: "rgba(255,255,255,0.35)",
+                  textDecoration: "none",
+                }}
+              >
+                Open Mailbox
+              </a>
             </div>
           )}
         </form>

@@ -682,6 +682,55 @@ function ProfilePreview({ userData, user, onEditProfile }) {
           )}
         </div>
       </div>
+      {/* Mail links */}
+      <a
+        href="https://mail.zoho.com/"
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          background: "#f0f6ff",
+          border: "1px solid #dce8f7",
+          borderRadius: 9,
+          padding: "7px 14px",
+          color: "#1565c0",
+          fontSize: 12,
+          fontWeight: 700,
+          fontFamily: "Sora,sans-serif",
+          flexShrink: 0,
+          whiteSpace: "nowrap",
+          textDecoration: "none",
+        }}
+      >
+        <Mail size={12} /> Mail
+      </a>
+      {userData?.isAdmin !== false && (
+        <a
+          href="https://mailadmin.zoho.com/cpanel/home.do#dashboard"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            background: "#f0f6ff",
+            border: "1px solid #dce8f7",
+            borderRadius: 9,
+            padding: "7px 14px",
+            color: "#1565c0",
+            fontSize: 12,
+            fontWeight: 700,
+            fontFamily: "Sora,sans-serif",
+            flexShrink: 0,
+            whiteSpace: "nowrap",
+            textDecoration: "none",
+          }}
+        >
+          <Mail size={12} /> Mail Admin
+        </a>
+      )}
       {/* Edit profile CTA */}
       <button
         onClick={onEditProfile}
@@ -5217,13 +5266,6 @@ function VehiclesSection({
                           </button>
                         </div>
                       ))}
-                      <button
-                        type="button"
-                        onClick={() => setVehicleEntries((prev) => prev.map((p, i) => (i === vIdx ? { ...p, chassisInputs: [...p.chassisInputs, ""] } : p)))}
-                        style={{ alignSelf: "flex-start", padding: "7px 16px", border: "1px dashed #b0c8f5", borderRadius: 8, background: "#f0f6ff", cursor: "pointer", color: "#1565c0", fontSize: 12, fontFamily: "Sora,sans-serif", fontWeight: 700 }}
-                      >
-                        + Add chassis
-                      </button>
                     </div>
                   </div>
                 </div>
