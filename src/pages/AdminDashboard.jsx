@@ -5257,13 +5257,6 @@ function VehiclesSection({
                             className={inp}
                             style={{ flex: 1 }}
                           />
-                          <button
-                            type="button"
-                            onClick={() => setVehicleEntries((prev) => prev.map((p, i) => (i === vIdx ? { ...p, chassisInputs: p.chassisInputs.filter((_, ci) => ci !== cIdx) } : p)))}
-                            style={{ padding: "6px 12px", border: "1px solid #fecdd3", borderRadius: 8, background: "#fff", cursor: "pointer", color: "#e11d48", fontSize: 12, fontFamily: "Sora,sans-serif", fontWeight: 600 }}
-                          >
-                            Remove
-                          </button>
                         </div>
                       ))}
                     </div>
